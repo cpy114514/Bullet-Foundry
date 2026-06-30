@@ -1,5 +1,12 @@
 using UnityEngine;
 
+public enum BulletElement
+{
+    Normal,
+    Fire,
+    Ice
+}
+
 [DisallowMultipleComponent]
 public sealed class Bullet : MonoBehaviour
 {
@@ -23,10 +30,17 @@ public sealed class Bullet : MonoBehaviour
     private float animationFrameDuration = 0.08f;
     private float animationTimer;
     private int animationFrameIndex;
+    private BulletElement element = BulletElement.Normal;
+    private Sprite normalSprite;
+    private Vector3 normalScale;
+    private bool normalVisualCached;
+
+    public BulletElement Element => element;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        CacheNormalVisual();
         EnsurePhysicsComponents();
     }
 
@@ -93,6 +107,89 @@ public sealed class Bullet : MonoBehaviour
             Mathf.Max(0.01f, scale.x),
             Mathf.Max(0.01f, scale.y),
             transform.localScale.z);
+    }
+
+    public void ApplyElement(
+        BulletElement newElement,
+        Sprite[] frames,
+        float frameDuration,
+        Vector2 visualScale)
+    {
+        if (newElement == BulletElement.Normal)
+        {
+            ResetToNormal();
+            return;
+        }
+
+        CacheNormalVisual();
+        element = newElement;
+        SetSpriteAnimation(frames, frameDuration);
+        SetVisualScale(visualScale);
+    }
+
+    public void ResetToNormal()
+    {
+        CacheNormalVisual();
+        element = BulletElement.Normal;
+        animationFrames = System.Array.Empty<Sprite>();
+        animationTimer = 0f;
+        animationFrameIndex = 0;
+        transform.localScale = normalScale;
+
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sprite = normalSprite;
+        }
+    }
+
+    public void CopyRuntimeStateFrom(Bullet source)
+    {
+        if (source == null || source == this)
+        {
+            return;
+        }
+
+        moveSpeed = source.moveSpeed;
+        moveDirection = source.moveDirection;
+        lifetime = source.lifetime;
+        damage = source.damage;
+        spawnImpactEffect = source.spawnImpactEffect;
+        element = source.element;
+        normalSprite = source.normalSprite;
+        normalScale = source.normalScale;
+        normalVisualCached = source.normalVisualCached;
+
+        animationFrames = source.animationFrames.Length == 0
+            ? System.Array.Empty<Sprite>()
+            : (Sprite[])source.animationFrames.Clone();
+        animationFrameDuration = source.animationFrameDuration;
+        animationTimer = source.animationTimer;
+        animationFrameIndex = source.animationFrameIndex;
+
+        transform.localScale = source.transform.localScale;
+        CopyRendererState(source);
+    }
+
+    private void CacheNormalVisual()
+    {
+        if (normalVisualCached)
+        {
+            return;
+        }
+
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        normalSprite = spriteRenderer != null ? spriteRenderer.sprite : null;
+        normalScale = transform.localScale;
+        normalVisualCached = true;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -163,6 +260,30 @@ public sealed class Bullet : MonoBehaviour
         {
             spriteRenderer.sprite = nextFrame;
         }
+    }
+
+    private void CopyRendererState(Bullet source)
+    {
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        if (source.spriteRenderer == null)
+        {
+            source.spriteRenderer = source.GetComponent<SpriteRenderer>();
+        }
+
+        if (spriteRenderer == null || source.spriteRenderer == null)
+        {
+            return;
+        }
+
+        spriteRenderer.sprite = source.spriteRenderer.sprite;
+        spriteRenderer.color = source.spriteRenderer.color;
+        spriteRenderer.flipX = source.spriteRenderer.flipX;
+        spriteRenderer.flipY = source.spriteRenderer.flipY;
+        spriteRenderer.sharedMaterial = source.spriteRenderer.sharedMaterial;
     }
 
     private static int CountValidFrames(Sprite[] frames)

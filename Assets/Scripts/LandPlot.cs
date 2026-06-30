@@ -4,6 +4,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class LandPlot : MonoBehaviour
 {
+    private const int LandSortingOrder = -5;
+
     [SerializeField]
     private bool isOccupied;
 
@@ -11,7 +13,7 @@ public sealed class LandPlot : MonoBehaviour
     private bool treatChildrenAsTowers = true;
 
     [SerializeField, Range(0f, 1f)]
-    private float emptyAlpha = 0.35f;
+    private float emptyAlpha = 0.9f;
 
     [SerializeField, Range(0f, 1f)]
     private float occupiedAlpha = 1f;
@@ -80,6 +82,7 @@ public sealed class LandPlot : MonoBehaviour
         Color color = spriteRenderer.color;
         color.a = IsOccupied ? occupiedAlpha : emptyAlpha;
         spriteRenderer.color = color;
+        spriteRenderer.sortingOrder = LandSortingOrder;
     }
 
     private bool HasTowerChild()

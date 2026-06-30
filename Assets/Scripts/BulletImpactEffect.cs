@@ -3,8 +3,10 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class BulletImpactEffect : MonoBehaviour
 {
+    private const string ImpactMaterialResourcePath = "Materials/BulletImpactBlack";
+
     [SerializeField, Min(1)]
-    private int particleCount = 10;
+    private int particleCount = 6;
 
     [SerializeField, Min(0f)]
     private float minSpeed = 1.5f;
@@ -13,12 +15,13 @@ public sealed class BulletImpactEffect : MonoBehaviour
     private float maxSpeed = 4f;
 
     [SerializeField]
-    private Color particleColor = new Color(1f, 0.9f, 0.45f, 1f);
+    private Color particleColor = Color.black;
 
     [SerializeField, Min(0f)]
     private float destroyAfterSeconds = 0.7f;
 
     private ParticleSystem particles;
+    private static Material impactMaterial;
 
     public static void Spawn(Vector3 position, Vector2 incomingDirection)
     {
@@ -57,7 +60,7 @@ public sealed class BulletImpactEffect : MonoBehaviour
                 position = Vector3.zero,
                 velocity = velocityDirection * Random.Range(minSpeed, maxSpeed),
                 startColor = particleColor,
-                startSize = Random.Range(0.035f, 0.08f),
+                startSize = Random.Range(0.1f, 0.2f),
                 startLifetime = Random.Range(0.18f, 0.38f)
             };
 
@@ -74,7 +77,7 @@ public sealed class BulletImpactEffect : MonoBehaviour
         main.loop = false;
         main.playOnAwake = false;
         main.startSpeed = 0f;
-        main.startSize = 0.06f;
+        main.startSize = 0.15f;
         main.startLifetime = 0.25f;
         main.gravityModifier = 0.25f;
         main.simulationSpace = ParticleSystemSimulationSpace.Local;
@@ -90,5 +93,16 @@ public sealed class BulletImpactEffect : MonoBehaviour
         ParticleSystemRenderer particleRenderer = particles.GetComponent<ParticleSystemRenderer>();
         particleRenderer.renderMode = ParticleSystemRenderMode.Billboard;
         particleRenderer.sortingOrder = 5;
+        particleRenderer.sharedMaterial = GetImpactMaterial();
+    }
+
+    private static Material GetImpactMaterial()
+    {
+        if (impactMaterial == null)
+        {
+            impactMaterial = Resources.Load<Material>(ImpactMaterialResourcePath);
+        }
+
+        return impactMaterial;
     }
 }

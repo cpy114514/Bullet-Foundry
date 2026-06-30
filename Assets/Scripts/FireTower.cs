@@ -48,8 +48,20 @@ public sealed class FireTower : MonoBehaviour
             return;
         }
 
-        bullet.SetSpriteAnimation(fireFrames, frameDuration);
-        bullet.SetVisualScale(fireBulletScale);
+        if (bullet.Element == BulletElement.Ice)
+        {
+            bullet.ResetToNormal();
+            return;
+        }
+
+        if (bullet.Element == BulletElement.Normal)
+        {
+            bullet.ApplyElement(
+                BulletElement.Fire,
+                fireFrames,
+                frameDuration,
+                fireBulletScale);
+        }
     }
 
     private bool IsInsideTower(Vector3 position)

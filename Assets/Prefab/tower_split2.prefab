@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4813214607448151297}
   - component: {fileID: 4813214607448151298}
   - component: {fileID: 4813214607448151299}
+  - component: {fileID: 4813214607448151300}
   m_Layer: 0
   m_Name: tower_split2
   m_TagString: Untagged
@@ -104,10 +105,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d52af0a02d624e4e9cc1a6c3e2b6ef91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SplitterTower
-  bulletPrefab: {fileID: 3585252903227048777, guid: acf246765cb64fa7a28cd2f42a527506, type: 3}
   spawnForwardOffset: 0.25
-  splitVerticalOffset: 0.15
+  splitVerticalOffset: 0.35
   overlapForwardOffset: 0.12
   upperDirection: {x: 1, y: 0}
   lowerDirection: {x: 1, y: 0}
   destroyIncomingBullet: 1
+--- !u!114 &4813214607448151300
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4813214607448151296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e05827c1b6d4396facb5c6d7e8f901a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TowerHealth
+  maxHealth: 3
+  currentHealth: 3

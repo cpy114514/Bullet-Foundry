@@ -4,9 +4,6 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class SplitterTower : MonoBehaviour
 {
-    [SerializeField]
-    private Bullet bulletPrefab;
-
     [SerializeField, Min(0f)]
     private float spawnForwardOffset = 0.25f;
 
@@ -74,11 +71,10 @@ public sealed class SplitterTower : MonoBehaviour
             return;
         }
 
-        Bullet sourcePrefab = bulletPrefab != null ? bulletPrefab : incomingBullet;
         Vector3 splitOrigin = GetSplitOrigin(incomingBullet.transform.position);
 
-        SpawnSplitBullet(sourcePrefab, splitOrigin + Vector3.up * splitVerticalOffset, upperDirection);
-        SpawnSplitBullet(sourcePrefab, splitOrigin + Vector3.down * splitVerticalOffset, lowerDirection);
+        SpawnSplitBullet(incomingBullet, splitOrigin + Vector3.up * splitVerticalOffset, upperDirection);
+        SpawnSplitBullet(incomingBullet, splitOrigin + Vector3.down * splitVerticalOffset, lowerDirection);
 
         if (destroyIncomingBullet)
         {
@@ -102,9 +98,10 @@ public sealed class SplitterTower : MonoBehaviour
             transform.position.z);
     }
 
-    private void SpawnSplitBullet(Bullet sourcePrefab, Vector3 position, Vector2 direction)
+    private void SpawnSplitBullet(Bullet incomingBullet, Vector3 position, Vector2 direction)
     {
-        Bullet spawnedBullet = Instantiate(sourcePrefab, ResolveSpawnPosition(position), Quaternion.identity);
+        Bullet spawnedBullet = Instantiate(incomingBullet, ResolveSpawnPosition(position), Quaternion.identity);
+        spawnedBullet.CopyRuntimeStateFrom(incomingBullet);
         spawnedBullet.SetDirection(direction);
     }
 

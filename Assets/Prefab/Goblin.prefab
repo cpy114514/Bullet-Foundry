@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 1}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 202}
@@ -81,11 +81,15 @@ MonoBehaviour:
   targetObjectName: Shooter
   attackRange: 0.7
   attackCooldown: 1
+  towerAttackRange: 0.1
+  towerLaneTolerance: 0.6
   walkStateName: goblin_walk
   attackStateName: goblin_attack
   dieStateName: goblin_die
   animationFadeTime: 0.08
   destroyDelayAfterDeath: 1.1
+  hitFlashColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
+  hitFlashDuration: 0.1
 --- !u!50 &924736757209591491
 Rigidbody2D:
   serializedVersion: 5
@@ -147,7 +151,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -1.4910935}
+  m_Offset: {x: 1.3600793, y: -1.4910936}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -157,7 +161,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 8.90625, y: 16.45094}
+  m_Size: {x: 3.6033173, y: 16.45094}
   m_EdgeRadius: 0
 --- !u!1 &201
 GameObject:
@@ -475,7 +479,7 @@ Transform:
   m_GameObject: {fileID: 311}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: -0.7658092, w: 0.6430679}
-  m_LocalPosition: {x: 1.0055485, y: 1.9734821, z: 0}
+  m_LocalPosition: {x: 1.355083, y: 1.3498033, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -652,7 +656,7 @@ Transform:
   m_GameObject: {fileID: 411}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: -0.59629565, w: 0.80276495}
-  m_LocalPosition: {x: 0.11430359, y: 2.2722034, z: 0}
+  m_LocalPosition: {x: 0.6900072, y: 1.0933821, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

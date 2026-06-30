@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -27,6 +28,12 @@ public sealed class GoblinEnemy : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float attackCooldown = 1f;
 
+    [SerializeField, Min(0f)]
+    private float towerAttackRange = 0.1f;
+
+    [SerializeField, Min(0.01f)]
+    private float towerLaneTolerance = 0.6f;
+
     [Header("Animation")]
     [SerializeField]
     private string walkStateName = "goblin_walk";
@@ -45,10 +52,10 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     [Header("Feedback")]
     [SerializeField]
-    private Color hitFlashColor = Color.white;
+    private Color hitFlashColor = new Color(0.25f, 0.25f, 0.25f, 1f);
 
     [SerializeField, Min(0f)]
-    private float hitFlashDuration = 0.08f;
+    private float hitFlashDuration = 0.1f;
 
     private Animator animator;
     private Rigidbody2D body;
@@ -62,6 +69,12 @@ public sealed class GoblinEnemy : MonoBehaviour
     private bool isDead;
 
     public bool IsDead => isDead;
+
+    public int CurrentHealth => currentHealth;
+
+    public int MaxHealth => maxHealth;
+
+    public event Action<int, int> HealthChanged;
 
     private void Awake()
     {
@@ -90,6 +103,13 @@ public sealed class GoblinEnemy : MonoBehaviour
 
         ResolveTargetIfNeeded();
 
+        TowerHealth towerTarget = FindTowerInAttackRange();
+        if (towerTarget != null)
+        {
+            AttackTower(towerTarget);
+            return;
+        }
+
         if (IsTargetInAttackRange())
         {
             Attack();
@@ -108,10 +128,16 @@ public sealed class GoblinEnemy : MonoBehaviour
 
         FlashOnHit();
         currentHealth = Mathf.Max(0, currentHealth - damage);
+        HealthChanged?.Invoke(currentHealth, maxHealth);
         if (currentHealth == 0)
         {
             Die();
         }
+    }
+
+    public void SetMoveSpeed(float speed)
+    {
+        moveSpeed = Mathf.Max(0f, speed);
     }
 
     private void Walk()
@@ -130,7 +156,19 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         nextAttackTime = Time.time + attackCooldown;
-        _ = contactDamage;
+    }
+
+    private void AttackTower(TowerHealth tower)
+    {
+        PlayState(attackStateName);
+
+        if (tower == null || tower.IsDestroyed || Time.time < nextAttackTime)
+        {
+            return;
+        }
+
+        nextAttackTime = Time.time + attackCooldown;
+        tower.TakeDamage(contactDamage);
     }
 
     private void Die()
@@ -175,6 +213,58 @@ public sealed class GoblinEnemy : MonoBehaviour
         return Vector2.Distance(transform.position, target.position) <= attackRange;
     }
 
+    private TowerHealth FindTowerInAttackRange()
+    {
+        TowerHealth[] towers = FindObjectsByType<TowerHealth>(FindObjectsSortMode.None);
+        if (towers.Length == 0)
+        {
+            return null;
+        }
+
+        Bounds goblinBounds = CalculateRendererBounds();
+        TowerHealth closestTower = null;
+        float closestTowerX = float.NegativeInfinity;
+
+        for (int i = 0; i < towers.Length; i++)
+        {
+            TowerHealth tower = towers[i];
+            if (tower == null || tower.IsDestroyed || !tower.isActiveAndEnabled)
+            {
+                continue;
+            }
+
+            Bounds towerBounds = tower.GetWorldBounds();
+            if (Mathf.Abs(towerBounds.center.y - goblinBounds.center.y) > towerLaneTolerance)
+            {
+                continue;
+            }
+
+            if (towerBounds.center.x > goblinBounds.center.x + 0.1f)
+            {
+                continue;
+            }
+
+            if (goblinBounds.max.x < towerBounds.min.x)
+            {
+                continue;
+            }
+
+            float horizontalGap = goblinBounds.min.x - towerBounds.max.x;
+            if (horizontalGap > towerAttackRange)
+            {
+                continue;
+            }
+
+            if (towerBounds.center.x > closestTowerX)
+            {
+                closestTower = tower;
+                closestTowerX = towerBounds.center.x;
+            }
+        }
+
+        return closestTower;
+    }
+
     private void PlayState(string stateName)
     {
         if (animator == null || string.IsNullOrWhiteSpace(stateName) || currentAnimationState == stateName)
@@ -213,7 +303,7 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     private void CacheSpriteRenderers()
     {
-        spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        spriteRenderers = GetComponentsInChildren<SpriteRenderer>(true);
         originalSpriteColors = new Color[spriteRenderers.Length];
 
         for (int i = 0; i < spriteRenderers.Length; i++)

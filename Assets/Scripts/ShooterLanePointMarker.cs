@@ -8,7 +8,7 @@ using UnityEditor;
 public sealed class ShooterLanePointMarker : MonoBehaviour
 {
     [SerializeField]
-    private Color gizmoColor = new Color(0f, 0.85f, 1f, 1f);
+    private Color gizmoColor = new Color(0.65f, 0.65f, 0.65f, 1f);
 
     [SerializeField, Min(0.05f)]
     private float gizmoRadius = 0.18f;
