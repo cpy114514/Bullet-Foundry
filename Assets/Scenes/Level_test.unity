@@ -341,7 +341,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShooterAutoFire
   bulletPrefab: {fileID: 7342691415596935796, guid: acf246765cb64fa7a28cd2f42a527506, type: 3}
-  fireInterval: 0.5
+  fireInterval: 0.75
   spawnOffset: {x: 0, y: 0, z: 0}
 --- !u!1 &59778842
 GameObject:
@@ -650,6 +650,98 @@ MonoBehaviour:
   treatChildrenAsTowers: 1
   emptyAlpha: 0.9
   occupiedAlpha: 1
+--- !u!1 &106140549
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 106140550}
+  - component: {fileID: 106140551}
+  m_Layer: 0
+  m_Name: Card Slot 6
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &106140550
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106140549}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.6, y: 4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1948690826}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &106140551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106140549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab71de9d27d180540823fdee63acd90c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardSlotPoint
+  slotIndex: 5
+  cardSize: {x: 1.4, y: 1.85}
+--- !u!1 &128233241
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 128233242}
+  - component: {fileID: 128233243}
+  m_Layer: 0
+  m_Name: Card Slot 4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &128233242
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 128233241}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -2.6, y: 4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1948690826}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &128233243
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 128233241}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab71de9d27d180540823fdee63acd90c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardSlotPoint
+  slotIndex: 3
+  cardSize: {x: 1.4, y: 1.85}
 --- !u!1 &230318070
 GameObject:
   m_ObjectHideFlags: 0
@@ -1211,6 +1303,52 @@ MonoBehaviour:
   treatChildrenAsTowers: 1
   emptyAlpha: 0.9
   occupiedAlpha: 1
+--- !u!1 &314031608
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 314031609}
+  - component: {fileID: 314031610}
+  m_Layer: 0
+  m_Name: Card Slot 1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &314031609
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 314031608}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -7.4, y: 4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1948690826}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &314031610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 314031608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab71de9d27d180540823fdee63acd90c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardSlotPoint
+  slotIndex: 0
+  cardSize: {x: 1.4, y: 1.85}
 --- !u!1 &361738383
 GameObject:
   m_ObjectHideFlags: 0
@@ -1365,6 +1503,71 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShooterLanePointMarker
   gizmoColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
   gizmoRadius: 0.18
+--- !u!1001 &394371169
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 9.39
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -2.21
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1004218318787863100, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3454262606005637599, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_Name
+      value: SpeedGoblin
+      objectReference: {fileID: 0}
+    - target: {fileID: 6188337875905903300, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.7106865
+      objectReference: {fileID: 0}
+    - target: {fileID: 6188337875905903300, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.7255149
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 67b91c38f476c5047b4620e8dc5288d8, type: 3}
 --- !u!1 &513034266
 GameObject:
   m_ObjectHideFlags: 0
@@ -1595,6 +1798,7 @@ GameObject:
   - component: {fileID: 519420030}
   - component: {fileID: 519420033}
   - component: {fileID: 519420034}
+  - component: {fileID: 519420035}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1733,9 +1937,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireTowerPlacementSystem
   worldCamera: {fileID: 519420031}
-  fireTowerCardRenderer: {fileID: 1696810058}
-  fireTowerPrefab: {fileID: 5721149959220154368, guid: 4f7be27a34d9459db09ad91f76c7ae25, type: 3}
+  cardCatalog: {fileID: 0}
   selectedCardColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
+  previewAlpha: 0.45
 --- !u!114 &519420034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1750,6 +1954,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CoinWallet
   startingCoins: 0
   currentCoins: 0
+--- !u!114 &519420035
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d23a56419ea9144aa782434219e15c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardRuntimeLoader
+  cardsPrefab: {fileID: 7405547224608312517, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
+  placementSystem: {fileID: 519420033}
 --- !u!1 &531726727
 GameObject:
   m_ObjectHideFlags: 0
@@ -1966,63 +2184,6 @@ MonoBehaviour:
   treatChildrenAsTowers: 1
   emptyAlpha: 0.9
   occupiedAlpha: 1
---- !u!1001 &554521154
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4813214607448151296, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_Name
-      value: tower_split2 (1)
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -2.8428936
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.8420012
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
 --- !u!1 &603147059
 GameObject:
   m_ObjectHideFlags: 0
@@ -2153,6 +2314,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &634224084
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 634224085}
+  - component: {fileID: 634224086}
+  m_Layer: 0
+  m_Name: Card Slot 5
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &634224085
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 634224084}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1, y: 4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1948690826}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &634224086
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 634224084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab71de9d27d180540823fdee63acd90c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardSlotPoint
+  slotIndex: 4
+  cardSize: {x: 1.4, y: 1.85}
 --- !u!1 &739669304
 GameObject:
   m_ObjectHideFlags: 0
@@ -2261,63 +2468,6 @@ MonoBehaviour:
   treatChildrenAsTowers: 1
   emptyAlpha: 0.9
   occupiedAlpha: 1
---- !u!1001 &750824338
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4813214607448151296, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_Name
-      value: tower_split2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -5.859604
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.8420012
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4813214607448151297, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
 --- !u!1 &782390432
 GameObject:
   m_ObjectHideFlags: 0
@@ -2937,6 +3087,52 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShooterLanePointMarker
   gizmoColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
   gizmoRadius: 0.18
+--- !u!1 &1183786117
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1183786118}
+  - component: {fileID: 1183786119}
+  m_Layer: 0
+  m_Name: Card Slot 3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1183786118
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1183786117}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4.2, y: 4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1948690826}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1183786119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1183786117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab71de9d27d180540823fdee63acd90c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardSlotPoint
+  slotIndex: 2
+  cardSize: {x: 1.4, y: 1.85}
 --- !u!1 &1229657947
 GameObject:
   m_ObjectHideFlags: 0
@@ -3160,7 +3356,7 @@ Transform:
   - {fileID: 603147060}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1556167811
+--- !u!1 &1557813354
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3168,118 +3364,44 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1556167813}
-  - component: {fileID: 1556167812}
-  - component: {fileID: 1556167815}
-  - component: {fileID: 1556167814}
+  - component: {fileID: 1557813355}
+  - component: {fileID: 1557813356}
   m_Layer: 0
-  m_Name: cointower_0
+  m_Name: Card Slot 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!212 &1556167812
-SpriteRenderer:
-  serializedVersion: 2
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1556167811}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 7614681410548041852, guid: 189c5c5c2aabad94cb08af404311481d, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 7.05, y: 6.58}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
---- !u!4 &1556167813
+--- !u!4 &1557813355
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1556167811}
+  m_GameObject: {fileID: 1557813354}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.45, y: -2.43, z: 0}
+  m_LocalPosition: {x: -5.8, y: 4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1948690826}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1556167814
+--- !u!114 &1557813356
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1556167811}
+  m_GameObject: {fileID: 1557813354}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e05827c1b6d4396facb5c6d7e8f901a, type: 3}
+  m_Script: {fileID: 11500000, guid: ab71de9d27d180540823fdee63acd90c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TowerHealth
-  maxHealth: 3
-  currentHealth: 0
---- !u!114 &1556167815
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1556167811}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1bd25f49e83a4063c7b8293a4b5c6d7e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CoinTower
-  coinsPerBullet: 1
+  m_EditorClassIdentifier: Assembly-CSharp::CardSlotPoint
+  slotIndex: 1
+  cardSize: {x: 1.4, y: 1.85}
 --- !u!1 &1558968999
 GameObject:
   m_ObjectHideFlags: 0
@@ -3534,11 +3656,6 @@ MonoBehaviour:
   treatChildrenAsTowers: 1
   emptyAlpha: 0.9
   occupiedAlpha: 1
---- !u!212 &1696810058 stripped
-SpriteRenderer:
-  m_CorrespondingSourceObject: {fileID: 3266419654128846997, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-  m_PrefabInstance: {fileID: 4745003609187323775}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1733437509
 GameObject:
   m_ObjectHideFlags: 0
@@ -4079,6 +4196,43 @@ MonoBehaviour:
   treatChildrenAsTowers: 1
   emptyAlpha: 0.9
   occupiedAlpha: 1
+--- !u!1 &1948690825
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1948690826}
+  m_Layer: 0
+  m_Name: Card Slots
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1948690826
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1948690825}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 314031609}
+  - {fileID: 1557813355}
+  - {fileID: 1183786118}
+  - {fileID: 128233242}
+  - {fileID: 634224085}
+  - {fileID: 106140550}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2010267958
 GameObject:
   m_ObjectHideFlags: 0
@@ -5459,105 +5613,6 @@ MonoBehaviour:
   treatChildrenAsTowers: 1
   emptyAlpha: 0.9
   occupiedAlpha: 1
---- !u!1001 &4745003609187323775
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 2421617939937772387, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_Text
-      value: 'Fire
-
-        tower'
-      objectReference: {fileID: 0}
-    - target: {fileID: 2421617939937772387, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_Color.rgba
-      value: 4278190080
-      objectReference: {fileID: 0}
-    - target: {fileID: 2421617939937772387, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LineSpacing
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2421617939937772387, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_CharacterSize
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6900000000000000001, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: cards.Array.data[0].displayName
-      value: 'Fire
-
-        Tower'
-      objectReference: {fileID: 0}
-    - target: {fileID: 7134233604888160873, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: labelText
-      value: 'Fire
-
-        tower'
-      objectReference: {fileID: 0}
-    - target: {fileID: 7405547224608312517, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_Name
-      value: Card_fire
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -6.32
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 4.02
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7413161003243161715, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8161910893882082005, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 8161910893882082005, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 8161910893882082005, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0.02
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: d42088188d911754cb600a7ff78a1ca2, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -5569,10 +5624,8 @@ SceneRoots:
   - {fileID: 59778844}
   - {fileID: 1398840071}
   - {fileID: 875075064}
-  - {fileID: 4745003609187323775}
   - {fileID: 1259315502}
   - {fileID: 816874387}
   - {fileID: 263707293}
-  - {fileID: 750824338}
-  - {fileID: 554521154}
-  - {fileID: 1556167813}
+  - {fileID: 394371169}
+  - {fileID: 1948690826}

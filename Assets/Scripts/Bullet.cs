@@ -10,6 +10,12 @@ public enum BulletElement
 [DisallowMultipleComponent]
 public sealed class Bullet : MonoBehaviour
 {
+    private const int NormalDamage = 3;
+    private const int FireDamage = 5;
+    private const int IceDamage = 3;
+    private const float IceSlowMultiplier = 0.5f;
+    private const float IceSlowDuration = 2f;
+
     [SerializeField, Min(0f)]
     private float moveSpeed = 10f;
 
@@ -19,13 +25,12 @@ public sealed class Bullet : MonoBehaviour
     [SerializeField, Min(0.1f)]
     private float lifetime = 5f;
 
-    [SerializeField, Min(1)]
-    private int damage = 1;
-
     [SerializeField]
     private bool spawnImpactEffect = true;
 
     private SpriteRenderer spriteRenderer;
+    private Collider2D bulletCollider;
+    private BulletImpactEffect impactEffect;
     private Sprite[] animationFrames = System.Array.Empty<Sprite>();
     private float animationFrameDuration = 0.08f;
     private float animationTimer;
@@ -34,12 +39,19 @@ public sealed class Bullet : MonoBehaviour
     private Sprite normalSprite;
     private Vector3 normalScale;
     private bool normalVisualCached;
+    private bool hasImpacted;
 
     public BulletElement Element => element;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        impactEffect = GetComponent<BulletImpactEffect>();
+        if (impactEffect == null)
+        {
+            impactEffect = gameObject.AddComponent<BulletImpactEffect>();
+        }
+
         CacheNormalVisual();
         EnsurePhysicsComponents();
     }
@@ -51,6 +63,11 @@ public sealed class Bullet : MonoBehaviour
 
     private void Update()
     {
+        if (hasImpacted)
+        {
+            return;
+        }
+
         transform.Translate((Vector3)(moveDirection.normalized * (moveSpeed * Time.deltaTime)), Space.World);
         UpdateSpriteAnimation();
     }
@@ -157,7 +174,6 @@ public sealed class Bullet : MonoBehaviour
         moveSpeed = source.moveSpeed;
         moveDirection = source.moveDirection;
         lifetime = source.lifetime;
-        damage = source.damage;
         spawnImpactEffect = source.spawnImpactEffect;
         element = source.element;
         normalSprite = source.normalSprite;
@@ -194,20 +210,118 @@ public sealed class Bullet : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (hasImpacted)
+        {
+            return;
+        }
+
         GoblinEnemy goblin = other.GetComponentInParent<GoblinEnemy>();
         if (goblin == null || goblin.IsDead)
         {
             return;
         }
 
-        if (spawnImpactEffect)
+        goblin.TakeDamage(GetDamage());
+        if (element == BulletElement.Ice && !goblin.IsDead)
         {
-            Vector3 impactPosition = other.ClosestPoint(transform.position);
-            BulletImpactEffect.Spawn(impactPosition, moveDirection);
+            goblin.ApplySlow(IceSlowMultiplier, IceSlowDuration);
+            EnemySlowEffect.Apply(goblin, IceSlowDuration);
         }
 
-        goblin.TakeDamage(damage);
+        if (spawnImpactEffect && impactEffect != null)
+        {
+            BeginImpactEffect();
+            return;
+        }
+
         Destroy(gameObject);
+    }
+
+    private int GetDamage()
+    {
+        return element switch
+        {
+            BulletElement.Fire => FireDamage,
+            BulletElement.Ice => IceDamage,
+            _ => NormalDamage
+        };
+    }
+
+    public void SpawnConversionEffect(BulletElement effectElement)
+    {
+        if (impactEffect == null)
+        {
+            impactEffect = GetComponent<BulletImpactEffect>();
+        }
+
+        if (impactEffect != null)
+        {
+            impactEffect.PlayConversion(
+                GetBulletWorldCenter(),
+                effectElement,
+                GetEffectWorldSize());
+        }
+    }
+
+    private void BeginImpactEffect()
+    {
+        hasImpacted = true;
+        Vector3 impactPosition = GetBulletWorldCenter();
+        float effectWorldSize = GetEffectWorldSize();
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = false;
+        }
+
+        if (bulletCollider != null)
+        {
+            bulletCollider.enabled = false;
+        }
+
+        float effectDuration = impactEffect.PlayImpact(
+            impactPosition,
+            moveDirection,
+            element,
+            effectWorldSize);
+        Destroy(gameObject, effectDuration);
+    }
+
+    private Vector3 GetBulletWorldCenter()
+    {
+        if (bulletCollider != null && bulletCollider.enabled)
+        {
+            return bulletCollider.bounds.center;
+        }
+
+        if (spriteRenderer != null)
+        {
+            return spriteRenderer.bounds.center;
+        }
+
+        return transform.position;
+    }
+
+    private float GetEffectWorldSize()
+    {
+        if (bulletCollider == null)
+        {
+            bulletCollider = GetComponent<Collider2D>();
+        }
+
+        if (bulletCollider != null)
+        {
+            Vector3 size = bulletCollider.bounds.size;
+            return Mathf.Clamp(Mathf.Max(size.x, size.y), 0.08f, 0.6f);
+        }
+
+        if (spriteRenderer != null)
+        {
+            Vector3 size = spriteRenderer.bounds.size;
+            return Mathf.Clamp(Mathf.Min(size.x, size.y), 0.08f, 0.6f);
+        }
+
+        return 0.2f;
     }
 
     private void OnValidate()
@@ -223,11 +337,12 @@ public sealed class Bullet : MonoBehaviour
 
     private void EnsurePhysicsComponents()
     {
-        if (!TryGetComponent(out Collider2D _))
+        if (!TryGetComponent(out bulletCollider))
         {
             CircleCollider2D circleCollider = gameObject.AddComponent<CircleCollider2D>();
             circleCollider.isTrigger = true;
             circleCollider.radius = 0.1f;
+            bulletCollider = circleCollider;
         }
 
         if (!TryGetComponent(out Rigidbody2D rigidbody2D))

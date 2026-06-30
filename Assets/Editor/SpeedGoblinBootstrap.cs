@@ -3,6 +3,8 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.U2D;
+using UnityEngine.U2D.Animation;
 
 [InitializeOnLoad]
 public static class SpeedGoblinBootstrap
@@ -17,7 +19,49 @@ public static class SpeedGoblinBootstrap
     private const string AttackClipPath = "Assets/Animation/speed_goblin_attack.anim";
     private const string DieClipPath = "Assets/Animation/speed_goblin_die.anim";
     private const string PrefabPath = "Assets/Prefab/SpeedGoblin.prefab";
+    private const string NormalGoblinPrefabPath = "Assets/Prefab/Goblin.prefab";
     private const float TargetHeight = 2.2f;
+    private const int RequiredSkinCount = 6;
+
+    private static readonly PartDefinition[] Parts =
+    {
+        new PartDefinition(
+            "speedGoblin_0",
+            "Body",
+            1,
+            "Torso Bone",
+            "Head Bone",
+            "Head Tip Bone"),
+        new PartDefinition(
+            "speedGoblin_1",
+            "Hat",
+            3,
+            "Hat Bone"),
+        new PartDefinition(
+            "speedGoblin_2",
+            "Left Arm",
+            2,
+            "Left Upper Arm Bone",
+            "Left Forearm Bone"),
+        new PartDefinition(
+            "speedGoblin_3",
+            "Right Arm",
+            2,
+            "Right Upper Arm Bone",
+            "Right Forearm Bone"),
+        new PartDefinition(
+            "speedGoblin_4",
+            "Left Leg",
+            0,
+            "Left Upper Leg Bone",
+            "Left Lower Leg Bone"),
+        new PartDefinition(
+            "speedGoblin_5",
+            "Right Leg",
+            0,
+            "Right Upper Leg Bone",
+            "Right Lower Leg Bone")
+    };
 
     static SpeedGoblinBootstrap()
     {
@@ -38,94 +82,52 @@ public static class SpeedGoblinBootstrap
             return;
         }
 
-        if (AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath) != null)
+        GameObject existingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        if (existingPrefab != null && HasExpectedHierarchy(existingPrefab))
         {
             AssignControllerToExistingPrefab(speedController);
             return;
         }
 
-        Sprite[] sprites = AssetDatabase.LoadAllAssetsAtPath(SpritePath)
+        Sprite[] allSprites = AssetDatabase.LoadAllAssetsAtPath(SpritePath)
             .OfType<Sprite>()
             .ToArray();
+        Sprite[] sprites = Parts
+            .Select(part => FindSprite(allSprites, part.SpriteName))
+            .ToArray();
 
-        Sprite bodySprite = FindSprite(sprites, "speedGoblin_0");
-        Sprite hatSprite = FindSprite(sprites, "speedGoblin_1");
-        Sprite leftArmSprite = FindSprite(sprites, "speedGoblin_2");
-        Sprite rightArmSprite = FindSprite(sprites, "speedGoblin_3");
-        Sprite leftLegSprite = FindSprite(sprites, "speedGoblin_4");
-        Sprite rightLegSprite = FindSprite(sprites, "speedGoblin_5");
-
-        if (bodySprite == null || hatSprite == null ||
-            leftArmSprite == null || rightArmSprite == null ||
-            leftLegSprite == null || rightLegSprite == null)
+        if (sprites.Any(sprite => sprite == null || sprite.GetBones().Length == 0))
         {
+            Debug.LogWarning(
+                "Speed Goblin prefab was not rebuilt because one or more required sprites have no bone data.");
             return;
         }
 
         GameObject root = new GameObject("SpeedGoblin");
         try
         {
-            ConfigureRootScale(
-                root.transform,
-                new[]
-                {
-                    bodySprite,
-                    hatSprite,
-                    leftArmSprite,
-                    rightArmSprite,
-                    leftLegSprite,
-                    rightLegSprite
-                });
-            Vector2 bodyCenter = bodySprite.rect.center;
-            float pixelsPerUnit = bodySprite.pixelsPerUnit;
+            ConfigureRootScale(root.transform, sprites);
 
-            Transform body = CreateTransform("Body", root.transform, Vector2.zero);
-            Transform torsoBone = CreateTransform("Torso Bone", body, Vector2.zero);
-            CreateVisual("Body Visual", torsoBone, bodySprite, Vector2.zero, -6.822f, 1);
-            CreateTransform("Head Bone", torsoBone, Vector2.zero);
+            Vector2 bodyCenter = sprites[0].rect.center;
+            float pixelsPerUnit = Mathf.Max(1f, sprites[0].pixelsPerUnit);
+            RiggedPart[] riggedParts = new RiggedPart[Parts.Length];
 
-            Vector2 hatPosition = ToLocalPosition(hatSprite, bodyCenter, pixelsPerUnit);
-            GameObject hat = CreateVisual("Hat", torsoBone, hatSprite, hatPosition, -6.822f, 2);
+            for (int i = 0; i < Parts.Length; i++)
+            {
+                Vector2 position = (sprites[i].rect.center - bodyCenter) / pixelsPerUnit;
+                riggedParts[i] = CreateRiggedPart(root.transform, Parts[i], sprites[i], position);
+            }
 
-            CreateLimb(
-                root.transform,
-                "Left Arm",
-                "Left Upper Arm Bone",
-                "Left Forearm Bone",
-                leftArmSprite,
-                ToLocalPosition(leftArmSprite, bodyCenter, pixelsPerUnit),
-                79.532f,
-                2);
+            Transform body = riggedParts[0].Root;
+            for (int i = 2; i < riggedParts.Length; i++)
+            {
+                riggedParts[i].Root.SetParent(body, true);
+            }
 
-            CreateLimb(
-                root.transform,
-                "Right Arm",
-                "Right Upper Arm Bone",
-                "Right Forearm Bone",
-                rightArmSprite,
-                ToLocalPosition(rightArmSprite, bodyCenter, pixelsPerUnit),
-                73.329f,
-                2);
-
-            CreateLimb(
-                root.transform,
-                "Left Leg",
-                "Left Upper Leg Bone",
-                "Left Lower Leg Bone",
-                leftLegSprite,
-                ToLocalPosition(leftLegSprite, bodyCenter, pixelsPerUnit),
-                89.042f,
-                0);
-
-            CreateLimb(
-                root.transform,
-                "Right Leg",
-                "Right Upper Leg Bone",
-                "Right Lower Leg Bone",
-                rightLegSprite,
-                ToLocalPosition(rightLegSprite, bodyCenter, pixelsPerUnit),
-                88.338f,
-                0);
+            Transform headBone = riggedParts[0].Bones.Length > 1
+                ? riggedParts[0].Bones[1]
+                : riggedParts[0].Bones[0];
+            riggedParts[1].Root.SetParent(headBone, true);
 
             Animator animator = root.AddComponent<Animator>();
             animator.runtimeAnimatorController = speedController;
@@ -140,23 +142,101 @@ public static class SpeedGoblinBootstrap
 
             GoblinEnemy enemy = root.AddComponent<GoblinEnemy>();
             SpeedGoblinEnemy speedEnemy = root.AddComponent<SpeedGoblinEnemy>();
-
-            SerializedObject serializedSpeedEnemy = new SerializedObject(speedEnemy);
-            serializedSpeedEnemy.FindProperty("enemy").objectReferenceValue = enemy;
-            serializedSpeedEnemy.FindProperty("hatObject").objectReferenceValue = hat;
-            serializedSpeedEnemy.FindProperty("hattedMoveSpeed").floatValue = 1.8f;
-            serializedSpeedEnemy.FindProperty("unhattedMoveSpeed").floatValue = 1f;
-            serializedSpeedEnemy.ApplyModifiedPropertiesWithoutUndo();
+            ConfigureSpeedEnemy(speedEnemy, enemy, riggedParts[1].Root.gameObject);
 
             FitHitbox(root.transform, hitbox);
 
             PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             AssetDatabase.SaveAssets();
+            Debug.Log("Speed Goblin prefab rebuilt from the rigged speedGoblin sprites.");
         }
         finally
         {
             UnityEngine.Object.DestroyImmediate(root);
         }
+    }
+
+    private static RiggedPart CreateRiggedPart(
+        Transform parent,
+        PartDefinition definition,
+        Sprite sprite,
+        Vector2 localPosition)
+    {
+        GameObject partObject = new GameObject(definition.ObjectName);
+        Transform part = partObject.transform;
+        part.SetParent(parent, false);
+        part.localPosition = new Vector3(localPosition.x, localPosition.y, 0f);
+
+        SpriteRenderer renderer = partObject.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.sortingOrder = definition.SortingOrder;
+
+        SpriteBone[] spriteBones = sprite.GetBones();
+        Transform[] boneTransforms = new Transform[spriteBones.Length];
+        Transform rootBone = null;
+
+        for (int i = 0; i < spriteBones.Length; i++)
+        {
+            CreateBone(i, spriteBones, definition.BoneNames, boneTransforms, part);
+            if (spriteBones[i].parentId < 0 && rootBone == null)
+            {
+                rootBone = boneTransforms[i];
+            }
+        }
+
+        SpriteSkin skin = partObject.AddComponent<SpriteSkin>();
+        skin.SetRootBone(rootBone);
+        skin.SetBoneTransforms(boneTransforms);
+        skin.alwaysUpdate = true;
+
+        return new RiggedPart(part, boneTransforms);
+    }
+
+    private static void CreateBone(
+        int index,
+        SpriteBone[] spriteBones,
+        string[] boneNames,
+        Transform[] transforms,
+        Transform partRoot)
+    {
+        if (transforms[index] != null)
+        {
+            return;
+        }
+
+        SpriteBone spriteBone = spriteBones[index];
+        if (spriteBone.parentId >= 0)
+        {
+            CreateBone(spriteBone.parentId, spriteBones, boneNames, transforms, partRoot);
+        }
+
+        string boneName = index < boneNames.Length
+            ? boneNames[index]
+            : $"{partRoot.name} Bone {index + 1}";
+        GameObject boneObject = new GameObject(boneName);
+        Transform bone = boneObject.transform;
+        bone.SetParent(
+            spriteBone.parentId >= 0 ? transforms[spriteBone.parentId] : partRoot,
+            false);
+        bone.localPosition = spriteBone.position;
+        bone.localRotation = spriteBone.rotation;
+        bone.localScale = Vector3.one;
+        transforms[index] = bone;
+    }
+
+    private static void ConfigureSpeedEnemy(
+        SpeedGoblinEnemy speedEnemy,
+        GoblinEnemy enemy,
+        GameObject hat)
+    {
+        SerializedObject serializedSpeedEnemy = new SerializedObject(speedEnemy);
+        serializedSpeedEnemy.FindProperty("enemy").objectReferenceValue = enemy;
+        serializedSpeedEnemy.FindProperty("hatObject").objectReferenceValue = hat;
+        serializedSpeedEnemy.FindProperty("normalGoblinPrefab").objectReferenceValue =
+            AssetDatabase.LoadAssetAtPath<GameObject>(NormalGoblinPrefabPath);
+        serializedSpeedEnemy.FindProperty("speedGoblinHealth").intValue = 5;
+        serializedSpeedEnemy.FindProperty("hattedMoveSpeed").floatValue = 1.8f;
+        serializedSpeedEnemy.ApplyModifiedPropertiesWithoutUndo();
     }
 
     private static AnimatorController EnsureSeparateAnimationAssets()
@@ -180,6 +260,9 @@ public static class SpeedGoblinBootstrap
         SetClipLooping(walkClip, true);
         SetClipLooping(attackClip, true);
         SetClipLooping(dieClip, false);
+        MoveLimbAnimationBindingsUnderBody(walkClip);
+        MoveLimbAnimationBindingsUnderBody(attackClip);
+        MoveLimbAnimationBindingsUnderBody(dieClip);
 
         AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
         SetStateMotion(stateMachine, "goblin_walk", walkClip);
@@ -189,6 +272,81 @@ public static class SpeedGoblinBootstrap
         EditorUtility.SetDirty(controller);
         AssetDatabase.SaveAssets();
         return controller;
+    }
+
+    private static void MoveLimbAnimationBindingsUnderBody(AnimationClip clip)
+    {
+        EditorCurveBinding[] floatBindings = AnimationUtility.GetCurveBindings(clip);
+        foreach (EditorCurveBinding oldBinding in floatBindings)
+        {
+            string newPath = GetBodyChildPath(oldBinding.path);
+            if (newPath == oldBinding.path)
+            {
+                continue;
+            }
+
+            AnimationCurve curve = AnimationUtility.GetEditorCurve(clip, oldBinding);
+            EditorCurveBinding newBinding = oldBinding;
+            newBinding.path = newPath;
+            AnimationUtility.SetEditorCurve(clip, oldBinding, null);
+            AnimationUtility.SetEditorCurve(clip, newBinding, curve);
+        }
+
+        EditorCurveBinding[] objectBindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+        foreach (EditorCurveBinding oldBinding in objectBindings)
+        {
+            string newPath = GetBodyChildPath(oldBinding.path);
+            if (newPath == oldBinding.path)
+            {
+                continue;
+            }
+
+            ObjectReferenceKeyframe[] curve =
+                AnimationUtility.GetObjectReferenceCurve(clip, oldBinding);
+            EditorCurveBinding newBinding = oldBinding;
+            newBinding.path = newPath;
+            AnimationUtility.SetObjectReferenceCurve(clip, oldBinding, null);
+            AnimationUtility.SetObjectReferenceCurve(clip, newBinding, curve);
+        }
+
+        EditorUtility.SetDirty(clip);
+    }
+
+    private static string GetBodyChildPath(string path)
+    {
+        string[] limbRoots = { "Left Arm", "Right Arm", "Left Leg", "Right Leg" };
+        foreach (string limbRoot in limbRoots)
+        {
+            if (path == limbRoot || path.StartsWith(limbRoot + "/", StringComparison.Ordinal))
+            {
+                return "Body/" + path;
+            }
+        }
+
+        return path;
+    }
+
+    private static bool HasExpectedHierarchy(GameObject prefab)
+    {
+        if (prefab.GetComponentsInChildren<SpriteSkin>(true).Length < RequiredSkinCount)
+        {
+            return false;
+        }
+
+        Transform body = prefab.transform.Find("Body");
+        SpeedGoblinEnemy speedEnemy = prefab.GetComponent<SpeedGoblinEnemy>();
+        SerializedObject serializedSpeedEnemy = speedEnemy != null
+            ? new SerializedObject(speedEnemy)
+            : null;
+        SerializedProperty normalGoblinPrefab =
+            serializedSpeedEnemy?.FindProperty("normalGoblinPrefab");
+        return body != null &&
+            body.Find("Left Arm") != null &&
+            body.Find("Right Arm") != null &&
+            body.Find("Left Leg") != null &&
+            body.Find("Right Leg") != null &&
+            normalGoblinPrefab != null &&
+            normalGoblinPrefab.objectReferenceValue != null;
     }
 
     private static void EnsureAssetCopy(string sourcePath, string destinationPath)
@@ -266,58 +424,9 @@ public static class SpeedGoblinBootstrap
         root.localScale = new Vector3(scale, scale, 1f);
     }
 
-    private static void CreateLimb(
-        Transform root,
-        string limbName,
-        string upperBoneName,
-        string lowerBoneName,
-        Sprite sprite,
-        Vector2 position,
-        float visualRotation,
-        int sortingOrder)
-    {
-        Transform limb = CreateTransform(limbName, root, position);
-        Transform upperBone = CreateTransform(upperBoneName, limb, Vector2.zero);
-        CreateTransform(lowerBoneName, upperBone, Vector2.zero);
-        CreateVisual(limbName + " Visual", upperBone, sprite, Vector2.zero, visualRotation, sortingOrder);
-    }
-
-    private static Transform CreateTransform(string name, Transform parent, Vector2 localPosition)
-    {
-        GameObject child = new GameObject(name);
-        Transform transform = child.transform;
-        transform.SetParent(parent, false);
-        transform.localPosition = new Vector3(localPosition.x, localPosition.y, 0f);
-        return transform;
-    }
-
-    private static GameObject CreateVisual(
-        string name,
-        Transform parent,
-        Sprite sprite,
-        Vector2 localPosition,
-        float localRotation,
-        int sortingOrder)
-    {
-        GameObject visual = new GameObject(name);
-        visual.transform.SetParent(parent, false);
-        visual.transform.localPosition = new Vector3(localPosition.x, localPosition.y, 0f);
-        visual.transform.localRotation = Quaternion.Euler(0f, 0f, localRotation);
-
-        SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite;
-        renderer.sortingOrder = sortingOrder;
-        return visual;
-    }
-
-    private static Vector2 ToLocalPosition(Sprite sprite, Vector2 origin, float pixelsPerUnit)
-    {
-        return (sprite.rect.center - origin) / Mathf.Max(1f, pixelsPerUnit);
-    }
-
     private static void FitHitbox(Transform root, BoxCollider2D hitbox)
     {
-        SpriteRenderer[] renderers = root.GetComponentsInChildren<SpriteRenderer>();
+        SpriteRenderer[] renderers = root.GetComponentsInChildren<SpriteRenderer>(true);
         if (renderers.Length == 0)
         {
             return;
@@ -340,5 +449,37 @@ public static class SpeedGoblinBootstrap
     {
         return sprites.FirstOrDefault(sprite =>
             string.Equals(sprite.name, spriteName, StringComparison.Ordinal));
+    }
+
+    private readonly struct PartDefinition
+    {
+        public PartDefinition(
+            string spriteName,
+            string objectName,
+            int sortingOrder,
+            params string[] boneNames)
+        {
+            SpriteName = spriteName;
+            ObjectName = objectName;
+            SortingOrder = sortingOrder;
+            BoneNames = boneNames;
+        }
+
+        public string SpriteName { get; }
+        public string ObjectName { get; }
+        public int SortingOrder { get; }
+        public string[] BoneNames { get; }
+    }
+
+    private readonly struct RiggedPart
+    {
+        public RiggedPart(Transform root, Transform[] bones)
+        {
+            Root = root;
+            Bones = bones;
+        }
+
+        public Transform Root { get; }
+        public Transform[] Bones { get; }
     }
 }

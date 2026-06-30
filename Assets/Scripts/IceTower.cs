@@ -51,6 +51,7 @@ public sealed class IceTower : MonoBehaviour
         if (bullet.Element == BulletElement.Fire)
         {
             bullet.ResetToNormal();
+            bullet.SpawnConversionEffect(BulletElement.Normal);
             return;
         }
 
@@ -61,6 +62,7 @@ public sealed class IceTower : MonoBehaviour
                 iceFrames,
                 frameDuration,
                 iceBulletScale);
+            bullet.SpawnConversionEffect(BulletElement.Ice);
         }
     }
 

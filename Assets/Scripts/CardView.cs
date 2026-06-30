@@ -22,6 +22,16 @@ public sealed class CardView : MonoBehaviour
     [TextArea(2, 5)]
     private string labelText = "Firetower";
 
+    private GameObject towerPrefab;
+
+    public SpriteRenderer BackgroundRenderer => backgroundRenderer;
+
+    public SpriteRenderer IconRenderer => iconRenderer;
+
+    public TextMesh LabelTextMesh => labelTextMesh;
+
+    public GameObject TowerPrefab => towerPrefab;
+
     public Sprite IconSprite
     {
         get => iconSprite;
@@ -62,9 +72,25 @@ public sealed class CardView : MonoBehaviour
 
     public void Configure(Sprite sprite, string text)
     {
+        Configure(sprite, text, null);
+    }
+
+    public void Configure(Sprite sprite, string text, GameObject prefab)
+    {
         iconSprite = sprite;
         labelText = text;
+        towerPrefab = prefab;
         Apply();
+    }
+
+    public void SetReferences(
+        SpriteRenderer background,
+        SpriteRenderer icon,
+        TextMesh label)
+    {
+        backgroundRenderer = background;
+        iconRenderer = icon;
+        labelTextMesh = label;
     }
 
     public void Apply()

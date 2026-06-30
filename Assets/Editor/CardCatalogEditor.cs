@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -37,7 +39,57 @@ public sealed class CardCatalogEditor : Editor
     {
         serializedObject.Update();
         cardList.DoLayoutList();
-        serializedObject.ApplyModifiedProperties();
+        bool changed = serializedObject.ApplyModifiedProperties();
+
+        if (changed)
+        {
+            ResolveTowerPrefabs((CardCatalog)target);
+        }
+
+        DrawResolutionWarnings();
+    }
+
+    public static bool ResolveTowerPrefabs(CardCatalog catalog)
+    {
+        if (catalog == null)
+        {
+            return false;
+        }
+
+        GameObject[] towerPrefabs = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefab" })
+            .Select(AssetDatabase.GUIDToAssetPath)
+            .Select(AssetDatabase.LoadAssetAtPath<GameObject>)
+            .Where(prefab => prefab != null && prefab.GetComponent<TowerHealth>() != null)
+            .ToArray();
+
+        SerializedObject serializedCatalog = new SerializedObject(catalog);
+        SerializedProperty entries = serializedCatalog.FindProperty("cards");
+        bool changed = false;
+
+        for (int i = 0; i < entries.arraySize; i++)
+        {
+            SerializedProperty entry = entries.GetArrayElementAtIndex(i);
+            string displayName = entry.FindPropertyRelative("displayName").stringValue;
+            SerializedProperty towerPrefab = entry.FindPropertyRelative("towerPrefab");
+            string normalizedName = NormalizeName(displayName);
+
+            GameObject match = towerPrefabs.FirstOrDefault(prefab =>
+                NormalizeName(prefab.name) == normalizedName);
+
+            if (towerPrefab.objectReferenceValue != match)
+            {
+                towerPrefab.objectReferenceValue = match;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(catalog);
+        }
+
+        return changed;
     }
 
     private void DrawCardEntry(Rect rect, int index, bool isActive, bool isFocused)
@@ -67,8 +119,38 @@ public sealed class CardCatalogEditor : Editor
         SerializedProperty newEntry = cardsProperty.GetArrayElementAtIndex(newIndex);
         newEntry.FindPropertyRelative("image").objectReferenceValue = null;
         newEntry.FindPropertyRelative("displayName").stringValue = string.Empty;
+        newEntry.FindPropertyRelative("towerPrefab").objectReferenceValue = null;
 
         list.index = newIndex;
         serializedObject.ApplyModifiedProperties();
+        ResolveTowerPrefabs((CardCatalog)target);
+    }
+
+    private void DrawResolutionWarnings()
+    {
+        CardCatalog catalog = (CardCatalog)target;
+        for (int i = 0; i < catalog.Cards.Count; i++)
+        {
+            CardEntry entry = catalog.Cards[i];
+            if (!string.IsNullOrWhiteSpace(entry.DisplayName) && entry.TowerPrefab == null)
+            {
+                EditorGUILayout.HelpBox(
+                    $"找不到与“{entry.DisplayName}”同名的塔楼 Prefab。",
+                    MessageType.Warning);
+            }
+        }
+    }
+
+    private static string NormalizeName(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        return new string(value
+            .Where(char.IsLetterOrDigit)
+            .Select(char.ToLowerInvariant)
+            .ToArray());
     }
 }

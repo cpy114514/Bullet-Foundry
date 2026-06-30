@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -7,15 +6,12 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class FireTowerPlacementBootstrap
 {
-    private const string CardName = "Card_fire";
-    private const string TowerPrefabPath = "Assets/Prefab/tower_fire.prefab";
-
     static FireTowerPlacementBootstrap()
     {
         EditorApplication.delayCall += EnsurePlacementSystem;
     }
 
-    [MenuItem("Tools/Bullet Foundry/Setup Fire Tower Placement")]
+    [MenuItem("Tools/Bullet Foundry/Setup Tower Card Placement")]
     public static void EnsurePlacementSystem()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -23,17 +19,8 @@ public static class FireTowerPlacementBootstrap
             return;
         }
 
-        Transform card = FindSceneTransform(CardName);
         Camera mainCamera = FindMainCamera();
-        GameObject towerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(TowerPrefabPath);
-
-        if (card == null || mainCamera == null || towerPrefab == null)
-        {
-            return;
-        }
-
-        SpriteRenderer cardRenderer = card.GetComponent<SpriteRenderer>();
-        if (cardRenderer == null)
+        if (mainCamera == null)
         {
             return;
         }
@@ -48,28 +35,23 @@ public static class FireTowerPlacementBootstrap
 
         SerializedObject serializedSystem = new SerializedObject(placementSystem);
         bool changed = false;
-
-        changed |= SetObjectReference(
-            serializedSystem.FindProperty("worldCamera"),
-            mainCamera);
-        changed |= SetObjectReference(
-            serializedSystem.FindProperty("fireTowerCardRenderer"),
-            cardRenderer);
-        changed |= SetObjectReference(
-            serializedSystem.FindProperty("fireTowerPrefab"),
-            towerPrefab);
+        changed |= SetObjectReference(serializedSystem.FindProperty("worldCamera"), mainCamera);
 
         if (changed)
         {
             serializedSystem.ApplyModifiedProperties();
             EditorUtility.SetDirty(placementSystem);
+        }
+
+        if (changed)
+        {
             EditorSceneManager.MarkSceneDirty(mainCamera.gameObject.scene);
         }
     }
 
     private static bool SetObjectReference(SerializedProperty property, UnityEngine.Object value)
     {
-        if (property.objectReferenceValue == value)
+        if (property == null || property.objectReferenceValue == value)
         {
             return false;
         }
@@ -84,11 +66,4 @@ public static class FireTowerPlacementBootstrap
             .FirstOrDefault(camera => camera.CompareTag("MainCamera"));
     }
 
-    private static Transform FindSceneTransform(string objectName)
-    {
-        return UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)
-            .FirstOrDefault(transform =>
-                transform.gameObject.scene.IsValid() &&
-                string.Equals(transform.name, objectName, StringComparison.OrdinalIgnoreCase));
-    }
 }

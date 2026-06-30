@@ -93,11 +93,11 @@ TextMesh:
   m_Text: Firetower
   m_OffsetZ: 0
   m_CharacterSize: 0.28
-  m_LineSpacing: 1
+  m_LineSpacing: 0.5
   m_Anchor: 4
   m_Alignment: 1
   m_TabSize: 4
-  m_FontSize: 80
+  m_FontSize: 110
   m_FontStyle: 0
   m_RichText: 1
   m_Font: {fileID: 12800000, guid: e015b2af1fbc479696aba7fe0bcf7e27, type: 3}
@@ -207,8 +207,10 @@ GameObject:
   - component: {fileID: 3266419654128846997}
   - component: {fileID: 7134233604888160873}
   - component: {fileID: 6900000000000000001}
+  - component: {fileID: 2468379232294503861}
+  - component: {fileID: 7723197212133257072}
   m_Layer: 0
-  m_Name: Card_fire
+  m_Name: Cards
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -321,4 +323,77 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardCatalog
   cards:
   - image: {fileID: -3446471830066921269, guid: 71c1219a34226604ab0cf7d361e78a8b, type: 3}
-    displayName: FireTower
+    displayName: 'Fire
+
+      Tower'
+    towerPrefab: {fileID: 5721149959220154368, guid: 4f7be27a34d9459db09ad91f76c7ae25, type: 3}
+  - image: {fileID: -1515134823594722529, guid: 71c1219a34226604ab0cf7d361e78a8b, type: 3}
+    displayName: 'Split
+
+      Tower'
+    towerPrefab: {fileID: 4813214607448151296, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
+  - image: {fileID: 1704872509302500955, guid: 71c1219a34226604ab0cf7d361e78a8b, type: 3}
+    displayName: 'Ice
+
+      Tower'
+    towerPrefab: {fileID: 6832251060331262468, guid: f9db28b7c6a04e31b5f60718293a4b5c, type: 3}
+  cardSpacing: 3.6
+--- !u!61 &2468379232294503861
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7405547224608312517}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1.28125, y: 1.71875}
+    newSize: {x: 3.28, y: 4.4}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1.28125, y: 1.71875}
+  m_EdgeRadius: 0
+--- !u!114 &7723197212133257072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7405547224608312517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6c8b6811c1c3264b9345ecff88a0298, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TowerCardDragHandle
+  cardView: {fileID: 7134233604888160873}

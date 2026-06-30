@@ -53,7 +53,7 @@ public sealed class LandPlot : MonoBehaviour
 
     public void SetTower(Transform tower)
     {
-        isOccupied = tower != null;
+        isOccupied = false;
 
         if (tower != null)
         {

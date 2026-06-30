@@ -10,15 +10,16 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
     [SerializeField]
     private GameObject hatObject;
 
+    [SerializeField]
+    private GameObject normalGoblinPrefab;
+
+    [SerializeField, Min(1)]
+    private int speedGoblinHealth = 5;
+
     [SerializeField, Min(0f)]
     private float hattedMoveSpeed = 1.8f;
 
-    [SerializeField, Min(0f)]
-    private float unhattedMoveSpeed = 1f;
-
-    private bool hasHat = true;
-
-    public bool HasHat => hasHat;
+    private bool replacementSpawned;
 
     private void Awake()
     {
@@ -28,35 +29,8 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
     private void OnEnable()
     {
         ResolveEnemy();
-        if (enemy != null)
-        {
-            enemy.HealthChanged += HandleHealthChanged;
-        }
+        replacementSpawned = false;
 
-        RestoreHat();
-    }
-
-    private void OnDisable()
-    {
-        if (enemy != null)
-        {
-            enemy.HealthChanged -= HandleHealthChanged;
-        }
-    }
-
-    private void HandleHealthChanged(int currentHealth, int maxHealth)
-    {
-        if (!hasHat || maxHealth <= 0 || currentHealth * 2 > maxHealth)
-        {
-            return;
-        }
-
-        RemoveHat();
-    }
-
-    private void RestoreHat()
-    {
-        hasHat = true;
         if (hatObject != null)
         {
             hatObject.SetActive(true);
@@ -64,21 +38,55 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
 
         if (enemy != null)
         {
+            enemy.Died += HandleHatDestroyed;
             enemy.SetMoveSpeed(hattedMoveSpeed);
+            enemy.RefillHealth(speedGoblinHealth);
         }
     }
 
-    private void RemoveHat()
+    private void OnDisable()
     {
-        hasHat = false;
-        if (hatObject != null)
-        {
-            hatObject.SetActive(false);
-        }
-
         if (enemy != null)
         {
-            enemy.SetMoveSpeed(unhattedMoveSpeed);
+            enemy.Died -= HandleHatDestroyed;
+        }
+    }
+
+    private void HandleHatDestroyed()
+    {
+        if (replacementSpawned)
+        {
+            return;
+        }
+
+        replacementSpawned = true;
+        HideBodyAndKeepHat();
+
+        if (normalGoblinPrefab == null)
+        {
+            Debug.LogWarning("Speed Goblin has no normal Goblin prefab assigned.", this);
+            return;
+        }
+
+        Instantiate(
+            normalGoblinPrefab,
+            transform.position,
+            transform.rotation,
+            transform.parent);
+    }
+
+    private void HideBodyAndKeepHat()
+    {
+        SpriteRenderer[] hatRenderers = hatObject != null
+            ? hatObject.GetComponentsInChildren<SpriteRenderer>(true)
+            : System.Array.Empty<SpriteRenderer>();
+        SpriteRenderer[] allRenderers = GetComponentsInChildren<SpriteRenderer>(true);
+
+        for (int i = 0; i < allRenderers.Length; i++)
+        {
+            SpriteRenderer renderer = allRenderers[i];
+            bool belongsToHat = System.Array.IndexOf(hatRenderers, renderer) >= 0;
+            renderer.enabled = belongsToHat;
         }
     }
 

@@ -16,15 +16,6 @@ public sealed class GoblinEnemy : MonoBehaviour
     private int contactDamage = 1;
 
     [Header("Attack")]
-    [SerializeField]
-    private Transform target;
-
-    [SerializeField]
-    private string targetObjectName = "Shooter";
-
-    [SerializeField, Min(0.01f)]
-    private float attackRange = 0.7f;
-
     [SerializeField, Min(0.01f)]
     private float attackCooldown = 1f;
 
@@ -65,6 +56,8 @@ public sealed class GoblinEnemy : MonoBehaviour
     private Coroutine hitFlashRoutine;
     private int currentHealth;
     private float nextAttackTime;
+    private float slowMultiplier = 1f;
+    private float slowUntilTime;
     private string currentAnimationState;
     private bool isDead;
 
@@ -74,7 +67,16 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     public int MaxHealth => maxHealth;
 
+    public Bounds GetWorldBounds()
+    {
+        return CalculateRendererBounds();
+    }
+
     public event Action<int, int> HealthChanged;
+
+    public event Action Died;
+
+    public event Action DeathAnimationFinished;
 
     private void Awake()
     {
@@ -91,6 +93,8 @@ public sealed class GoblinEnemy : MonoBehaviour
         currentHealth = maxHealth;
         isDead = false;
         nextAttackTime = 0f;
+        slowMultiplier = 1f;
+        slowUntilTime = 0f;
         PlayState(walkStateName);
     }
 
@@ -101,18 +105,10 @@ public sealed class GoblinEnemy : MonoBehaviour
             return;
         }
 
-        ResolveTargetIfNeeded();
-
         TowerHealth towerTarget = FindTowerInAttackRange();
         if (towerTarget != null)
         {
             AttackTower(towerTarget);
-            return;
-        }
-
-        if (IsTargetInAttackRange())
-        {
-            Attack();
             return;
         }
 
@@ -140,22 +136,52 @@ public sealed class GoblinEnemy : MonoBehaviour
         moveSpeed = Mathf.Max(0f, speed);
     }
 
-    private void Walk()
+    public void ApplySlow(float speedMultiplier, float duration)
     {
-        PlayState(walkStateName);
-        transform.Translate(Vector3.left * (moveSpeed * Time.deltaTime), Space.World);
-    }
-
-    private void Attack()
-    {
-        PlayState(attackStateName);
-
-        if (Time.time < nextAttackTime)
+        if (isDead || duration <= 0f)
         {
             return;
         }
 
-        nextAttackTime = Time.time + attackCooldown;
+        if (Time.time >= slowUntilTime)
+        {
+            slowMultiplier = 1f;
+        }
+
+        slowMultiplier = Mathf.Min(
+            slowMultiplier,
+            Mathf.Clamp(speedMultiplier, 0.05f, 1f));
+        slowUntilTime = Mathf.Max(slowUntilTime, Time.time + duration);
+    }
+
+    public void RefillHealth(int newMaxHealth)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        maxHealth = Mathf.Max(1, newMaxHealth);
+        currentHealth = maxHealth;
+        HealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
+    private void Walk()
+    {
+        PlayState(walkStateName);
+        transform.Translate(
+            Vector3.left * (GetCurrentMoveSpeed() * Time.deltaTime),
+            Space.World);
+    }
+
+    private float GetCurrentMoveSpeed()
+    {
+        if (Time.time >= slowUntilTime)
+        {
+            slowMultiplier = 1f;
+        }
+
+        return moveSpeed * slowMultiplier;
     }
 
     private void AttackTower(TowerHealth tower)
@@ -186,31 +212,19 @@ public sealed class GoblinEnemy : MonoBehaviour
             body.linearVelocity = Vector2.zero;
         }
 
-        Destroy(gameObject, destroyDelayAfterDeath);
+        Died?.Invoke();
+        StartCoroutine(FinishDeathRoutine());
     }
 
-    private void ResolveTargetIfNeeded()
+    private IEnumerator FinishDeathRoutine()
     {
-        if (target != null || string.IsNullOrWhiteSpace(targetObjectName))
+        if (destroyDelayAfterDeath > 0f)
         {
-            return;
+            yield return new WaitForSeconds(destroyDelayAfterDeath);
         }
 
-        GameObject targetObject = GameObject.Find(targetObjectName);
-        if (targetObject != null)
-        {
-            target = targetObject.transform;
-        }
-    }
-
-    private bool IsTargetInAttackRange()
-    {
-        if (target == null)
-        {
-            return false;
-        }
-
-        return Vector2.Distance(transform.position, target.position) <= attackRange;
+        DeathAnimationFinished?.Invoke();
+        Destroy(gameObject);
     }
 
     private TowerHealth FindTowerInAttackRange()

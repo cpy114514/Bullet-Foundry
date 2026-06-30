@@ -74,12 +74,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37b2f734909a2bc4caf1d83c71cdfd99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GoblinEnemy
-  maxHealth: 7
+  maxHealth: 20
   moveSpeed: 1
   contactDamage: 1
-  target: {fileID: 0}
-  targetObjectName: Shooter
-  attackRange: 0.7
   attackCooldown: 1
   towerAttackRange: 0.1
   towerLaneTolerance: 0.6
