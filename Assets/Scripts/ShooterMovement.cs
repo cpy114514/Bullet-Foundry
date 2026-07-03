@@ -7,6 +7,9 @@ public sealed class ShooterMovement : MonoBehaviour
     [SerializeField, Min(0f)]
     private float moveSpeed = 5f;
 
+    [SerializeField, Min(1)]
+    private int shooterMaxHealth = 20;
+
     [SerializeField]
     private Transform[] lanePoints = System.Array.Empty<Transform>();
 
@@ -22,14 +25,41 @@ public sealed class ShooterMovement : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float fallbackLaneSpacing = 1.25f;
 
+    [Header("Drag Movement")]
+    [SerializeField]
+    private bool allowMouseDrag = true;
+
+    [SerializeField, Min(0f)]
+    private float dragHitPadding = 0.25f;
+
     private Vector3[] fallbackLanePositions = System.Array.Empty<Vector3>();
     private int currentLaneIndex;
+    private bool isDragging;
+    private Collider2D cachedCollider;
+    private SpriteRenderer cachedSpriteRenderer;
+    private Camera cachedCamera;
 
     private void Awake()
     {
+        cachedCollider = GetComponent<Collider2D>();
+        cachedSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        cachedCamera = Camera.main;
+
+        EnsureShooterHealth();
         RefreshLanePointsFromSceneIfNeeded();
         RebuildFallbackLanePositions();
         SnapToNearestLane();
+    }
+
+    private void EnsureShooterHealth()
+    {
+        TowerHealth health = GetComponent<TowerHealth>();
+        if (health == null)
+        {
+            health = gameObject.AddComponent<TowerHealth>();
+        }
+
+        health.SetMaxHealth(shooterMaxHealth);
     }
 
     private void Update()
@@ -42,20 +72,20 @@ public sealed class ShooterMovement : MonoBehaviour
             return;
         }
 
+        HandleDragInput();
+
         Keyboard keyboard = Keyboard.current;
-        if (keyboard == null)
+        if (!isDragging && keyboard != null)
         {
-            return;
-        }
+            if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame)
+            {
+                MoveToLane(currentLaneIndex + 1);
+            }
 
-        if (keyboard.wKey.wasPressedThisFrame || keyboard.upArrowKey.wasPressedThisFrame)
-        {
-            MoveToLane(currentLaneIndex + 1);
-        }
-
-        if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame)
-        {
-            MoveToLane(currentLaneIndex - 1);
+            if (keyboard.sKey.wasPressedThisFrame || keyboard.downArrowKey.wasPressedThisFrame)
+            {
+                MoveToLane(currentLaneIndex - 1);
+            }
         }
 
         currentLaneIndex = Mathf.Clamp(currentLaneIndex, 0, laneTotal - 1);
@@ -67,6 +97,82 @@ public sealed class ShooterMovement : MonoBehaviour
             transform.position,
             targetPosition,
             moveSpeed * Time.deltaTime);
+    }
+
+    private void HandleDragInput()
+    {
+        if (!allowMouseDrag)
+        {
+            isDragging = false;
+            return;
+        }
+
+        Mouse mouse = Mouse.current;
+        if (mouse == null)
+        {
+            isDragging = false;
+            return;
+        }
+
+        if (mouse.leftButton.wasPressedThisFrame)
+        {
+            isDragging = TryGetPointerWorldPosition(out Vector3 worldPosition) &&
+                IsPointerOverShooter(worldPosition);
+        }
+
+        if (mouse.leftButton.wasReleasedThisFrame)
+        {
+            isDragging = false;
+        }
+
+        if (!isDragging || !mouse.leftButton.isPressed)
+        {
+            return;
+        }
+
+        if (TryGetPointerWorldPosition(out Vector3 dragWorldPosition))
+        {
+            MoveToLane(FindNearestLaneIndex(dragWorldPosition));
+        }
+    }
+
+    private bool TryGetPointerWorldPosition(out Vector3 worldPosition)
+    {
+        worldPosition = Vector3.zero;
+
+        Camera worldCamera = cachedCamera != null ? cachedCamera : Camera.main;
+        if (worldCamera == null)
+        {
+            return false;
+        }
+
+        cachedCamera = worldCamera;
+
+        Vector2 screenPosition = Mouse.current.position.ReadValue();
+        Vector3 screenPoint = new Vector3(
+            screenPosition.x,
+            screenPosition.y,
+            Mathf.Abs(worldCamera.transform.position.z - transform.position.z));
+        worldPosition = worldCamera.ScreenToWorldPoint(screenPoint);
+        worldPosition.z = transform.position.z;
+        return true;
+    }
+
+    private bool IsPointerOverShooter(Vector3 worldPosition)
+    {
+        if (cachedCollider != null)
+        {
+            return cachedCollider.OverlapPoint(worldPosition);
+        }
+
+        if (cachedSpriteRenderer != null)
+        {
+            Bounds bounds = cachedSpriteRenderer.bounds;
+            bounds.Expand(dragHitPadding * 2f);
+            return bounds.Contains(worldPosition);
+        }
+
+        return Vector2.Distance(worldPosition, transform.position) <= Mathf.Max(0.1f, dragHitPadding);
     }
 
     private void RefreshLanePointsFromSceneIfNeeded()

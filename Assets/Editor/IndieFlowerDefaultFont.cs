@@ -26,6 +26,11 @@ public static class IndieFlowerDefaultFont
 
     private static void OnComponentWasAdded(Component component)
     {
+        if (IsInPlayMode())
+        {
+            return;
+        }
+
         if (component is Text uiText)
         {
             ApplyToText(uiText, replaceCustomFonts: false, recordUndo: false);
@@ -38,6 +43,11 @@ public static class IndieFlowerDefaultFont
 
     private static void ApplyToDefaultTextObjects()
     {
+        if (IsInPlayMode())
+        {
+            return;
+        }
+
         ApplyToTextObjects(replaceCustomFonts: false, recordUndo: false);
     }
 
@@ -170,11 +180,21 @@ public static class IndieFlowerDefaultFont
 
     private static void MarkDirty(Component component)
     {
+        if (IsInPlayMode())
+        {
+            return;
+        }
+
         EditorUtility.SetDirty(component);
 
         if (!EditorUtility.IsPersistent(component) && component.gameObject.scene.IsValid())
         {
             EditorSceneManager.MarkSceneDirty(component.gameObject.scene);
         }
+    }
+
+    private static bool IsInPlayMode()
+    {
+        return EditorApplication.isPlayingOrWillChangePlaymode || Application.isPlaying;
     }
 }

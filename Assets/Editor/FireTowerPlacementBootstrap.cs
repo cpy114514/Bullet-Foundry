@@ -2,6 +2,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [InitializeOnLoad]
 public static class FireTowerPlacementBootstrap
@@ -15,6 +16,11 @@ public static class FireTowerPlacementBootstrap
     public static void EnsurePlacementSystem()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            return;
+        }
+
+        if (IsMenuScene(EditorSceneManager.GetActiveScene()))
         {
             return;
         }
@@ -66,4 +72,8 @@ public static class FireTowerPlacementBootstrap
             .FirstOrDefault(camera => camera.CompareTag("MainCamera"));
     }
 
+    private static bool IsMenuScene(Scene scene)
+    {
+        return scene.IsValid() && (scene.name == "TitlePage" || scene.name == "LevelSelect");
+    }
 }

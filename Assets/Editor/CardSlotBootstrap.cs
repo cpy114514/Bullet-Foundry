@@ -11,7 +11,7 @@ public static class CardSlotBootstrap
     private const string ScenePath = "Assets/Scenes/Level_test.unity";
     private const string CardPrefabPath = "Assets/Prefab/Cards.prefab";
     private const string RootName = "Card Slots";
-    private const int SlotCount = 6;
+    private const int SlotCount = 9;
     private const float FirstSlotX = -7.4f;
     private const float SlotSpacing = 1.6f;
     private const float SlotY = 4f;
@@ -58,7 +58,17 @@ public static class CardSlotBootstrap
                 GameObject slotObject = new GameObject(slotName);
                 slot = slotObject.transform;
                 slot.SetParent(root, false);
-                slot.position = new Vector3(FirstSlotX + SlotSpacing * i, SlotY, 0f);
+                slot.localPosition = new Vector3(FirstSlotX + SlotSpacing * i, SlotY, 0f);
+                changed = true;
+            }
+
+            Vector3 expectedLocalPosition = new(
+                FirstSlotX + SlotSpacing * i,
+                SlotY,
+                0f);
+            if (slot.localPosition != expectedLocalPosition)
+            {
+                slot.localPosition = expectedLocalPosition;
                 changed = true;
             }
 

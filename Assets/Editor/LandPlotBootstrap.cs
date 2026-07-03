@@ -6,7 +6,7 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class LandPlotBootstrap
 {
-    private const string SessionKey = "BulletFoundry.LandPlotBootstrap.Completed";
+    private static readonly Vector3 TargetScale = new(1.5f, 1.5f, 1f);
 
     static LandPlotBootstrap()
     {
@@ -16,11 +16,6 @@ public static class LandPlotBootstrap
     private static void EnsureLandPlots()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
-        {
-            return;
-        }
-
-        if (SessionState.GetBool(SessionKey, false))
         {
             return;
         }
@@ -36,20 +31,24 @@ public static class LandPlotBootstrap
 
         foreach (GameObject land in lands)
         {
-            if (land.GetComponent<LandPlot>() != null)
+            if (land.transform.localScale != TargetScale)
             {
-                continue;
+                Undo.RecordObject(land.transform, "Resize land plot");
+                land.transform.localScale = TargetScale;
+                changed = true;
             }
 
-            Undo.AddComponent<LandPlot>(land);
-            changed = true;
+            if (land.GetComponent<LandPlot>() == null)
+            {
+                Undo.AddComponent<LandPlot>(land);
+                changed = true;
+            }
         }
 
         if (changed && lands.Length > 0)
         {
             EditorSceneManager.MarkSceneDirty(lands[0].scene);
+            EditorSceneManager.SaveScene(lands[0].scene);
         }
-
-        SessionState.SetBool(SessionKey, true);
     }
 }

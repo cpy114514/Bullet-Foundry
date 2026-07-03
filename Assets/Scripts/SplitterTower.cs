@@ -5,27 +5,27 @@ using UnityEngine;
 public sealed class SplitterTower : MonoBehaviour
 {
     [SerializeField, Min(0f)]
-    private float spawnForwardOffset = 0.25f;
-
-    [SerializeField, Min(0f)]
     private float splitVerticalOffset = 0.35f;
-
-    [SerializeField, Min(0.01f)]
-    private float overlapForwardOffset = 0.12f;
-
-    [SerializeField]
-    private Vector2 upperDirection = Vector2.right;
-
-    [SerializeField]
-    private Vector2 lowerDirection = Vector2.right;
 
     [SerializeField]
     private bool destroyIncomingBullet = true;
 
+    [SerializeField, Min(0f)]
+    private float shotInterval = 0.12f;
+
+    [SerializeField, Min(0f)]
+    private float launchForwardDistance = 0.35f;
+
+    [SerializeField, Min(0f)]
+    private float outputForwardStagger = 0.08f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float requiredRearDirectionDot = 0.5f;
+
     private readonly HashSet<Bullet> handledBullets = new();
-    private readonly List<Vector3> spawnedPositionsThisFrame = new();
+    private readonly Queue<Bullet> pendingShots = new();
     private SpriteRenderer spriteRenderer;
-    private int spawnedPositionsFrame = -1;
+    private float nextShotTime;
 
     private void Awake()
     {
@@ -35,7 +35,7 @@ public sealed class SplitterTower : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        TrySplit(other.GetComponentInParent<Bullet>());
+        QueueShot(other.GetComponentInParent<Bullet>());
     }
 
     private void Update()
@@ -47,9 +47,11 @@ public sealed class SplitterTower : MonoBehaviour
             Bullet bullet = bullets[i];
             if (bullet != null && bullet.isActiveAndEnabled && IsInsideTower(bullet.transform.position))
             {
-                TrySplit(bullet);
+                QueueShot(bullet);
             }
         }
+
+        ProcessShotQueue();
     }
 
     private bool IsInsideTower(Vector3 position)
@@ -64,78 +66,136 @@ public sealed class SplitterTower : MonoBehaviour
         return Vector2.Distance(transform.position, position) <= 0.5f;
     }
 
-    private void TrySplit(Bullet incomingBullet)
+    private void QueueShot(Bullet incomingBullet)
     {
-        if (incomingBullet == null || !handledBullets.Add(incomingBullet))
+        if (incomingBullet == null
+            || !CanAcceptBullet(incomingBullet)
+            || !handledBullets.Add(incomingBullet))
         {
             return;
         }
 
-        Vector3 splitOrigin = GetSplitOrigin(incomingBullet.transform.position);
-
-        SpawnSplitBullet(incomingBullet, splitOrigin + Vector3.up * splitVerticalOffset, upperDirection);
-        SpawnSplitBullet(incomingBullet, splitOrigin + Vector3.down * splitVerticalOffset, lowerDirection);
-
-        if (destroyIncomingBullet)
-        {
-            Destroy(incomingBullet.gameObject);
-        }
+        incomingBullet.PauseForTowerQueue();
+        pendingShots.Enqueue(incomingBullet);
     }
 
-    private Vector3 GetSplitOrigin(Vector3 incomingBulletPosition)
+    private bool CanAcceptBullet(Bullet incomingBullet)
     {
-        float splitY = incomingBulletPosition.y;
-
-        if (spriteRenderer != null && spriteRenderer.enabled)
+        if (Vector2.Dot(incomingBullet.Direction, Vector2.right) < requiredRearDirectionDot)
         {
-            Bounds bounds = spriteRenderer.bounds;
-            return new Vector3(bounds.max.x + spawnForwardOffset, splitY, transform.position.z);
+            return false;
         }
 
-        return new Vector3(
-            transform.position.x + spawnForwardOffset,
-            splitY,
-            transform.position.z);
+        return incomingBullet.transform.position.x <= GetTowerCenter().x;
     }
 
-    private void SpawnSplitBullet(Bullet incomingBullet, Vector3 position, Vector2 direction)
+    private void ProcessShotQueue()
     {
-        Bullet spawnedBullet = Instantiate(incomingBullet, ResolveSpawnPosition(position), Quaternion.identity);
-        spawnedBullet.CopyRuntimeStateFrom(incomingBullet);
-        spawnedBullet.SetDirection(direction);
-    }
-
-    private Vector3 ResolveSpawnPosition(Vector3 position)
-    {
-        if (spawnedPositionsFrame != Time.frameCount)
+        if (pendingShots.Count == 0 || Time.time < nextShotTime)
         {
-            spawnedPositionsFrame = Time.frameCount;
-            spawnedPositionsThisFrame.Clear();
+            return;
         }
 
-        Vector3 resolvedPosition = position;
-        while (ContainsSpawnPosition(resolvedPosition))
+        Bullet sourceBullet = pendingShots.Dequeue();
+        if (sourceBullet != null)
         {
-            resolvedPosition += Vector3.right * Mathf.Max(0.01f, overlapForwardOffset);
-        }
+            FireSplitPair(sourceBullet);
 
-        spawnedPositionsThisFrame.Add(resolvedPosition);
-        return resolvedPosition;
-    }
-
-    private bool ContainsSpawnPosition(Vector3 position)
-    {
-        const float MinDistanceSqr = 0.0001f;
-
-        for (int i = 0; i < spawnedPositionsThisFrame.Count; i++)
-        {
-            if ((spawnedPositionsThisFrame[i] - position).sqrMagnitude <= MinDistanceSqr)
+            if (destroyIncomingBullet)
             {
-                return true;
+                Destroy(sourceBullet.gameObject);
+            }
+            else
+            {
+                sourceBullet.ResumeFromTowerQueue();
+                sourceBullet.SetDirection(Vector2.right);
             }
         }
 
-        return false;
+        nextShotTime = Time.time + shotInterval;
+    }
+
+    private void FireSplitPair(Bullet sourceBullet)
+    {
+        Vector2 outputDirection = Vector2.right;
+        Vector2 perpendicular = Vector2.up;
+        Vector3 launchOrigin = GetLaunchOrigin(sourceBullet.transform.position.z);
+
+        SpawnSplitBullet(
+            sourceBullet,
+            launchOrigin,
+            GetOutputTargetPosition(
+                launchOrigin,
+                outputDirection,
+                perpendicular,
+                splitVerticalOffset,
+                outputForwardStagger * 0.5f,
+                sourceBullet.transform.position.z),
+            outputDirection);
+
+        SpawnSplitBullet(
+            sourceBullet,
+            launchOrigin,
+            GetOutputTargetPosition(
+                launchOrigin,
+                outputDirection,
+                perpendicular,
+                -splitVerticalOffset,
+                -outputForwardStagger * 0.5f,
+                sourceBullet.transform.position.z),
+            outputDirection);
+    }
+
+    private Bullet SpawnSplitBullet(
+        Bullet sourceBullet,
+        Vector3 spawnPosition,
+        Vector3 targetPosition,
+        Vector2 direction)
+    {
+        Bullet spawnedBullet = Instantiate(sourceBullet, spawnPosition, Quaternion.identity);
+        spawnedBullet.CopyRuntimeStateFrom(sourceBullet);
+        spawnedBullet.ResumeFromTowerQueue();
+        spawnedBullet.FlyToThenContinue(targetPosition, direction);
+        handledBullets.Add(spawnedBullet);
+        return spawnedBullet;
+    }
+
+    private Vector3 GetLaunchOrigin(float sourceZ)
+    {
+        Vector3 origin = GetTowerCenter();
+        origin.z = sourceZ;
+        return origin;
+    }
+
+    private Vector3 GetTowerCenter()
+    {
+        if (spriteRenderer != null && spriteRenderer.enabled)
+        {
+            return spriteRenderer.bounds.center;
+        }
+
+        Collider2D towerCollider = GetComponent<Collider2D>();
+        return towerCollider != null && towerCollider.enabled
+            ? towerCollider.bounds.center
+            : transform.position;
+    }
+
+    private Vector3 GetOutputTargetPosition(
+        Vector3 launchOrigin,
+        Vector2 outputDirection,
+        Vector2 perpendicular,
+        float perpendicularOffset,
+        float forwardStagger,
+        float z)
+    {
+        Vector3 forward = new(outputDirection.x, outputDirection.y, 0f);
+        Vector3 sideways = new(perpendicular.x, perpendicular.y, 0f);
+        float forwardDistance = Mathf.Max(0.05f, launchForwardDistance + forwardStagger);
+        Vector3 targetPosition = launchOrigin
+            + forward * forwardDistance
+            + sideways * perpendicularOffset;
+        targetPosition.z = z;
+        return targetPosition;
     }
 
     private void EnsureTriggerCollider()

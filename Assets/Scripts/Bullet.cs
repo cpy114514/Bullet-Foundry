@@ -22,6 +22,12 @@ public sealed class Bullet : MonoBehaviour
     [SerializeField]
     private Vector2 moveDirection = Vector2.right;
 
+    [SerializeField]
+    private bool rotateToMoveDirection = true;
+
+    [SerializeField]
+    private float rotationAngleOffset;
+
     [SerializeField, Min(0.1f)]
     private float lifetime = 5f;
 
@@ -40,8 +46,15 @@ public sealed class Bullet : MonoBehaviour
     private Vector3 normalScale;
     private bool normalVisualCached;
     private bool hasImpacted;
+    private bool hasLaunchTarget;
+    private Vector3 launchTargetPosition;
+    private Vector2 launchFinalDirection = Vector2.right;
+    private bool isPausedForTowerQueue;
+    private float remainingLifetime;
 
     public BulletElement Element => element;
+
+    public Vector2 Direction => moveDirection.normalized;
 
     private void Awake()
     {
@@ -58,7 +71,8 @@ public sealed class Bullet : MonoBehaviour
 
     private void OnEnable()
     {
-        Destroy(gameObject, lifetime);
+        remainingLifetime = lifetime;
+        ApplyRotationToMoveDirection();
     }
 
     private void Update()
@@ -68,7 +82,19 @@ public sealed class Bullet : MonoBehaviour
             return;
         }
 
-        transform.Translate((Vector3)(moveDirection.normalized * (moveSpeed * Time.deltaTime)), Space.World);
+        if (isPausedForTowerQueue)
+        {
+            return;
+        }
+
+        remainingLifetime -= Time.deltaTime;
+        if (remainingLifetime <= 0f)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        MoveBullet(Time.deltaTime);
         UpdateSpriteAnimation();
     }
 
@@ -79,7 +105,88 @@ public sealed class Bullet : MonoBehaviour
             return;
         }
 
+        hasLaunchTarget = false;
+        isPausedForTowerQueue = false;
         moveDirection = direction.normalized;
+        ApplyRotationToMoveDirection();
+    }
+
+    public void PauseForTowerQueue()
+    {
+        isPausedForTowerQueue = true;
+        hasLaunchTarget = false;
+
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = false;
+        }
+
+        if (bulletCollider == null)
+        {
+            bulletCollider = GetComponent<Collider2D>();
+        }
+
+        if (bulletCollider != null)
+        {
+            bulletCollider.enabled = false;
+        }
+    }
+
+    public void ResumeFromTowerQueue()
+    {
+        isPausedForTowerQueue = false;
+
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = true;
+        }
+
+        if (bulletCollider == null)
+        {
+            bulletCollider = GetComponent<Collider2D>();
+        }
+
+        if (bulletCollider != null)
+        {
+            bulletCollider.enabled = true;
+        }
+    }
+
+    public void FlyToThenContinue(Vector3 targetPosition, Vector2 finalDirection)
+    {
+        if (finalDirection.sqrMagnitude <= Mathf.Epsilon)
+        {
+            finalDirection = moveDirection.sqrMagnitude > Mathf.Epsilon
+                ? moveDirection
+                : Vector2.right;
+        }
+
+        launchFinalDirection = finalDirection.normalized;
+        launchTargetPosition = targetPosition;
+        launchTargetPosition.z = transform.position.z;
+
+        Vector2 toTarget = launchTargetPosition - transform.position;
+        if (toTarget.sqrMagnitude <= 0.0001f)
+        {
+            hasLaunchTarget = false;
+            moveDirection = launchFinalDirection;
+            ApplyRotationToMoveDirection();
+            return;
+        }
+
+        hasLaunchTarget = true;
+        moveDirection = toTarget.normalized;
+        ApplyRotationToMoveDirection();
     }
 
     public void SetSpriteAnimation(Sprite[] frames, float frameDuration)
@@ -173,12 +280,21 @@ public sealed class Bullet : MonoBehaviour
 
         moveSpeed = source.moveSpeed;
         moveDirection = source.moveDirection;
+        rotateToMoveDirection = source.rotateToMoveDirection;
+        rotationAngleOffset = source.rotationAngleOffset;
         lifetime = source.lifetime;
         spawnImpactEffect = source.spawnImpactEffect;
         element = source.element;
         normalSprite = source.normalSprite;
         normalScale = source.normalScale;
         normalVisualCached = source.normalVisualCached;
+        hasLaunchTarget = false;
+        launchTargetPosition = Vector3.zero;
+        launchFinalDirection = Vector2.right;
+        isPausedForTowerQueue = false;
+        remainingLifetime = source.remainingLifetime > 0f
+            ? source.remainingLifetime
+            : source.lifetime;
 
         animationFrames = source.animationFrames.Length == 0
             ? System.Array.Empty<Sprite>()
@@ -188,6 +304,7 @@ public sealed class Bullet : MonoBehaviour
         animationFrameIndex = source.animationFrameIndex;
 
         transform.localScale = source.transform.localScale;
+        ApplyRotationToMoveDirection();
         CopyRendererState(source);
     }
 
@@ -329,10 +446,48 @@ public sealed class Bullet : MonoBehaviour
         if (moveDirection.sqrMagnitude <= Mathf.Epsilon)
         {
             moveDirection = Vector2.right;
-            return;
         }
 
         moveDirection.Normalize();
+        ApplyRotationToMoveDirection();
+    }
+
+    private void MoveBullet(float deltaTime)
+    {
+        if (!hasLaunchTarget)
+        {
+            ApplyRotationToMoveDirection();
+            transform.Translate((Vector3)(moveDirection.normalized * (moveSpeed * deltaTime)), Space.World);
+            return;
+        }
+
+        Vector3 currentPosition = transform.position;
+        Vector3 toTarget = launchTargetPosition - currentPosition;
+        float stepDistance = moveSpeed * deltaTime;
+
+        if (toTarget.sqrMagnitude <= stepDistance * stepDistance)
+        {
+            transform.position = launchTargetPosition;
+            hasLaunchTarget = false;
+            moveDirection = launchFinalDirection;
+            ApplyRotationToMoveDirection();
+            return;
+        }
+
+        moveDirection = toTarget.normalized;
+        ApplyRotationToMoveDirection();
+        transform.Translate((Vector3)(moveDirection * stepDistance), Space.World);
+    }
+
+    private void ApplyRotationToMoveDirection()
+    {
+        if (!rotateToMoveDirection || moveDirection.sqrMagnitude <= Mathf.Epsilon)
+        {
+            return;
+        }
+
+        float angle = Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg;
+        transform.rotation = Quaternion.Euler(0f, 0f, angle + rotationAngleOffset);
     }
 
     private void EnsurePhysicsComponents()

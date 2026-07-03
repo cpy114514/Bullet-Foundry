@@ -78,7 +78,7 @@ MonoBehaviour:
   moveSpeed: 1
   contactDamage: 1
   attackCooldown: 1
-  towerAttackRange: 0.1
+  towerAttackRange: 0.02
   towerLaneTolerance: 0.6
   walkStateName: goblin_walk
   attackStateName: goblin_attack

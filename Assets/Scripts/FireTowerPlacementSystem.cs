@@ -24,6 +24,7 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
     private Color selectedCardNormalColor = Color.white;
     private GameObject previewObject;
     private SpriteRenderer previewRenderer;
+    private CoinWallet wallet;
     private bool cardPointerDown;
     private bool dragMoved;
     private bool pressedCardWasSelected;
@@ -32,6 +33,7 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
     private void Awake()
     {
         ResolveCamera();
+        ResolveWallet();
     }
 
     private void OnEnable()
@@ -204,6 +206,13 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
 
         LandPlot land = FindLandAt(worldPosition);
         if (land == null || land.IsOccupied)
+        {
+            return false;
+        }
+
+        ResolveWallet();
+        int price = selectedCard.Price;
+        if (price > 0 && (wallet == null || !wallet.TrySpendCoins(price)))
         {
             return false;
         }
@@ -427,6 +436,20 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
         if (worldCamera == null)
         {
             worldCamera = Camera.main;
+        }
+    }
+
+    private void ResolveWallet()
+    {
+        if (wallet != null)
+        {
+            return;
+        }
+
+        wallet = CoinWallet.Instance;
+        if (wallet == null)
+        {
+            wallet = FindFirstObjectByType<CoinWallet>();
         }
     }
 }

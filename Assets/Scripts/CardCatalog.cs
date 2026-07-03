@@ -7,20 +7,33 @@ using UnityEngine;
 public sealed class CardEntry
 {
     [SerializeField]
-    private Sprite image;
+    private GameObject towerPrefab;
 
     [SerializeField]
     [TextArea(2, 5)]
     private string displayName;
 
-    [SerializeField, HideInInspector]
-    private GameObject towerPrefab;
+    [SerializeField, Min(0)]
+    private int price = 25;
 
-    public Sprite Image => image;
+    public Sprite Image
+    {
+        get
+        {
+            SpriteRenderer renderer = towerPrefab != null
+                ? towerPrefab.GetComponentInChildren<SpriteRenderer>(true)
+                : null;
+            return renderer != null ? renderer.sprite : null;
+        }
+    }
 
-    public string DisplayName => displayName;
+    public string DisplayName => !string.IsNullOrWhiteSpace(displayName)
+        ? displayName
+        : towerPrefab != null ? towerPrefab.name : string.Empty;
 
     public GameObject TowerPrefab => towerPrefab;
+
+    public int Price => Mathf.Max(0, price);
 }
 
 [DisallowMultipleComponent]
@@ -104,8 +117,15 @@ public sealed class CardCatalog : MonoBehaviour
                 .GetComponent<TextMesh>();
         }
 
+        TextMesh priceLabel = null;
+        if (template.PriceTextMesh != null)
+        {
+            priceLabel = Instantiate(template.PriceTextMesh.gameObject, cardTransform)
+                .GetComponent<TextMesh>();
+        }
+
         CardView cardView = cardObject.AddComponent<CardView>();
-        cardView.SetReferences(background, icon, label);
+        cardView.SetReferences(background, icon, label, priceLabel);
 
         BoxCollider2D templateCollider = template.GetComponent<BoxCollider2D>();
         BoxCollider2D cardCollider = cardObject.AddComponent<BoxCollider2D>();
@@ -196,7 +216,10 @@ public sealed class CardCatalog : MonoBehaviour
 
     private static void ConfigureCard(CardView view, CardEntry entry)
     {
-        view.Configure(entry.Image, entry.DisplayName, entry.TowerPrefab);
+        view.Configure(
+            entry.TowerPrefab,
+            entry.DisplayName,
+            entry.Price);
     }
 
     private static void CopySpriteRenderer(SpriteRenderer source, SpriteRenderer destination)

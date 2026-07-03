@@ -88,6 +88,28 @@ public static class CardPrefabBootstrap
                 changed = true;
             }
 
+            TextMesh label = cardView.LabelTextMesh;
+            TextMesh priceLabel = cardView.PriceTextMesh;
+            if (priceLabel == null && label != null)
+            {
+                GameObject priceObject = Object.Instantiate(label.gameObject, prefabRoot.transform);
+                priceObject.name = "Price Label";
+                priceObject.transform.localPosition = new Vector3(0.36f, 0.68f, -0.05f);
+                priceObject.transform.localRotation = Quaternion.identity;
+                priceLabel = priceObject.GetComponent<TextMesh>();
+                priceLabel.text = "$0";
+                changed = true;
+            }
+
+            SerializedObject serializedCardView = new SerializedObject(cardView);
+            SerializedProperty priceTextProperty = serializedCardView.FindProperty("priceTextMesh");
+            if (priceTextProperty.objectReferenceValue != priceLabel)
+            {
+                priceTextProperty.objectReferenceValue = priceLabel;
+                serializedCardView.ApplyModifiedPropertiesWithoutUndo();
+                changed = true;
+            }
+
             Vector2 expectedSize = background.sprite != null
                 ? background.sprite.bounds.size
                 : background.size;
@@ -143,12 +165,17 @@ public static class CardPrefabBootstrap
 
         SpriteRenderer backgroundRenderer = card.GetComponent<SpriteRenderer>();
         SpriteRenderer iconRenderer = FindIconRenderer(card, backgroundRenderer);
-        TextMesh labelTextMesh = card.GetComponentInChildren<TextMesh>(true);
+        TextMesh[] textMeshes = card.GetComponentsInChildren<TextMesh>(true);
+        TextMesh labelTextMesh = textMeshes.FirstOrDefault(text =>
+            !text.name.Contains("Price", System.StringComparison.OrdinalIgnoreCase));
+        TextMesh priceTextMesh = textMeshes.FirstOrDefault(text =>
+            text.name.Contains("Price", System.StringComparison.OrdinalIgnoreCase));
 
         SerializedObject serializedCardView = new SerializedObject(cardView);
         serializedCardView.FindProperty("backgroundRenderer").objectReferenceValue = backgroundRenderer;
         serializedCardView.FindProperty("iconRenderer").objectReferenceValue = iconRenderer;
         serializedCardView.FindProperty("labelTextMesh").objectReferenceValue = labelTextMesh;
+        serializedCardView.FindProperty("priceTextMesh").objectReferenceValue = priceTextMesh;
         serializedCardView.FindProperty("iconSprite").objectReferenceValue = iconRenderer != null
             ? iconRenderer.sprite
             : null;

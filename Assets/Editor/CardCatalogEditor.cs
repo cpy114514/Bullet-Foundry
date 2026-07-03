@@ -25,11 +25,11 @@ public sealed class CardCatalogEditor : Editor
             true);
 
         cardList.drawHeaderCallback = rect =>
-            EditorGUI.LabelField(rect, "卡片数据（按 + 添加）");
+            EditorGUI.LabelField(rect, "卡牌数据（按 + 添加）");
 
         cardList.elementHeight =
-            (EditorGUIUtility.singleLineHeight * (TextAreaLines + 2f)) +
-            (RowSpacing * 4f);
+            (EditorGUIUtility.singleLineHeight * (TextAreaLines + 4f)) +
+            (RowSpacing * 6f);
 
         cardList.drawElementCallback = DrawCardEntry;
         cardList.onAddCallback = AddCardEntry;
@@ -39,12 +39,7 @@ public sealed class CardCatalogEditor : Editor
     {
         serializedObject.Update();
         cardList.DoLayoutList();
-        bool changed = serializedObject.ApplyModifiedProperties();
-
-        if (changed)
-        {
-            ResolveTowerPrefabs((CardCatalog)target);
-        }
+        serializedObject.ApplyModifiedProperties();
 
         DrawResolutionWarnings();
     }
@@ -71,12 +66,17 @@ public sealed class CardCatalogEditor : Editor
             SerializedProperty entry = entries.GetArrayElementAtIndex(i);
             string displayName = entry.FindPropertyRelative("displayName").stringValue;
             SerializedProperty towerPrefab = entry.FindPropertyRelative("towerPrefab");
+            if (towerPrefab.objectReferenceValue != null)
+            {
+                continue;
+            }
+
             string normalizedName = NormalizeName(displayName);
 
             GameObject match = towerPrefabs.FirstOrDefault(prefab =>
                 NormalizeName(prefab.name) == normalizedName);
 
-            if (towerPrefab.objectReferenceValue != match)
+            if (match != null)
             {
                 towerPrefab.objectReferenceValue = match;
                 changed = true;
@@ -95,20 +95,24 @@ public sealed class CardCatalogEditor : Editor
     private void DrawCardEntry(Rect rect, int index, bool isActive, bool isFocused)
     {
         SerializedProperty entry = cardsProperty.GetArrayElementAtIndex(index);
-        SerializedProperty image = entry.FindPropertyRelative("image");
+        SerializedProperty towerPrefab = entry.FindPropertyRelative("towerPrefab");
         SerializedProperty displayName = entry.FindPropertyRelative("displayName");
+        SerializedProperty price = entry.FindPropertyRelative("price");
 
         float lineHeight = EditorGUIUtility.singleLineHeight;
         rect.y += RowSpacing;
         rect.height = lineHeight;
 
-        EditorGUI.PropertyField(rect, image, new GUIContent("图片"));
+        EditorGUI.PropertyField(rect, towerPrefab, new GUIContent("塔楼 Prefab"));
         rect.y += lineHeight + RowSpacing;
 
         EditorGUI.LabelField(rect, "名称（可换行）");
         rect.y += lineHeight + RowSpacing;
         rect.height = lineHeight * TextAreaLines;
         displayName.stringValue = EditorGUI.TextArea(rect, displayName.stringValue);
+        rect.y += rect.height + RowSpacing;
+        rect.height = lineHeight;
+        EditorGUI.PropertyField(rect, price, new GUIContent("价格"));
     }
 
     private void AddCardEntry(ReorderableList list)
@@ -117,13 +121,12 @@ public sealed class CardCatalogEditor : Editor
         cardsProperty.InsertArrayElementAtIndex(newIndex);
 
         SerializedProperty newEntry = cardsProperty.GetArrayElementAtIndex(newIndex);
-        newEntry.FindPropertyRelative("image").objectReferenceValue = null;
         newEntry.FindPropertyRelative("displayName").stringValue = string.Empty;
         newEntry.FindPropertyRelative("towerPrefab").objectReferenceValue = null;
+        newEntry.FindPropertyRelative("price").intValue = 25;
 
         list.index = newIndex;
         serializedObject.ApplyModifiedProperties();
-        ResolveTowerPrefabs((CardCatalog)target);
     }
 
     private void DrawResolutionWarnings()
@@ -135,7 +138,7 @@ public sealed class CardCatalogEditor : Editor
             if (!string.IsNullOrWhiteSpace(entry.DisplayName) && entry.TowerPrefab == null)
             {
                 EditorGUILayout.HelpBox(
-                    $"找不到与“{entry.DisplayName}”同名的塔楼 Prefab。",
+                    $"卡牌“{entry.DisplayName}”还没有指定塔楼 Prefab。",
                     MessageType.Warning);
             }
         }

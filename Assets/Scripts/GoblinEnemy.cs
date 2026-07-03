@@ -20,7 +20,7 @@ public sealed class GoblinEnemy : MonoBehaviour
     private float attackCooldown = 1f;
 
     [SerializeField, Min(0f)]
-    private float towerAttackRange = 0.1f;
+    private float towerAttackRange = 0.02f;
 
     [SerializeField, Min(0.01f)]
     private float towerLaneTolerance = 0.6f;
@@ -48,6 +48,9 @@ public sealed class GoblinEnemy : MonoBehaviour
     [SerializeField, Min(0f)]
     private float hitFlashDuration = 0.1f;
 
+    [SerializeField, Range(0.1f, 1f)]
+    private float slowTintMultiplier = 0.75f;
+
     private Animator animator;
     private Rigidbody2D body;
     private Collider2D hitbox;
@@ -60,6 +63,7 @@ public sealed class GoblinEnemy : MonoBehaviour
     private float slowUntilTime;
     private string currentAnimationState;
     private bool isDead;
+    private bool slowVisualActive;
 
     public bool IsDead => isDead;
 
@@ -89,17 +93,32 @@ public sealed class GoblinEnemy : MonoBehaviour
     private void OnEnable()
     {
         CacheSpriteRenderers();
-        RestoreSpriteColors();
         currentHealth = maxHealth;
         isDead = false;
         nextAttackTime = 0f;
         slowMultiplier = 1f;
         slowUntilTime = 0f;
+        slowVisualActive = false;
+        RestoreSpriteColors();
         PlayState(walkStateName);
+    }
+
+    private void OnDisable()
+    {
+        if (hitFlashRoutine != null)
+        {
+            StopCoroutine(hitFlashRoutine);
+            hitFlashRoutine = null;
+        }
+
+        slowVisualActive = false;
+        RestoreSpriteColors();
     }
 
     private void Update()
     {
+        RefreshSlowState();
+
         if (isDead)
         {
             return;
@@ -152,6 +171,7 @@ public sealed class GoblinEnemy : MonoBehaviour
             slowMultiplier,
             Mathf.Clamp(speedMultiplier, 0.05f, 1f));
         slowUntilTime = Mathf.Max(slowUntilTime, Time.time + duration);
+        SetSlowVisualActive(true);
     }
 
     public void RefillHealth(int newMaxHealth)
@@ -176,12 +196,33 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     private float GetCurrentMoveSpeed()
     {
-        if (Time.time >= slowUntilTime)
+        RefreshSlowState();
+        return moveSpeed * slowMultiplier;
+    }
+
+    private void RefreshSlowState()
+    {
+        if (Time.time < slowUntilTime)
         {
-            slowMultiplier = 1f;
+            return;
         }
 
-        return moveSpeed * slowMultiplier;
+        slowMultiplier = 1f;
+        SetSlowVisualActive(false);
+    }
+
+    private void SetSlowVisualActive(bool active)
+    {
+        if (slowVisualActive == active)
+        {
+            return;
+        }
+
+        slowVisualActive = active;
+        if (hitFlashRoutine == null)
+        {
+            RestoreSpriteColors();
+        }
     }
 
     private void AttackTower(TowerHealth tower)
@@ -281,7 +322,10 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     private void PlayState(string stateName)
     {
-        if (animator == null || string.IsNullOrWhiteSpace(stateName) || currentAnimationState == stateName)
+        if (animator == null ||
+            animator.runtimeAnimatorController == null ||
+            string.IsNullOrWhiteSpace(stateName) ||
+            currentAnimationState == stateName)
         {
             return;
         }
@@ -373,7 +417,13 @@ public sealed class GoblinEnemy : MonoBehaviour
         {
             if (spriteRenderers[i] != null)
             {
-                spriteRenderers[i].color = originalSpriteColors[i];
+                Color original = originalSpriteColors[i];
+                float multiplier = slowVisualActive ? slowTintMultiplier : 1f;
+                spriteRenderers[i].color = new Color(
+                    original.r * multiplier,
+                    original.g * multiplier,
+                    original.b * multiplier,
+                    original.a);
             }
         }
     }

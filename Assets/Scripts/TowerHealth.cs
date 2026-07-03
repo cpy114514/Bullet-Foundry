@@ -18,6 +18,19 @@ public sealed class TowerHealth : MonoBehaviour
 
     public bool IsDestroyed => isDestroyed;
 
+    public void SetMaxHealth(int health, bool refill = true)
+    {
+        maxHealth = Mathf.Max(1, health);
+        if (refill)
+        {
+            ResetHealth();
+        }
+        else
+        {
+            currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        }
+    }
+
     private void Awake()
     {
         CacheRenderers();

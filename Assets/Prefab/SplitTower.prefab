@@ -103,14 +103,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d52af0a02d624e4e9cc1a6c3e2b6ef91, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::SplitterTower
-  spawnForwardOffset: 0.25
   splitVerticalOffset: 0.35
-  overlapForwardOffset: 0.12
-  upperDirection: {x: 1, y: 0}
-  lowerDirection: {x: 1, y: 0}
   destroyIncomingBullet: 1
+  shotInterval: 0.12
+  launchForwardDistance: 0.35
+  outputForwardStagger: 0.08
+  requiredRearDirectionDot: 0.5
 --- !u!114 &4813214607448151300
 MonoBehaviour:
   m_ObjectHideFlags: 0

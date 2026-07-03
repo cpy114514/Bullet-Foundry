@@ -1,5 +1,109 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1996124426145562788
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3025103951241231851}
+  - component: {fileID: 1165535851390764079}
+  - component: {fileID: 615062661943845540}
+  m_Layer: 0
+  m_Name: Price Label
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3025103951241231851
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996124426145562788}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.013, y: -0.68, z: -0.05}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7413161003243161715}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1165535851390764079
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996124426145562788}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: e015b2af1fbc479696aba7fe0bcf7e27, type: 3}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 5
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!102 &615062661943845540
+TextMesh:
+  serializedVersion: 3
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1996124426145562788}
+  m_Text: $0
+  m_OffsetZ: 0
+  m_CharacterSize: 0.28
+  m_LineSpacing: 0.5
+  m_Anchor: 4
+  m_Alignment: 1
+  m_TabSize: 4
+  m_FontSize: 110
+  m_FontStyle: 0
+  m_RichText: 1
+  m_Font: {fileID: 12800000, guid: e015b2af1fbc479696aba7fe0bcf7e27, type: 3}
+  m_Color:
+    serializedVersion: 2
+    rgba: 4278190080
 --- !u!1 &4388007835140903433
 GameObject:
   m_ObjectHideFlags: 0
@@ -27,8 +131,8 @@ Transform:
   m_GameObject: {fileID: 4388007835140903433}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.02, y: -0.49, z: -0.05}
-  m_LocalScale: {x: 0.12, y: 0.12, z: 1}
+  m_LocalPosition: {x: 0, y: -0.345, z: -0.05}
+  m_LocalScale: {x: 0.09, y: 0.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7413161003243161715}
@@ -231,6 +335,7 @@ Transform:
   m_Children:
   - {fileID: 8161910893882082005}
   - {fileID: 4184019555783175396}
+  - {fileID: 3025103951241231851}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &3266419654128846997
@@ -307,8 +412,22 @@ MonoBehaviour:
   backgroundRenderer: {fileID: 3266419654128846997}
   iconRenderer: {fileID: 9021548725740408908}
   labelTextMesh: {fileID: 2421617939937772387}
+  priceTextMesh: {fileID: 615062661943845540}
   iconSprite: {fileID: -3446471830066921269, guid: 71c1219a34226604ab0cf7d361e78a8b, type: 3}
   labelText: Firetower
+  price: 0
+  towerPrefab: {fileID: 0}
+  autoFitLabelText: 1
+  labelMaxCharactersPerLine: 9
+  labelMinimumScale: 0.68
+  labelMaximumLines: 2
+  autoFitPriceText: 1
+  priceMaxCharactersPerLine: 5
+  priceMinimumScale: 0.72
+  baseLabelCharacterSize: 0.28
+  baseLabelFontSize: 110
+  basePriceCharacterSize: 0.28
+  basePriceFontSize: 110
 --- !u!114 &6900000000000000001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -322,21 +441,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardCatalog
   cards:
-  - image: {fileID: -3446471830066921269, guid: 71c1219a34226604ab0cf7d361e78a8b, type: 3}
-    displayName: 'Fire
-
-      Tower'
-    towerPrefab: {fileID: 5721149959220154368, guid: 4f7be27a34d9459db09ad91f76c7ae25, type: 3}
-  - image: {fileID: -1515134823594722529, guid: 71c1219a34226604ab0cf7d361e78a8b, type: 3}
-    displayName: 'Split
-
-      Tower'
-    towerPrefab: {fileID: 4813214607448151296, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
-  - image: {fileID: 1704872509302500955, guid: 71c1219a34226604ab0cf7d361e78a8b, type: 3}
-    displayName: 'Ice
-
-      Tower'
-    towerPrefab: {fileID: 6832251060331262468, guid: f9db28b7c6a04e31b5f60718293a4b5c, type: 3}
+  - towerPrefab: {fileID: 5721149959220154368, guid: 4f7be27a34d9459db09ad91f76c7ae25, type: 3}
+    displayName: FireTower
+    price: 35
+  - towerPrefab: {fileID: 4813214607448151296, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
+    displayName: SplitTower
+    price: 40
+  - towerPrefab: {fileID: 6832251060331262468, guid: f9db28b7c6a04e31b5f60718293a4b5c, type: 3}
+    displayName: IceTower
+    price: 30
+  - towerPrefab: {fileID: 2183715628236857674, guid: 04f972ad9fd4fe041988104cf0525a8f, type: 3}
+    displayName: TriwayTower
+    price: 50
+  - towerPrefab: {fileID: 7931142071442373578, guid: 3df4716b0a5c4285e9da4b5c6d7e8f90, type: 3}
+    displayName: CoinTower
+    price: 10
   cardSpacing: 3.6
 --- !u!61 &2468379232294503861
 BoxCollider2D:
