@@ -4,6 +4,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class CardRuntimeLoader : MonoBehaviour
 {
+    private const string CardsResourcePath = "Cards";
+
     [SerializeField]
     private GameObject cardsPrefab;
 
@@ -31,8 +33,18 @@ public sealed class CardRuntimeLoader : MonoBehaviour
         {
             loadedCatalog = existingCatalog;
         }
-        else if (cardsPrefab != null)
+        else
         {
+            if (cardsPrefab == null)
+            {
+                cardsPrefab = Resources.Load<GameObject>(CardsResourcePath);
+            }
+
+            if (cardsPrefab == null)
+            {
+                return;
+            }
+
             GameObject cardsObject = Instantiate(cardsPrefab);
             cardsObject.name = cardsPrefab.name;
             loadedCatalog = cardsObject.GetComponent<CardCatalog>();
@@ -43,7 +55,14 @@ public sealed class CardRuntimeLoader : MonoBehaviour
             return;
         }
 
-        loadedCatalog.BuildCards();
+        if (CardSelectionState.HasSelection)
+        {
+            loadedCatalog.BuildCards(CardSelectionState.SelectedTowerNames);
+        }
+        else
+        {
+            loadedCatalog.BuildCards();
+        }
 
         if (placementSystem == null)
         {

@@ -116,6 +116,7 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
 
     private void ConfigureHattedEnemy()
     {
+        enemy.SetCoinDropsEnabled(false);
         enemy.SetAnimationStateNames(
             hattedWalkStateName,
             hattedAttackStateName,

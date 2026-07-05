@@ -226,7 +226,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: 4673128588958589295, guid: ef22beebf65150d4b85124d46c3480fc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -595,6 +595,12 @@ MonoBehaviour:
   hitFlashDuration: 0.1
   slowTintMultiplier: 0.75
   stunTintMultiplier: 0.45
+  dropCoinsOnDeath: 1
+  coinDropCount: 2
+  coinDropValue: 1
+  coinPickupPrefab: {fileID: 0}
+  coinPickupSprite: {fileID: 7843416716369364892, guid: ca4bd6f34e291a74d8e5d39b2a665606, type: 3}
+  coinDropScatterRadius: 0.45
 --- !u!1 &4645042614224959300
 GameObject:
   m_ObjectHideFlags: 0

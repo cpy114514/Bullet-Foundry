@@ -177,10 +177,18 @@ public sealed class TitlePageSpriteButton : MonoBehaviour
 
     private bool ShouldBlockForOpenSettings()
     {
-        return controller != null &&
-            controller.IsSettingsOpen() &&
-            action != ButtonAction.CloseSettings &&
-            action != ButtonAction.ToggleSettings;
+        if (action == ButtonAction.CloseSettings || action == ButtonAction.ToggleSettings)
+        {
+            return false;
+        }
+
+        if (controller != null && controller.IsSettingsOpen())
+        {
+            return true;
+        }
+
+        SettingsMenuController settings = FindFirstObjectByType<SettingsMenuController>();
+        return settings != null && settings.IsOpen;
     }
 
     private void UpdateVisualScale()

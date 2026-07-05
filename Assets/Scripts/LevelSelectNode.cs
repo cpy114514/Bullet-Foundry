@@ -116,13 +116,18 @@ public sealed class LevelSelectNode : MonoBehaviour
 
     private void LoadLevel()
     {
+        if (CardSelectionMenu.IsOpen)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(targetSceneName))
         {
             Debug.LogWarning($"{name} has no target scene assigned.");
             return;
         }
 
-        SceneTransitionController.LoadScene(targetSceneName);
+        CardSelectionMenu.Show(targetSceneName);
     }
 
     private void UpdateVisualScale()

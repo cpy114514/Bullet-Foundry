@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 610000000000000004}
   - component: {fileID: 610000000000000005}
   m_Layer: 0
-  m_Name: DirectionOutputTower
+  m_Name: TransitTower
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

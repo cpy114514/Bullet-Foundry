@@ -88,6 +88,13 @@ MonoBehaviour:
   hitFlashColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
   hitFlashDuration: 0.1
   slowTintMultiplier: 0.75
+  stunTintMultiplier: 0.45
+  dropCoinsOnDeath: 1
+  coinDropCount: 1
+  coinDropValue: 1
+  coinPickupPrefab: {fileID: 0}
+  coinPickupSprite: {fileID: 7843416716369364892, guid: ca4bd6f34e291a74d8e5d39b2a665606, type: 3}
+  coinDropScatterRadius: 0.45
 --- !u!50 &924736757209591491
 Rigidbody2D:
   serializedVersion: 5

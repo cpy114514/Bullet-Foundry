@@ -11,6 +11,9 @@ public sealed class TitlePageGoblinDemo : MonoBehaviour
     private Collider2D clickArea;
 
     [SerializeField]
+    private SettingsMenuController settingsMenu;
+
+    [SerializeField]
     private Animator goblinAnimator;
 
     [SerializeField]
@@ -44,21 +47,26 @@ public sealed class TitlePageGoblinDemo : MonoBehaviour
     private string normalDeathStateName = "goblin_die";
 
     [SerializeField, Min(0.01f)]
-    private float bulletTravelDuration = 0.48f;
+    private float bulletTravelDuration = 0.26f;
 
     [SerializeField, Min(0f)]
-    private float bulletStagger = 0.08f;
+    private float bulletStagger = 0f;
 
     [SerializeField, Min(0f)]
     private float deathFreezeDelay = 1.1f;
 
     [SerializeField, Min(0f)]
-    private float speedDeathDelay = 0.65f;
+    private float speedDeathDelay = 0.08f;
 
     private bool hasPlayed;
 
     private void Awake()
     {
+        if (settingsMenu == null)
+        {
+            settingsMenu = FindFirstObjectByType<SettingsMenuController>();
+        }
+
         PrepareTitleEnemyState();
         DisableRuntimeEnemyBehaviour();
         DisableRuntimeBulletBehaviour();
@@ -76,7 +84,7 @@ public sealed class TitlePageGoblinDemo : MonoBehaviour
             return;
         }
 
-        if (clickArea.OverlapPoint(worldPosition))
+        if (clickArea.OverlapPoint(worldPosition) && !ShouldIgnorePointer(worldPosition))
         {
             StartCoroutine(PlayDemoRoutine());
         }
@@ -86,6 +94,7 @@ public sealed class TitlePageGoblinDemo : MonoBehaviour
     {
         hasPlayed = true;
         PlaySpeedDeathOnce();
+        StartCoroutine(FinishDeathSequenceRoutine());
 
         int validBulletCount = 0;
         for (int i = 0; i < bulletTransforms.Length; i++)
@@ -105,14 +114,8 @@ public sealed class TitlePageGoblinDemo : MonoBehaviour
             finalBulletDelay += (validBulletCount - 1) * bulletStagger;
         }
 
-        yield return new WaitForSeconds(finalBulletDelay);
-        float remainingSpeedDeathDelay = Mathf.Max(0f, speedDeathDelay - finalBulletDelay);
-        if (remainingSpeedDeathDelay > 0f)
-        {
-            yield return new WaitForSeconds(remainingSpeedDeathDelay);
-        }
-
-        yield return FinishDeathSequenceRoutine();
+        float finalDeathDelay = speedDeathDelay + deathFreezeDelay;
+        yield return new WaitForSeconds(Mathf.Max(finalBulletDelay, finalDeathDelay));
         enabled = false;
     }
 
@@ -184,6 +187,11 @@ public sealed class TitlePageGoblinDemo : MonoBehaviour
 
     private IEnumerator FinishDeathSequenceRoutine()
     {
+        if (speedDeathDelay > 0f)
+        {
+            yield return new WaitForSeconds(speedDeathDelay);
+        }
+
         GameObject speedObject = GetAnimatorObject(speedGoblinObject, speedGoblinAnimator);
         if (speedObject != null)
         {
@@ -209,6 +217,36 @@ public sealed class TitlePageGoblinDemo : MonoBehaviour
 
         FreezeAnimator(normalGoblinAnimator);
         FreezeAnimator(goblinAnimator);
+    }
+
+    private bool ShouldIgnorePointer(Vector2 worldPosition)
+    {
+        if (settingsMenu == null)
+        {
+            settingsMenu = FindFirstObjectByType<SettingsMenuController>();
+        }
+
+        if (settingsMenu != null && settingsMenu.IsOpen)
+        {
+            return true;
+        }
+
+        Collider2D[] hits = Physics2D.OverlapPointAll(worldPosition);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Collider2D hit = hits[i];
+            if (hit == null || hit == clickArea)
+            {
+                continue;
+            }
+
+            if (hit.GetComponentInParent<TitlePageSpriteButton>() != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void PrepareTitleEnemyState()

@@ -54,6 +54,25 @@ public sealed class GoblinEnemy : MonoBehaviour
     [SerializeField, Range(0.05f, 1f)]
     private float stunTintMultiplier = 0.45f;
 
+    [Header("Coin Drop")]
+    [SerializeField]
+    private bool dropCoinsOnDeath = true;
+
+    [SerializeField, Min(0)]
+    private int coinDropCount = 1;
+
+    [SerializeField, Min(1)]
+    private int coinDropValue = 1;
+
+    [SerializeField]
+    private CoinPickup coinPickupPrefab;
+
+    [SerializeField]
+    private Sprite coinPickupSprite;
+
+    [SerializeField, Min(0f)]
+    private float coinDropScatterRadius = 0.45f;
+
     private Animator animator;
     private Rigidbody2D body;
     private Collider2D hitbox;
@@ -66,9 +85,15 @@ public sealed class GoblinEnemy : MonoBehaviour
     private float slowUntilTime;
     private float stunUntilTime;
     private string currentAnimationState;
+    private Vector3 movementPosition;
+    private float pendingMoveSpeed;
+    private bool hasMovementPosition;
+    private bool shouldMoveThisFrame;
+    private bool coinsDropped;
     private bool isDead;
     private bool slowVisualActive;
     private bool stunVisualActive;
+    private static Sprite fallbackCoinSprite;
 
     public bool IsDead => isDead;
 
@@ -92,13 +117,18 @@ public sealed class GoblinEnemy : MonoBehaviour
         animator = GetComponent<Animator>();
         CacheSpriteRenderers();
         EnsurePhysicsComponents();
+        ResetMovementPosition();
         currentHealth = maxHealth;
     }
 
     private void OnEnable()
     {
+        ResetMovementPosition();
         CacheSpriteRenderers();
         currentHealth = maxHealth;
+        shouldMoveThisFrame = false;
+        pendingMoveSpeed = 0f;
+        coinsDropped = false;
         isDead = false;
         nextAttackTime = 0f;
         slowMultiplier = 1f;
@@ -125,6 +155,9 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     private void Update()
     {
+        shouldMoveThisFrame = false;
+        pendingMoveSpeed = 0f;
+
         RefreshSlowState();
         RefreshStunState();
 
@@ -147,6 +180,21 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         Walk();
+    }
+
+    private void LateUpdate()
+    {
+        if (!hasMovementPosition)
+        {
+            ResetMovementPosition();
+        }
+
+        if (!isDead && shouldMoveThisFrame && pendingMoveSpeed > 0f)
+        {
+            movementPosition += Vector3.left * (pendingMoveSpeed * Time.deltaTime);
+        }
+
+        ApplyMovementPosition();
     }
 
     public void TakeDamage(int damage)
@@ -192,6 +240,11 @@ public sealed class GoblinEnemy : MonoBehaviour
         {
             PlayState(walkStateName);
         }
+    }
+
+    public void SetCoinDropsEnabled(bool enabled)
+    {
+        dropCoinsOnDeath = enabled;
     }
 
     public void ApplySlow(float speedMultiplier, float duration)
@@ -244,9 +297,8 @@ public sealed class GoblinEnemy : MonoBehaviour
     private void Walk()
     {
         PlayState(walkStateName);
-        transform.Translate(
-            Vector3.left * (GetCurrentMoveSpeed() * Time.deltaTime),
-            Space.World);
+        pendingMoveSpeed = GetCurrentMoveSpeed();
+        shouldMoveThisFrame = pendingMoveSpeed > 0f;
     }
 
     private float GetCurrentMoveSpeed()
@@ -327,6 +379,7 @@ public sealed class GoblinEnemy : MonoBehaviour
     {
         isDead = true;
         PlayState(dieStateName);
+        DropCoins();
 
         if (hitbox != null)
         {
@@ -340,6 +393,119 @@ public sealed class GoblinEnemy : MonoBehaviour
 
         Died?.Invoke();
         StartCoroutine(FinishDeathRoutine());
+    }
+
+    private void DropCoins()
+    {
+        if (coinsDropped || !dropCoinsOnDeath || coinDropCount <= 0)
+        {
+            return;
+        }
+
+        coinsDropped = true;
+        Vector3 spawnPosition = CalculateDropPosition();
+
+        for (int i = 0; i < coinDropCount; i++)
+        {
+            CoinPickup pickup = SpawnCoinPickup(spawnPosition);
+            if (pickup == null)
+            {
+                continue;
+            }
+
+            pickup.SetValue(coinDropValue);
+            pickup.ScatterTo(GetCoinScatterPosition(spawnPosition, i, coinDropCount));
+        }
+    }
+
+    private CoinPickup SpawnCoinPickup(Vector3 spawnPosition)
+    {
+        if (coinPickupPrefab != null)
+        {
+            return Instantiate(coinPickupPrefab, spawnPosition, Quaternion.identity);
+        }
+
+        GameObject pickupObject = new("EnemyCoinPickup");
+        pickupObject.transform.position = spawnPosition;
+        SpriteRenderer pickupRenderer = pickupObject.AddComponent<SpriteRenderer>();
+        pickupRenderer.sprite = coinPickupSprite != null
+            ? coinPickupSprite
+            : GetFallbackCoinSprite();
+        pickupRenderer.color = Color.white;
+        pickupRenderer.sortingOrder = 6;
+        pickupObject.transform.localScale = Vector3.one * 0.65f;
+
+        CoinPickup pickup = pickupObject.AddComponent<CoinPickup>();
+        return pickup;
+    }
+
+    private static Sprite GetFallbackCoinSprite()
+    {
+        if (fallbackCoinSprite != null)
+        {
+            return fallbackCoinSprite;
+        }
+
+        const int size = 16;
+        Texture2D texture = new(size, size, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Point
+        };
+        Color[] pixels = new Color[size * size];
+        Vector2 center = new((size - 1) * 0.5f, (size - 1) * 0.5f);
+        float radius = size * 0.42f;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float distance = Vector2.Distance(new Vector2(x, y), center);
+                pixels[(y * size) + x] = distance <= radius
+                    ? Color.white
+                    : Color.clear;
+            }
+        }
+
+        texture.SetPixels(pixels);
+        texture.Apply();
+        fallbackCoinSprite = Sprite.Create(
+            texture,
+            new Rect(0f, 0f, size, size),
+            new Vector2(0.5f, 0.5f),
+            size);
+        return fallbackCoinSprite;
+    }
+
+    private Vector3 CalculateDropPosition()
+    {
+        Bounds bounds = CalculateCombatBounds();
+        Vector3 position = bounds.center;
+        position.z = transform.position.z;
+        return position;
+    }
+
+    private Vector3 GetCoinScatterPosition(Vector3 center, int coinIndex, int coinCount)
+    {
+        Vector2 randomDirection = UnityEngine.Random.insideUnitCircle;
+        if (randomDirection.sqrMagnitude <= 0.001f)
+        {
+            randomDirection = Vector2.up;
+        }
+
+        randomDirection.Normalize();
+        float radius = coinDropScatterRadius * UnityEngine.Random.Range(0.65f, 1f);
+        Vector3 position = center + new Vector3(
+            randomDirection.x * radius,
+            randomDirection.y * radius,
+            0f);
+
+        if (coinCount > 1)
+        {
+            float centeredIndex = coinIndex - ((coinCount - 1) * 0.5f);
+            position.x += centeredIndex * 0.18f;
+        }
+
+        return position;
     }
 
     private IEnumerator FinishDeathRoutine()
@@ -361,7 +527,7 @@ public sealed class GoblinEnemy : MonoBehaviour
             return null;
         }
 
-        Bounds goblinBounds = CalculateRendererBounds();
+        Bounds goblinBounds = CalculateCombatBounds();
         TowerHealth closestTower = null;
         float closestTowerX = float.NegativeInfinity;
 
@@ -442,6 +608,22 @@ public sealed class GoblinEnemy : MonoBehaviour
         {
             hitbox.isTrigger = true;
         }
+    }
+
+    private void ResetMovementPosition()
+    {
+        movementPosition = transform.position;
+        hasMovementPosition = true;
+    }
+
+    private void ApplyMovementPosition()
+    {
+        if (body != null)
+        {
+            body.position = movementPosition;
+        }
+
+        transform.position = movementPosition;
     }
 
     private void CacheSpriteRenderers()
@@ -557,5 +739,15 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         return bounds;
+    }
+
+    private Bounds CalculateCombatBounds()
+    {
+        if (hitbox != null && hitbox.enabled)
+        {
+            return hitbox.bounds;
+        }
+
+        return CalculateRendererBounds();
     }
 }

@@ -58,28 +58,51 @@ public sealed class CardCatalog : MonoBehaviour
 
     public void BuildCards()
     {
+        BuildCards(cards);
+    }
+
+    public void BuildCards(IReadOnlyCollection<string> selectedTowerNames)
+    {
+        if (selectedTowerNames == null || selectedTowerNames.Count == 0)
+        {
+            BuildCards(cards);
+            return;
+        }
+
+        List<CardEntry> filteredCards = cards
+            .Where(card =>
+                card != null &&
+                card.TowerPrefab != null &&
+                selectedTowerNames.Contains(card.TowerPrefab.name))
+            .ToList();
+
+        BuildCards(filteredCards.Count > 0 ? filteredCards : cards);
+    }
+
+    private void BuildCards(IReadOnlyList<CardEntry> cardsToBuild)
+    {
         activeCards.Clear();
 
         CardView template = GetComponent<CardView>();
-        if (template == null || cards.Count == 0)
+        if (template == null || cardsToBuild == null || cardsToBuild.Count == 0)
         {
             return;
         }
 
         CardSlotPoint[] slots = FindCardSlots();
-        ConfigureCard(template, cards[0]);
+        ConfigureCard(template, cardsToBuild[0]);
         PlaceCard(template.transform, 0, slots);
         activeCards.Add(template);
 
-        for (int i = 1; i < cards.Count; i++)
+        for (int i = 1; i < cardsToBuild.Count; i++)
         {
             CardView card = GetOrCreateCard(template, i);
-            ConfigureCard(card, cards[i]);
+            ConfigureCard(card, cardsToBuild[i]);
             PlaceCard(card.transform, i, slots);
             activeCards.Add(card);
         }
 
-        RemoveUnusedGeneratedCards(cards.Count);
+        RemoveUnusedGeneratedCards(cardsToBuild.Count);
     }
 
     private CardView GetOrCreateCard(CardView template, int index)

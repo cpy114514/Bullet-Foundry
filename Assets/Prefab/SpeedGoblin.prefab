@@ -519,6 +519,13 @@ MonoBehaviour:
   hitFlashColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
   hitFlashDuration: 0.1
   slowTintMultiplier: 0.75
+  stunTintMultiplier: 0.45
+  dropCoinsOnDeath: 0
+  coinDropCount: 0
+  coinDropValue: 1
+  coinPickupPrefab: {fileID: 0}
+  coinPickupSprite: {fileID: 7843416716369364892, guid: ca4bd6f34e291a74d8e5d39b2a665606, type: 3}
+  coinDropScatterRadius: 0.45
 --- !u!114 &2038850818998545365
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -536,6 +543,9 @@ MonoBehaviour:
   normalGoblinPrefab: {fileID: 101, guid: 9b1f6ea0b5f94fb68c5ff4924a312384, type: 3}
   speedGoblinHealth: 15
   hattedMoveSpeed: 1.8
+  hattedWalkStateName: speed_goblin_walk
+  hattedAttackStateName: speed_goblin_attack
+  hattedDieStateName: speed_goblin_die
 --- !u!1 &5074887192980787803
 GameObject:
   m_ObjectHideFlags: 0

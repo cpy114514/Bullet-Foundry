@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 public sealed class CoinWallet : MonoBehaviour
 {
     [SerializeField, Min(0)]
-    private int startingCoins;
+    private int startingCoins = 15;
 
     [SerializeField, Min(0)]
     private int currentCoins;
