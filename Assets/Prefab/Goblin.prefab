@@ -87,6 +87,7 @@ MonoBehaviour:
   destroyDelayAfterDeath: 1.1
   hitFlashColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
   hitFlashDuration: 0.1
+  slowTintMultiplier: 0.75
 --- !u!50 &924736757209591491
 Rigidbody2D:
   serializedVersion: 5

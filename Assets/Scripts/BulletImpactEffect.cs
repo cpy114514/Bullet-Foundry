@@ -66,6 +66,8 @@ public sealed class BulletImpactEffect : MonoBehaviour
         {
             BulletElement.Fire => Random.Range(0.8f, 1.35f),
             BulletElement.Ice => particleIndex % 2 == 0 ? 1.25f : 0.65f,
+            BulletElement.Lightning => particleIndex % 2 == 0 ? 1.45f : 0.45f,
+            BulletElement.Missile => Random.Range(1.2f, 1.8f),
             _ => Random.Range(0.8f, 1.1f)
         };
 
@@ -96,6 +98,18 @@ public sealed class BulletImpactEffect : MonoBehaviour
         {
             float angle = particleIndex * Mathf.PI * 2f / Mathf.Max(1, particleCount);
             return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+        }
+
+        if (element == BulletElement.Lightning)
+        {
+            float zigZag = particleIndex % 2 == 0 ? 1f : -1f;
+            Vector2 perpendicular = new(-baseDirection.y, baseDirection.x);
+            return (baseDirection + perpendicular * zigZag * 0.8f).normalized;
+        }
+
+        if (element == BulletElement.Missile)
+        {
+            return Random.insideUnitCircle.normalized;
         }
 
         if (element == BulletElement.Fire)
@@ -174,6 +188,12 @@ public sealed class BulletImpactEffect : MonoBehaviour
                 BulletElement.Ice => new EffectProfile(
                     6, 1.2f, 2.6f, 0.06f, 0.14f, 0.16f, 0.3f,
                     new Color(0.75f, 0.75f, 0.75f, 1f), 0.12f, 1f, 0.5f),
+                BulletElement.Lightning => new EffectProfile(
+                    9, 2.5f, 6f, 0.08f, 0.22f, 0.08f, 0.18f,
+                    Color.black, 0f, 0.25f, 0.35f),
+                BulletElement.Homing => new EffectProfile(
+                    6, 1.5f, 3.5f, 0.1f, 0.2f, 0.14f, 0.28f,
+                    new Color(0.9f, 0.9f, 0.9f, 1f), 0.05f, 0.75f, 0.4f),
                 _ => new EffectProfile(
                     5, 1.5f, 3f, 0.15f, 0.32f, 0.14f, 0.28f,
                     Color.black, 0.1f, 1f, 0.5f)
@@ -188,6 +208,15 @@ public sealed class BulletImpactEffect : MonoBehaviour
             BulletElement.Ice => new EffectProfile(
                 8, 1.8f, 4f, 0.07f, 0.18f, 0.16f, 0.34f,
                 new Color(0.72f, 0.72f, 0.72f, 1f), 0.35f, 0.9f, 0.65f),
+            BulletElement.Lightning => new EffectProfile(
+                14, 6f, 13f, 0.08f, 0.28f, 0.08f, 0.2f,
+                Color.black, 0f, 0.2f, 0.45f),
+            BulletElement.Homing => new EffectProfile(
+                10, 4f, 8f, 0.12f, 0.32f, 0.14f, 0.28f,
+                new Color(0.9f, 0.9f, 0.9f, 1f), 0.08f, 0.8f, 0.55f),
+            BulletElement.Missile => new EffectProfile(
+                18, 5f, 12f, 0.45f, 1.05f, 0.18f, 0.42f,
+                Color.black, 0.25f, 1.6f, 0.8f),
             _ => new EffectProfile(
                 12, 7f, 14f, 0.6f, 1.3f, 0.25f, 0.5f,
                 Color.black, 0.3f, 1.4f, 0.9f)

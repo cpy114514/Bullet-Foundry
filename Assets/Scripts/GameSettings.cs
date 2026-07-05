@@ -5,6 +5,7 @@ public static class GameSettings
     public const string ResolutionWidthKey = "settings.resolution.width";
     public const string ResolutionHeightKey = "settings.resolution.height";
     public const string FullscreenKey = "settings.fullscreen";
+    public const string MasterVolumeEnabledKey = "settings.volume.master.enabled";
     public const string MasterVolumeKey = "settings.volume.master";
     public const string MusicEnabledKey = "settings.music.enabled";
     public const string MusicVolumeKey = "settings.music.volume";
@@ -22,6 +23,12 @@ public static class GameSettings
     {
         get => PlayerPrefs.GetFloat(MasterVolumeKey, 1f);
         set => PlayerPrefs.SetFloat(MasterVolumeKey, Mathf.Clamp01(value));
+    }
+
+    public static bool MasterVolumeEnabled
+    {
+        get => PlayerPrefs.GetInt(MasterVolumeEnabledKey, 1) == 1;
+        set => PlayerPrefs.SetInt(MasterVolumeEnabledKey, value ? 1 : 0);
     }
 
     public static bool MusicEnabled
@@ -73,7 +80,7 @@ public static class GameSettings
 
     public static void ApplyAudio(AudioSource[] musicSources, AudioSource[] soundEffectSources)
     {
-        AudioListener.volume = MasterVolume;
+        AudioListener.volume = MasterVolumeEnabled ? MasterVolume : 0f;
         ApplySources(musicSources, MusicEnabled, MusicVolume);
         ApplySources(soundEffectSources, SoundEffectsEnabled, SoundEffectsVolume);
     }

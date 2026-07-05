@@ -511,13 +511,14 @@ MonoBehaviour:
   attackCooldown: 1
   towerAttackRange: 0.02
   towerLaneTolerance: 0.6
-  walkStateName: goblin_walk
-  attackStateName: goblin_attack
-  dieStateName: goblin_die
+  walkStateName: speed_goblin_walk
+  attackStateName: speed_goblin_attack
+  dieStateName: speed_goblin_die
   animationFadeTime: 0.08
   destroyDelayAfterDeath: 1.1
   hitFlashColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
   hitFlashDuration: 0.1
+  slowTintMultiplier: 0.75
 --- !u!114 &2038850818998545365
 MonoBehaviour:
   m_ObjectHideFlags: 0

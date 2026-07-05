@@ -51,6 +51,9 @@ public sealed class GoblinEnemy : MonoBehaviour
     [SerializeField, Range(0.1f, 1f)]
     private float slowTintMultiplier = 0.75f;
 
+    [SerializeField, Range(0.05f, 1f)]
+    private float stunTintMultiplier = 0.45f;
+
     private Animator animator;
     private Rigidbody2D body;
     private Collider2D hitbox;
@@ -61,9 +64,11 @@ public sealed class GoblinEnemy : MonoBehaviour
     private float nextAttackTime;
     private float slowMultiplier = 1f;
     private float slowUntilTime;
+    private float stunUntilTime;
     private string currentAnimationState;
     private bool isDead;
     private bool slowVisualActive;
+    private bool stunVisualActive;
 
     public bool IsDead => isDead;
 
@@ -98,7 +103,9 @@ public sealed class GoblinEnemy : MonoBehaviour
         nextAttackTime = 0f;
         slowMultiplier = 1f;
         slowUntilTime = 0f;
+        stunUntilTime = 0f;
         slowVisualActive = false;
+        stunVisualActive = false;
         RestoreSpriteColors();
         PlayState(walkStateName);
     }
@@ -112,15 +119,23 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         slowVisualActive = false;
+        stunVisualActive = false;
         RestoreSpriteColors();
     }
 
     private void Update()
     {
         RefreshSlowState();
+        RefreshStunState();
 
         if (isDead)
         {
+            return;
+        }
+
+        if (IsStunned())
+        {
+            PlayState(walkStateName);
             return;
         }
 
@@ -155,6 +170,30 @@ public sealed class GoblinEnemy : MonoBehaviour
         moveSpeed = Mathf.Max(0f, speed);
     }
 
+    public void SetAnimationStateNames(string walkState, string attackState, string dieState)
+    {
+        if (!string.IsNullOrWhiteSpace(walkState))
+        {
+            walkStateName = walkState;
+        }
+
+        if (!string.IsNullOrWhiteSpace(attackState))
+        {
+            attackStateName = attackState;
+        }
+
+        if (!string.IsNullOrWhiteSpace(dieState))
+        {
+            dieStateName = dieState;
+        }
+
+        currentAnimationState = null;
+        if (!isDead)
+        {
+            PlayState(walkStateName);
+        }
+    }
+
     public void ApplySlow(float speedMultiplier, float duration)
     {
         if (isDead || duration <= 0f)
@@ -172,6 +211,22 @@ public sealed class GoblinEnemy : MonoBehaviour
             Mathf.Clamp(speedMultiplier, 0.05f, 1f));
         slowUntilTime = Mathf.Max(slowUntilTime, Time.time + duration);
         SetSlowVisualActive(true);
+    }
+
+    public void ApplyStun(float duration)
+    {
+        if (isDead || duration <= 0f)
+        {
+            return;
+        }
+
+        stunUntilTime = Mathf.Max(stunUntilTime, Time.time + duration);
+        SetStunVisualActive(true);
+
+        if (body != null)
+        {
+            body.linearVelocity = Vector2.zero;
+        }
     }
 
     public void RefillHealth(int newMaxHealth)
@@ -211,6 +266,22 @@ public sealed class GoblinEnemy : MonoBehaviour
         SetSlowVisualActive(false);
     }
 
+    private bool IsStunned()
+    {
+        RefreshStunState();
+        return Time.time < stunUntilTime;
+    }
+
+    private void RefreshStunState()
+    {
+        if (Time.time < stunUntilTime)
+        {
+            return;
+        }
+
+        SetStunVisualActive(false);
+    }
+
     private void SetSlowVisualActive(bool active)
     {
         if (slowVisualActive == active)
@@ -219,6 +290,20 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         slowVisualActive = active;
+        if (hitFlashRoutine == null)
+        {
+            RestoreSpriteColors();
+        }
+    }
+
+    private void SetStunVisualActive(bool active)
+    {
+        if (stunVisualActive == active)
+        {
+            return;
+        }
+
+        stunVisualActive = active;
         if (hitFlashRoutine == null)
         {
             RestoreSpriteColors();
@@ -418,7 +503,11 @@ public sealed class GoblinEnemy : MonoBehaviour
             if (spriteRenderers[i] != null)
             {
                 Color original = originalSpriteColors[i];
-                float multiplier = slowVisualActive ? slowTintMultiplier : 1f;
+                float multiplier = stunVisualActive
+                    ? stunTintMultiplier
+                    : slowVisualActive
+                        ? slowTintMultiplier
+                        : 1f;
                 spriteRenderers[i].color = new Color(
                     original.r * multiplier,
                     original.g * multiplier,

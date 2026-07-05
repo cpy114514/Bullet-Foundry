@@ -4,7 +4,10 @@ public enum BulletElement
 {
     Normal,
     Fire,
-    Ice
+    Ice,
+    Lightning,
+    Homing,
+    Missile
 }
 
 [DisallowMultipleComponent]
@@ -13,8 +16,12 @@ public sealed class Bullet : MonoBehaviour
     private const int NormalDamage = 3;
     private const int FireDamage = 5;
     private const int IceDamage = 3;
+    private const int LightningDamage = 3;
+    private const int HomingDamage = 3;
+    private const int MissileDamage = 8;
     private const float IceSlowMultiplier = 0.5f;
     private const float IceSlowDuration = 2f;
+    private const float LightningStunDuration = 0.25f;
 
     [SerializeField, Min(0f)]
     private float moveSpeed = 10f;
@@ -50,11 +57,16 @@ public sealed class Bullet : MonoBehaviour
     private Vector3 launchTargetPosition;
     private Vector2 launchFinalDirection = Vector2.right;
     private bool isPausedForTowerQueue;
+    private bool manualMotion;
     private float remainingLifetime;
 
     public BulletElement Element => element;
 
     public Vector2 Direction => moveDirection.normalized;
+
+    public float MoveSpeed => moveSpeed;
+
+    public int CurrentDamage => GetDamage();
 
     private void Awake()
     {
@@ -87,14 +99,21 @@ public sealed class Bullet : MonoBehaviour
             return;
         }
 
-        remainingLifetime -= Time.deltaTime;
-        if (remainingLifetime <= 0f)
+        if (!manualMotion)
         {
-            Destroy(gameObject);
-            return;
+            remainingLifetime -= Time.deltaTime;
+            if (remainingLifetime <= 0f)
+            {
+                Destroy(gameObject);
+                return;
+            }
         }
 
-        MoveBullet(Time.deltaTime);
+        if (!manualMotion)
+        {
+            MoveBullet(Time.deltaTime);
+        }
+
         UpdateSpriteAnimation();
     }
 
@@ -107,8 +126,18 @@ public sealed class Bullet : MonoBehaviour
 
         hasLaunchTarget = false;
         isPausedForTowerQueue = false;
+        manualMotion = false;
         moveDirection = direction.normalized;
         ApplyRotationToMoveDirection();
+    }
+
+    public void SetManualMotion(bool enabled)
+    {
+        manualMotion = enabled;
+        if (!enabled)
+        {
+            ApplyRotationToMoveDirection();
+        }
     }
 
     public void PauseForTowerQueue()
@@ -233,6 +262,19 @@ public sealed class Bullet : MonoBehaviour
             transform.localScale.z);
     }
 
+    public void SetVisualColor(Color color)
+    {
+        if (spriteRenderer == null)
+        {
+            spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = color;
+        }
+    }
+
     public void ApplyElement(
         BulletElement newElement,
         Sprite[] frames,
@@ -247,6 +289,16 @@ public sealed class Bullet : MonoBehaviour
 
         CacheNormalVisual();
         element = newElement;
+        if (newElement != BulletElement.Homing)
+        {
+            RemoveHomingBehavior();
+        }
+
+        if (newElement != BulletElement.Lightning)
+        {
+            RemoveLightningBehavior();
+        }
+
         SetSpriteAnimation(frames, frameDuration);
         SetVisualScale(visualScale);
     }
@@ -255,6 +307,8 @@ public sealed class Bullet : MonoBehaviour
     {
         CacheNormalVisual();
         element = BulletElement.Normal;
+        RemoveHomingBehavior();
+        RemoveLightningBehavior();
         animationFrames = System.Array.Empty<Sprite>();
         animationTimer = 0f;
         animationFrameIndex = 0;
@@ -268,6 +322,7 @@ public sealed class Bullet : MonoBehaviour
         if (spriteRenderer != null)
         {
             spriteRenderer.sprite = normalSprite;
+            spriteRenderer.color = Color.white;
         }
     }
 
@@ -292,6 +347,7 @@ public sealed class Bullet : MonoBehaviour
         launchTargetPosition = Vector3.zero;
         launchFinalDirection = Vector2.right;
         isPausedForTowerQueue = false;
+        manualMotion = false;
         remainingLifetime = source.remainingLifetime > 0f
             ? source.remainingLifetime
             : source.lifetime;
@@ -344,6 +400,10 @@ public sealed class Bullet : MonoBehaviour
             goblin.ApplySlow(IceSlowMultiplier, IceSlowDuration);
             EnemySlowEffect.Apply(goblin, IceSlowDuration);
         }
+        else if (element == BulletElement.Lightning && !goblin.IsDead)
+        {
+            goblin.ApplyStun(LightningStunDuration);
+        }
 
         if (spawnImpactEffect && impactEffect != null)
         {
@@ -354,12 +414,15 @@ public sealed class Bullet : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private int GetDamage()
+    public int GetDamage()
     {
         return element switch
         {
             BulletElement.Fire => FireDamage,
             BulletElement.Ice => IceDamage,
+            BulletElement.Lightning => LightningDamage,
+            BulletElement.Homing => HomingDamage,
+            BulletElement.Missile => MissileDamage,
             _ => NormalDamage
         };
     }
@@ -554,6 +617,24 @@ public sealed class Bullet : MonoBehaviour
         spriteRenderer.flipX = source.spriteRenderer.flipX;
         spriteRenderer.flipY = source.spriteRenderer.flipY;
         spriteRenderer.sharedMaterial = source.spriteRenderer.sharedMaterial;
+    }
+
+    private void RemoveHomingBehavior()
+    {
+        HomingBullet homingBullet = GetComponent<HomingBullet>();
+        if (homingBullet != null)
+        {
+            Destroy(homingBullet);
+        }
+    }
+
+    private void RemoveLightningBehavior()
+    {
+        LightningBulletEffect lightningEffect = GetComponent<LightningBulletEffect>();
+        if (lightningEffect != null)
+        {
+            Destroy(lightningEffect);
+        }
     }
 
     private static int CountValidFrames(Sprite[] frames)

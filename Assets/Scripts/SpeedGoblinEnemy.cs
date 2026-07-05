@@ -19,6 +19,15 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
     [SerializeField, Min(0f)]
     private float hattedMoveSpeed = 1.8f;
 
+    [SerializeField]
+    private string hattedWalkStateName = "speed_goblin_walk";
+
+    [SerializeField]
+    private string hattedAttackStateName = "speed_goblin_attack";
+
+    [SerializeField]
+    private string hattedDieStateName = "speed_goblin_die";
+
     private bool replacementSpawned;
 
     private void Awake()
@@ -39,8 +48,7 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
         if (enemy != null)
         {
             enemy.Died += HandleHatDestroyed;
-            enemy.SetMoveSpeed(hattedMoveSpeed);
-            enemy.RefillHealth(speedGoblinHealth);
+            ConfigureHattedEnemy();
         }
     }
 
@@ -49,6 +57,14 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
         if (enemy != null)
         {
             enemy.Died -= HandleHatDestroyed;
+        }
+    }
+
+    private void Update()
+    {
+        if (!replacementSpawned && enemy != null && !enemy.IsDead)
+        {
+            enemy.SetMoveSpeed(hattedMoveSpeed);
         }
     }
 
@@ -96,5 +112,15 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
         {
             enemy = GetComponent<GoblinEnemy>();
         }
+    }
+
+    private void ConfigureHattedEnemy()
+    {
+        enemy.SetAnimationStateNames(
+            hattedWalkStateName,
+            hattedAttackStateName,
+            hattedDieStateName);
+        enemy.SetMoveSpeed(hattedMoveSpeed);
+        enemy.RefillHealth(speedGoblinHealth);
     }
 }

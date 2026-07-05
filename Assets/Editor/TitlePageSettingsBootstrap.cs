@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-[InitializeOnLoad]
 public static class TitlePageSettingsBootstrap
 {
     private const string ScenePath = "Assets/Scenes/TitlePage.unity";
@@ -18,8 +17,8 @@ public static class TitlePageSettingsBootstrap
 
     static TitlePageSettingsBootstrap()
     {
-        EditorApplication.delayCall += EnsureTitlePageSettings;
-        EditorSceneManager.sceneOpened += OnSceneOpened;
+        // Intentionally no automatic scene mutation here.
+        // The title/settings setup can still be run manually from the Tools menu.
     }
 
     [MenuItem("Tools/Bullet Foundry/Setup Title Page Settings")]
@@ -220,8 +219,14 @@ public static class TitlePageSettingsBootstrap
         Toggle fullscreenToggle = CreateToggleRow(
             panel.transform, "FULLSCREEN", new Vector2(0f, 74f), circleSprite);
         CreateSectionTitle(panel.transform, "AUDIO", new Vector2(-302f, 28f));
-        Slider masterVolumeSlider = CreateSliderRow(
-            panel.transform, "VOLUME", new Vector2(0f, -16f), circleSprite, out Text masterVolumeValueText);
+        CreateToggleSliderRow(
+            panel.transform,
+            "VOLUME",
+            new Vector2(0f, -16f),
+            circleSprite,
+            out Toggle masterVolumeToggle,
+            out Slider masterVolumeSlider,
+            out Text masterVolumeValueText);
         CreateToggleSliderRow(
             panel.transform,
             "MUSIC",
@@ -249,6 +254,7 @@ public static class TitlePageSettingsBootstrap
         SetObject(serializedSettings.FindProperty("closeSettingsButton"), closeButton);
         SetObject(serializedSettings.FindProperty("resolutionDropdown"), resolutionDropdown);
         SetObject(serializedSettings.FindProperty("fullscreenToggle"), fullscreenToggle);
+        SetObject(serializedSettings.FindProperty("masterVolumeToggle"), masterVolumeToggle);
         SetObject(serializedSettings.FindProperty("masterVolumeSlider"), masterVolumeSlider);
         SetObject(serializedSettings.FindProperty("masterVolumeValueText"), masterVolumeValueText);
         SetObject(serializedSettings.FindProperty("musicToggle"), musicToggle);
@@ -299,6 +305,9 @@ public static class TitlePageSettingsBootstrap
         changed |= SetObjectIfDifferent(
             serializedSettings.FindProperty("fullscreenToggle"),
             FindChildComponent<Toggle>(panel, "FULLSCREEN Toggle"));
+        changed |= SetObjectIfDifferent(
+            serializedSettings.FindProperty("masterVolumeToggle"),
+            FindChildComponent<Toggle>(panel, "VOLUME Toggle", "MASTER VOLUME Toggle"));
         changed |= SetObjectIfDifferent(
             serializedSettings.FindProperty("masterVolumeSlider"),
             FindChildComponent<Slider>(panel, "VOLUME Slider", "MASTER VOLUME Slider"));
@@ -510,7 +519,7 @@ public static class TitlePageSettingsBootstrap
         contentRect.anchoredPosition = Vector2.zero;
         contentRect.sizeDelta = new Vector2(0f, 48f);
         VerticalLayoutGroup layout = contentObject.AddComponent<VerticalLayoutGroup>();
-        layout.childControlHeight = true;
+        layout.childControlHeight = false;
         layout.childControlWidth = true;
         layout.childForceExpandHeight = false;
         ContentSizeFitter fitter = contentObject.AddComponent<ContentSizeFitter>();
@@ -962,11 +971,4 @@ public static class TitlePageSettingsBootstrap
         return true;
     }
 
-    private static void OnSceneOpened(Scene scene, OpenSceneMode mode)
-    {
-        if (scene.path == ScenePath)
-        {
-            EditorApplication.delayCall += EnsureTitlePageSettings;
-        }
-    }
 }

@@ -55,6 +55,9 @@ public sealed class SettingsMenuController : MonoBehaviour
     private Toggle fullscreenToggle;
 
     [SerializeField]
+    private Toggle masterVolumeToggle;
+
+    [SerializeField]
     private Slider masterVolumeSlider;
 
     [SerializeField]
@@ -341,6 +344,7 @@ public sealed class SettingsMenuController : MonoBehaviour
             fullscreenToggle.onValueChanged.AddListener(OnFullscreenChanged);
         }
 
+        AddToggleListener(masterVolumeToggle, OnMasterVolumeToggleChanged);
         AddSliderListener(masterVolumeSlider, OnMasterVolumeChanged);
         AddToggleListener(musicToggle, OnMusicToggleChanged);
         AddSliderListener(musicVolumeSlider, OnMusicVolumeChanged);
@@ -430,6 +434,7 @@ public sealed class SettingsMenuController : MonoBehaviour
             GameSettings.ResolutionWidth,
             GameSettings.ResolutionHeight));
         SetToggleValueWithoutNotify(fullscreenToggle, GameSettings.Fullscreen);
+        SetToggleValueWithoutNotify(masterVolumeToggle, GameSettings.MasterVolumeEnabled);
         SetSliderValueWithoutNotify(masterVolumeSlider, GameSettings.MasterVolume);
         SetToggleValueWithoutNotify(musicToggle, GameSettings.MusicEnabled);
         SetSliderValueWithoutNotify(musicVolumeSlider, GameSettings.MusicVolume);
@@ -437,6 +442,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         SetSliderValueWithoutNotify(soundEffectsVolumeSlider, GameSettings.SoundEffectsVolume);
         SetToggleValueWithoutNotify(clickEffectToggle, GameSettings.ClickEffectEnabled);
         RefreshValueTexts();
+        RefreshControlInteractable();
 
         isApplyingUiState = false;
     }
@@ -499,6 +505,11 @@ public sealed class SettingsMenuController : MonoBehaviour
         ApplySettings();
     }
 
+    private void OnMasterVolumeToggleChanged(bool _)
+    {
+        ApplySettings();
+    }
+
     private void OnMasterVolumeChanged(float _)
     {
         ApplySettings();
@@ -548,6 +559,7 @@ public sealed class SettingsMenuController : MonoBehaviour
             Screen.SetResolution(selectedResolution.x, selectedResolution.y, fullscreen);
         }
 
+        GameSettings.MasterVolumeEnabled = masterVolumeToggle == null || masterVolumeToggle.isOn;
         GameSettings.MasterVolume = masterVolumeSlider != null ? masterVolumeSlider.value : GameSettings.MasterVolume;
         GameSettings.MusicEnabled = musicToggle == null || musicToggle.isOn;
         GameSettings.MusicVolume = musicVolumeSlider != null ? musicVolumeSlider.value : GameSettings.MusicVolume;
@@ -559,6 +571,7 @@ public sealed class SettingsMenuController : MonoBehaviour
 
         GameSettings.ApplyAudio(musicSources, soundEffectSources);
         RefreshValueTexts();
+        RefreshControlInteractable();
 
         if (save)
         {
@@ -571,6 +584,27 @@ public sealed class SettingsMenuController : MonoBehaviour
         SetPercentText(masterVolumeValueText, masterVolumeSlider);
         SetPercentText(musicVolumeValueText, musicVolumeSlider);
         SetPercentText(soundEffectsVolumeValueText, soundEffectsVolumeSlider);
+    }
+
+    private void RefreshControlInteractable()
+    {
+        bool masterEnabled = masterVolumeToggle == null || masterVolumeToggle.isOn;
+        if (masterVolumeSlider != null)
+        {
+            masterVolumeSlider.interactable = masterEnabled;
+        }
+
+        bool musicEnabled = musicToggle == null || musicToggle.isOn;
+        if (musicVolumeSlider != null)
+        {
+            musicVolumeSlider.interactable = musicEnabled;
+        }
+
+        bool soundEffectsEnabled = soundEffectsToggle == null || soundEffectsToggle.isOn;
+        if (soundEffectsVolumeSlider != null)
+        {
+            soundEffectsVolumeSlider.interactable = soundEffectsEnabled;
+        }
     }
 
     private static void SetPercentText(Text text, Slider slider)
@@ -614,7 +648,7 @@ public sealed class SettingsMenuController : MonoBehaviour
 
         resolutionDropdown = CreateDropdownRow("RESOLUTION");
         fullscreenToggle = CreateToggleRow("FULLSCREEN");
-        masterVolumeSlider = CreateSliderRow("VOLUME", out masterVolumeValueText);
+        CreateToggleSliderRow("VOLUME", out masterVolumeToggle, out masterVolumeSlider, out masterVolumeValueText);
         CreateToggleSliderRow("MUSIC", out musicToggle, out musicVolumeSlider, out musicVolumeValueText);
         CreateToggleSliderRow(
             "SOUND EFFECTS",
@@ -792,7 +826,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         contentRect.anchoredPosition = Vector2.zero;
         contentRect.sizeDelta = new Vector2(0f, 48f);
         VerticalLayoutGroup contentLayout = contentObject.AddComponent<VerticalLayoutGroup>();
-        contentLayout.childControlHeight = true;
+        contentLayout.childControlHeight = false;
         contentLayout.childControlWidth = true;
         contentLayout.childForceExpandHeight = false;
         ContentSizeFitter fitter = contentObject.AddComponent<ContentSizeFitter>();

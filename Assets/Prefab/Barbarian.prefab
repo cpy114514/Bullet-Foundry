@@ -594,6 +594,7 @@ MonoBehaviour:
   hitFlashColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
   hitFlashDuration: 0.1
   slowTintMultiplier: 0.75
+  stunTintMultiplier: 0.45
 --- !u!1 &4645042614224959300
 GameObject:
   m_ObjectHideFlags: 0
