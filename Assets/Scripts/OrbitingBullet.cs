@@ -3,14 +3,16 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class OrbitingBullet : MonoBehaviour
 {
+    private const float DefaultOrbitDuration = 5.5f;
+
     [SerializeField, Min(0.05f)]
     private float radius = 0.5f;
 
     [SerializeField, Min(1f)]
     private float angularSpeedDegrees = 220f;
 
-    [SerializeField, Min(0f)]
-    private float orbitDuration;
+    [SerializeField, Min(0.1f)]
+    private float orbitDuration = DefaultOrbitDuration;
 
     private Bullet bullet;
     private Transform orbitCenter;
@@ -22,7 +24,7 @@ public sealed class OrbitingBullet : MonoBehaviour
         orbitCenter = center;
         radius = Mathf.Max(0.05f, newRadius);
         angularSpeedDegrees = Mathf.Max(1f, newAngularSpeedDegrees);
-        orbitDuration = Mathf.Max(0f, newDuration);
+        orbitDuration = newDuration > 0f ? newDuration : DefaultOrbitDuration;
         startTime = Time.time;
 
         bullet = GetComponent<Bullet>();
@@ -45,18 +47,9 @@ public sealed class OrbitingBullet : MonoBehaviour
             return;
         }
 
-        if (orbitDuration > 0f && Time.time - startTime >= orbitDuration)
+        if (Time.time - startTime >= orbitDuration)
         {
-            if (bullet != null)
-            {
-                bullet.SetManualMotion(false);
-                Vector2 exitDirection = new(
-                    -Mathf.Sin(angle * Mathf.Deg2Rad),
-                    Mathf.Cos(angle * Mathf.Deg2Rad));
-                bullet.SetDirection(exitDirection);
-            }
-
-            Destroy(this);
+            Destroy(gameObject);
             return;
         }
 

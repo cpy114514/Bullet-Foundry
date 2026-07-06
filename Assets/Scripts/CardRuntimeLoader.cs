@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [DefaultExecutionOrder(-100)]
@@ -21,19 +22,33 @@ public sealed class CardRuntimeLoader : MonoBehaviour
         LoadCards();
     }
 
+    public void AdoptLoadedCatalog(CardCatalog catalog)
+    {
+        if (catalog == null)
+        {
+            LoadCards();
+            return;
+        }
+
+        if (loadedCatalog != null && loadedCatalog != catalog)
+        {
+            Destroy(loadedCatalog.gameObject);
+        }
+
+        loadedCatalog = catalog;
+        loadedCatalog.gameObject.name = cardsPrefab != null ? cardsPrefab.name : "Cards";
+        LoadCards();
+    }
+
     public void LoadCards()
     {
-        if (loadedCatalog != null)
+        LevelDefinition levelDefinition = FindFirstObjectByType<LevelDefinition>();
+        if (levelDefinition != null && levelDefinition.ShouldDelayCardRuntimeLoad())
         {
             return;
         }
 
-        CardCatalog existingCatalog = FindFirstObjectByType<CardCatalog>();
-        if (existingCatalog != null)
-        {
-            loadedCatalog = existingCatalog;
-        }
-        else
+        if (loadedCatalog == null)
         {
             if (cardsPrefab == null)
             {
@@ -55,9 +70,30 @@ public sealed class CardRuntimeLoader : MonoBehaviour
             return;
         }
 
-        if (CardSelectionState.HasSelection)
+        IReadOnlyCollection<string> selectedTowerNames = CardSelectionState.SelectionConfirmed
+            ? CardSelectionState.SelectedTowerNames
+            : null;
+
+        if (selectedTowerNames != null)
         {
-            loadedCatalog.BuildCards(CardSelectionState.SelectedTowerNames);
+            List<string> orderedTowerNames = new List<string>(CardSelectionState.SelectedTowerNames);
+            if (levelDefinition != null && levelDefinition.HasCardRules())
+            {
+                HashSet<string> availableTowerNames = new HashSet<string>(
+                    levelDefinition.GetAvailableTowerNames(
+                        loadedCatalog.Cards,
+                        selectedTowerNames));
+                orderedTowerNames.RemoveAll(towerName => !availableTowerNames.Contains(towerName));
+            }
+
+            loadedCatalog.BuildCardsInOrder(orderedTowerNames);
+        }
+        else if (levelDefinition != null && levelDefinition.HasCardRules())
+        {
+            loadedCatalog.BuildCards(levelDefinition.GetAvailableTowerNames(
+                loadedCatalog.Cards,
+                null),
+                false);
         }
         else
         {

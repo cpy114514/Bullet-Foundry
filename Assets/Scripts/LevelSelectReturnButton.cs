@@ -104,6 +104,12 @@ public sealed class LevelSelectReturnButton : MonoBehaviour
 
     private void ReturnToTitle()
     {
+        SettingsMenuController settings = FindFirstObjectByType<SettingsMenuController>();
+        if (settings != null && settings.IsOpen)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(titleSceneName))
         {
             Debug.LogWarning($"{name} has no title scene assigned.");

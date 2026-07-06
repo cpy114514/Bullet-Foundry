@@ -63,9 +63,14 @@ public sealed class CardCatalog : MonoBehaviour
 
     public void BuildCards(IReadOnlyCollection<string> selectedTowerNames)
     {
+        BuildCards(selectedTowerNames, true);
+    }
+
+    public void BuildCards(IReadOnlyCollection<string> selectedTowerNames, bool fallbackToAllIfNoMatch)
+    {
         if (selectedTowerNames == null || selectedTowerNames.Count == 0)
         {
-            BuildCards(cards);
+            BuildCards(fallbackToAllIfNoMatch ? cards : new List<CardEntry>());
             return;
         }
 
@@ -76,7 +81,38 @@ public sealed class CardCatalog : MonoBehaviour
                 selectedTowerNames.Contains(card.TowerPrefab.name))
             .ToList();
 
-        BuildCards(filteredCards.Count > 0 ? filteredCards : cards);
+        BuildCards(filteredCards.Count > 0 || !fallbackToAllIfNoMatch ? filteredCards : cards);
+    }
+
+    public void BuildCardsInOrder(IReadOnlyList<string> orderedTowerNames)
+    {
+        if (orderedTowerNames == null || orderedTowerNames.Count == 0)
+        {
+            BuildCards(new List<CardEntry>());
+            return;
+        }
+
+        List<CardEntry> orderedCards = new List<CardEntry>();
+        HashSet<string> addedTowerNames = new HashSet<string>();
+        for (int i = 0; i < orderedTowerNames.Count; i++)
+        {
+            string towerName = orderedTowerNames[i];
+            if (string.IsNullOrWhiteSpace(towerName) || !addedTowerNames.Add(towerName))
+            {
+                continue;
+            }
+
+            CardEntry entry = cards.FirstOrDefault(card =>
+                card != null &&
+                card.TowerPrefab != null &&
+                card.TowerPrefab.name == towerName);
+            if (entry != null)
+            {
+                orderedCards.Add(entry);
+            }
+        }
+
+        BuildCards(orderedCards);
     }
 
     private void BuildCards(IReadOnlyList<CardEntry> cardsToBuild)
@@ -84,11 +120,19 @@ public sealed class CardCatalog : MonoBehaviour
         activeCards.Clear();
 
         CardView template = GetComponent<CardView>();
-        if (template == null || cardsToBuild == null || cardsToBuild.Count == 0)
+        if (template == null)
         {
             return;
         }
 
+        if (cardsToBuild == null || cardsToBuild.Count == 0)
+        {
+            SetCardEnabled(template, false);
+            RemoveUnusedGeneratedCards(0);
+            return;
+        }
+
+        SetCardEnabled(template, true);
         CardSlotPoint[] slots = FindCardSlots();
         ConfigureCard(template, cardsToBuild[0]);
         PlaceCard(template.transform, 0, slots);
@@ -97,6 +141,7 @@ public sealed class CardCatalog : MonoBehaviour
         for (int i = 1; i < cardsToBuild.Count; i++)
         {
             CardView card = GetOrCreateCard(template, i);
+            SetCardEnabled(card, true);
             ConfigureCard(card, cardsToBuild[i]);
             PlaceCard(card.transform, i, slots);
             activeCards.Add(card);
@@ -262,5 +307,40 @@ public sealed class CardCatalog : MonoBehaviour
         destination.sortingLayerID = source.sortingLayerID;
         destination.sortingOrder = source.sortingOrder;
         destination.sharedMaterial = source.sharedMaterial;
+    }
+
+    private static void SetCardEnabled(CardView card, bool isEnabled)
+    {
+        if (card == null)
+        {
+            return;
+        }
+
+        SpriteRenderer[] spriteRenderers = card.GetComponentsInChildren<SpriteRenderer>(true);
+        for (int i = 0; i < spriteRenderers.Length; i++)
+        {
+            if (spriteRenderers[i].GetComponentInParent<CardView>() == card)
+            {
+                spriteRenderers[i].enabled = isEnabled;
+            }
+        }
+
+        MeshRenderer[] meshRenderers = card.GetComponentsInChildren<MeshRenderer>(true);
+        for (int i = 0; i < meshRenderers.Length; i++)
+        {
+            if (meshRenderers[i].GetComponentInParent<CardView>() == card)
+            {
+                meshRenderers[i].enabled = isEnabled;
+            }
+        }
+
+        Collider2D[] colliders = card.GetComponentsInChildren<Collider2D>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            if (colliders[i].GetComponentInParent<CardView>() == card)
+            {
+                colliders[i].enabled = isEnabled;
+            }
+        }
     }
 }

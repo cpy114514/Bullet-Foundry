@@ -1,7 +1,16 @@
+using System;
+using System.Collections;
 using UnityEngine;
+using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
+#endif
+
+#if UNITY_EDITOR
+using System.IO;
+using UnityEditor;
 #endif
 
 [DisallowMultipleComponent]
@@ -13,8 +22,22 @@ public sealed class LevelSelectNode : MonoBehaviour
     [SerializeField]
     private bool bossLevel;
 
+    [Header("Scene")]
     [SerializeField]
-    private string targetSceneName = "Level_test";
+    private UnityEngine.Object targetSceneAsset;
+
+    [SerializeField]
+    private string targetSceneName = "Levels";
+
+    [Header("Level JSON")]
+    [SerializeField]
+    private TextAsset levelJson;
+
+    [SerializeField]
+    private string externalJsonLocation;
+
+    [SerializeField]
+    private bool preferExternalJson;
 
     [Header("Animation")]
     [SerializeField, Range(1f, 1.25f)]
@@ -29,6 +52,7 @@ public sealed class LevelSelectNode : MonoBehaviour
     private Vector3 baseScale;
     private bool pointerIsOverNode;
     private bool pointerIsPressingNode;
+    private bool loadingLevel;
 
 #if ENABLE_INPUT_SYSTEM
     private bool pointerPressedOnThisNode;
@@ -37,6 +61,8 @@ public sealed class LevelSelectNode : MonoBehaviour
     public int LevelNumber => levelNumber;
     public bool BossLevel => bossLevel;
     public string TargetSceneName => targetSceneName;
+    public TextAsset LevelJson => levelJson;
+    public string ExternalJsonLocation => externalJsonLocation;
 
     private void Awake()
     {
@@ -116,7 +142,8 @@ public sealed class LevelSelectNode : MonoBehaviour
 
     private void LoadLevel()
     {
-        if (CardSelectionMenu.IsOpen)
+        SettingsMenuController settings = FindFirstObjectByType<SettingsMenuController>();
+        if (CardSelectionMenu.IsOpen || (settings != null && settings.IsOpen))
         {
             return;
         }
@@ -127,7 +154,91 @@ public sealed class LevelSelectNode : MonoBehaviour
             return;
         }
 
-        CardSelectionMenu.Show(targetSceneName);
+        if (loadingLevel)
+        {
+            return;
+        }
+
+        if (preferExternalJson && !string.IsNullOrWhiteSpace(externalJsonLocation))
+        {
+            LoadExternalJson();
+            return;
+        }
+
+        if (levelJson != null)
+        {
+            TryStartLevel(levelJson.text, levelJson.name);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(externalJsonLocation))
+        {
+            LoadExternalJson();
+            return;
+        }
+
+        Debug.LogWarning($"{name} has no level JSON assigned.", this);
+    }
+
+    private void LoadExternalJson()
+    {
+        if (LooksLikeUrl(externalJsonLocation) || Application.platform == RuntimePlatform.WebGLPlayer)
+        {
+            StartCoroutine(LoadExternalJsonRoutine(externalJsonLocation));
+            return;
+        }
+
+        if (!LevelJsonUtility.TryReadExternal(externalJsonLocation, out string json, out string error))
+        {
+            Debug.LogError(error, this);
+            return;
+        }
+
+        TryStartLevel(json, externalJsonLocation);
+    }
+
+    private IEnumerator LoadExternalJsonRoutine(string location)
+    {
+        loadingLevel = true;
+        string url = location;
+        if (!LooksLikeUrl(url))
+        {
+            url = LevelJsonUtility.ResolveExternalPath(location);
+        }
+
+        using UnityWebRequest request = UnityWebRequest.Get(url);
+        yield return request.SendWebRequest();
+        loadingLevel = false;
+
+        if (request.result != UnityWebRequest.Result.Success)
+        {
+            Debug.LogError($"Could not import level JSON from '{url}': {request.error}", this);
+            yield break;
+        }
+
+        TryStartLevel(request.downloadHandler.text, url);
+    }
+
+    private void TryStartLevel(string json, string source)
+    {
+        if (!LevelJsonUtility.TryParse(json, out _, out string error))
+        {
+            Debug.LogError($"Invalid level JSON on {name}: {error}", this);
+            return;
+        }
+
+        loadingLevel = true;
+        LevelLoadRequest.Set(json, source, levelNumber);
+        CardSelectionState.PrepareLevelLoad(targetSceneName);
+        SceneTransitionController.LoadScene(targetSceneName);
+    }
+
+    private static bool LooksLikeUrl(string value)
+    {
+        return Uri.TryCreate(value, UriKind.Absolute, out Uri uri) &&
+            (uri.Scheme == Uri.UriSchemeHttp ||
+             uri.Scheme == Uri.UriSchemeHttps ||
+             uri.Scheme == Uri.UriSchemeFile);
     }
 
     private void UpdateVisualScale()
@@ -160,6 +271,27 @@ public sealed class LevelSelectNode : MonoBehaviour
         Vector3 screenPoint = new(screenPosition.x, screenPosition.y, distanceFromCamera);
         Vector3 worldPosition = worldCamera.ScreenToWorldPoint(screenPoint);
         return nodeCollider.OverlapPoint(worldPosition);
+    }
+#endif
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        levelNumber = Mathf.Max(1, levelNumber);
+
+        if (targetSceneAsset == null)
+        {
+            return;
+        }
+
+        string scenePath = AssetDatabase.GetAssetPath(targetSceneAsset);
+        if (string.IsNullOrWhiteSpace(scenePath) ||
+            !string.Equals(Path.GetExtension(scenePath), ".unity", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        targetSceneName = Path.GetFileNameWithoutExtension(scenePath);
     }
 #endif
 }

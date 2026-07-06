@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "level-07",
+  "displayName": "Level 7",
+  "startingCoins": 105,
+  "showCardSelectionOnStart": true,
+  "waitForCardSelectionBeforeLoadingCards": true,
+  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": [] },
+  "enemySpawns": [
+    { "time": 1, "enemy": "SpeedGoblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 3.5, "enemy": "SpeedGoblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 7, "enemy": "Goblin", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 11, "enemy": "Barbarian", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+  ]
+}

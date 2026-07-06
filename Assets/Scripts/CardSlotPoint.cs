@@ -11,6 +11,8 @@ public sealed class CardSlotPoint : MonoBehaviour
 
     public int SlotIndex => slotIndex;
 
+    public Vector2 CardSize => cardSize;
+
     public void SetSlotIndex(int index)
     {
         slotIndex = Mathf.Max(0, index);

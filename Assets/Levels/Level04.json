@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "level-04",
+  "displayName": "Level 4",
+  "startingCoins": 90,
+  "showCardSelectionOnStart": true,
+  "waitForCardSelectionBeforeLoadingCards": true,
+  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": ["RocketTower", "ShieldTower"] },
+  "enemySpawns": [
+    { "time": 2, "enemy": "Goblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 5, "enemy": "Goblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 9, "enemy": "SpeedGoblin", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+  ]
+}

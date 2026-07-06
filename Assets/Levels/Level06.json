@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "level-06",
+  "displayName": "Level 6",
+  "startingCoins": 100,
+  "showCardSelectionOnStart": true,
+  "waitForCardSelectionBeforeLoadingCards": true,
+  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": [] },
+  "enemySpawns": [
+    { "time": 1.5, "enemy": "Goblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 4, "enemy": "Goblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 7, "enemy": "SpeedGoblin", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 11, "enemy": "Barbarian", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+  ]
+}

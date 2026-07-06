@@ -4,6 +4,7 @@ using UnityEngine;
 public static class CardSelectionState
 {
     private static readonly List<string> selectedTowerNames = new();
+    private static bool selectionConfirmed;
 
     public static string TargetSceneName { get; private set; } = "Level_test";
 
@@ -11,12 +12,33 @@ public static class CardSelectionState
 
     public static bool HasSelection => selectedTowerNames.Count > 0;
 
+    public static bool SelectionConfirmed => selectionConfirmed;
+
+    public static bool IsSelectionConfirmedForScene(string sceneName)
+    {
+        return selectionConfirmed &&
+            !string.IsNullOrWhiteSpace(sceneName) &&
+            string.Equals(TargetSceneName, sceneName, System.StringComparison.Ordinal);
+    }
+
+    public static void PrepareLevelLoad(string targetSceneName)
+    {
+        selectedTowerNames.Clear();
+        selectionConfirmed = false;
+        if (!string.IsNullOrWhiteSpace(targetSceneName))
+        {
+            TargetSceneName = targetSceneName;
+        }
+    }
+
     public static void BeginSelection(string targetSceneName)
     {
         if (!string.IsNullOrWhiteSpace(targetSceneName))
         {
             TargetSceneName = targetSceneName;
         }
+
+        selectionConfirmed = false;
     }
 
     public static void SetSelection(IEnumerable<CardView> selectedCards)
@@ -44,6 +66,12 @@ public static class CardSelectionState
         }
     }
 
+    public static void ConfirmSelection(IEnumerable<CardView> selectedCards)
+    {
+        SetSelection(selectedCards);
+        selectionConfirmed = true;
+    }
+
     public static bool ContainsTower(GameObject towerPrefab)
     {
         return towerPrefab != null && selectedTowerNames.Contains(towerPrefab.name);
@@ -52,5 +80,11 @@ public static class CardSelectionState
     public static void ClearSelection()
     {
         selectedTowerNames.Clear();
+    }
+
+    public static void ClearAll()
+    {
+        selectedTowerNames.Clear();
+        selectionConfirmed = false;
     }
 }

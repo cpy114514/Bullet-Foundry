@@ -49,6 +49,13 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
 
     private void Update()
     {
+        if (CardSelectionMenu.IsOpen)
+        {
+            ClearSelection();
+            HidePlacementPreview();
+            return;
+        }
+
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             ClearSelection();

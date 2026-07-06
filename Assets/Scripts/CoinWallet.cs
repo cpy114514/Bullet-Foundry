@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 public sealed class CoinWallet : MonoBehaviour
 {
     [SerializeField, Min(0)]
-    private int startingCoins = 15;
+    private int startingCoins = 75;
 
     [SerializeField, Min(0)]
     private int currentCoins;
@@ -62,6 +62,21 @@ public sealed class CoinWallet : MonoBehaviour
 
         currentCoins += amount;
         CoinsChanged?.Invoke(currentCoins);
+    }
+
+    public void SetCoins(int amount)
+    {
+        currentCoins = Mathf.Max(0, amount);
+        CoinsChanged?.Invoke(currentCoins);
+    }
+
+    public void SetStartingCoins(int amount, bool resetCurrentCoins = true)
+    {
+        startingCoins = Mathf.Max(0, amount);
+        if (resetCurrentCoins)
+        {
+            SetCoins(startingCoins);
+        }
     }
 
     public bool CanAfford(int amount)

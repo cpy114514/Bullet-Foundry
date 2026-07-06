@@ -93,6 +93,8 @@ public sealed class GoblinEnemy : MonoBehaviour
     private bool isDead;
     private bool slowVisualActive;
     private bool stunVisualActive;
+    private bool temporaryActionActive;
+    private float temporaryActionUntilTime;
     private static Sprite fallbackCoinSprite;
 
     public bool IsDead => isDead;
@@ -100,6 +102,8 @@ public sealed class GoblinEnemy : MonoBehaviour
     public int CurrentHealth => currentHealth;
 
     public int MaxHealth => maxHealth;
+
+    public bool IsActionBlocked => isDead || Time.time < stunUntilTime;
 
     public Bounds GetWorldBounds()
     {
@@ -134,6 +138,8 @@ public sealed class GoblinEnemy : MonoBehaviour
         slowMultiplier = 1f;
         slowUntilTime = 0f;
         stunUntilTime = 0f;
+        temporaryActionActive = false;
+        temporaryActionUntilTime = 0f;
         slowVisualActive = false;
         stunVisualActive = false;
         RestoreSpriteColors();
@@ -160,6 +166,7 @@ public sealed class GoblinEnemy : MonoBehaviour
 
         RefreshSlowState();
         RefreshStunState();
+        RefreshTemporaryAction();
 
         if (isDead)
         {
@@ -169,6 +176,11 @@ public sealed class GoblinEnemy : MonoBehaviour
         if (IsStunned())
         {
             PlayState(walkStateName);
+            return;
+        }
+
+        if (temporaryActionActive)
+        {
             return;
         }
 
@@ -245,6 +257,26 @@ public sealed class GoblinEnemy : MonoBehaviour
     public void SetCoinDropsEnabled(bool enabled)
     {
         dropCoinsOnDeath = enabled;
+    }
+
+    public void PlayTemporaryAction(string stateName, float duration)
+    {
+        if (isDead || duration <= 0f)
+        {
+            return;
+        }
+
+        temporaryActionActive = true;
+        temporaryActionUntilTime = Mathf.Max(
+            temporaryActionUntilTime,
+            Time.time + duration);
+        currentAnimationState = null;
+        PlayState(stateName);
+
+        if (body != null)
+        {
+            body.linearVelocity = Vector2.zero;
+        }
     }
 
     public void ApplySlow(float speedMultiplier, float duration)
@@ -334,6 +366,18 @@ public sealed class GoblinEnemy : MonoBehaviour
         SetStunVisualActive(false);
     }
 
+    private void RefreshTemporaryAction()
+    {
+        if (!temporaryActionActive || Time.time < temporaryActionUntilTime)
+        {
+            return;
+        }
+
+        temporaryActionActive = false;
+        temporaryActionUntilTime = 0f;
+        currentAnimationState = null;
+    }
+
     private void SetSlowVisualActive(bool active)
     {
         if (slowVisualActive == active)
@@ -378,6 +422,8 @@ public sealed class GoblinEnemy : MonoBehaviour
     private void Die()
     {
         isDead = true;
+        temporaryActionActive = false;
+        temporaryActionUntilTime = 0f;
         PlayState(dieStateName);
         DropCoins();
 

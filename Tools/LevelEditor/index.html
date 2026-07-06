@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bullet Foundry — Level Editor</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #111;
+      --paper: #fff;
+      --wash: #e7e7e7;
+      --muted: #6d6d6d;
+      --line: #1b1b1b;
+      --danger: #8b1e1e;
+      --shadow: 4px 4px 0 #111;
+      --radius: 5px;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px) 0 0 / 28px 28px,
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px) 0 0 / 28px 28px,
+        #202020;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      min-height: 38px;
+      padding: 8px 13px;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--paper);
+      box-shadow: 2px 2px 0 var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+
+    button:hover { background: #dcdcdc; transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+    button:active { transform: translate(2px, 2px); box-shadow: none; }
+    button.danger { color: var(--danger); }
+    button.primary { color: #fff; background: #111; box-shadow: 2px 2px 0 #777; }
+    button.primary:hover { background: #333; }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-height: 76px;
+      padding: 14px 20px;
+      border-bottom: 3px solid var(--line);
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(8px);
+    }
+
+    .brand { min-width: 220px; }
+    .brand h1 { margin: 0; font-size: 20px; letter-spacing: .08em; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(270px, 330px) minmax(520px, 1fr) minmax(300px, 390px);
+      gap: 15px;
+      width: min(1800px, 100%);
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .column { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+
+    .panel {
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 13px;
+      border-bottom: 2px solid var(--line);
+      background: var(--wash);
+    }
+
+    .panel-header h2 { margin: 0; font-size: 14px; letter-spacing: .07em; text-transform: uppercase; }
+    .panel-body { padding: 13px; }
+
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .field.span-2 { grid-column: span 2; }
+    label, .label { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+
+    input, select, textarea {
+      width: 100%;
+      border: 2px solid var(--line);
+      border-radius: 3px;
+      color: var(--ink);
+      background: #fff;
+      outline: none;
+    }
+
+    input, select { height: 36px; padding: 6px 9px; }
+    textarea { padding: 10px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { box-shadow: 0 0 0 3px #bbb; }
+
+    .check-row { display: flex; align-items: center; gap: 9px; min-height: 34px; }
+    .check-row input { width: 18px; height: 18px; margin: 0; accent-color: #111; }
+    .check-row label { text-transform: none; font-size: 13px; letter-spacing: 0; }
+
+    .card-list { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; max-height: 286px; overflow: auto; padding: 2px; }
+    .card-toggle {
+      min-height: 36px;
+      padding: 7px 8px;
+      border: 2px solid #777;
+      box-shadow: none;
+      font-size: 12px;
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card-toggle.active { color: #fff; border-color: #111; background: #111; }
+    .mode-help { margin: 9px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+
+    .timeline-canvas { position: relative; min-height: 230px; padding: 10px 12px 13px 48px; overflow-x: auto; background: #fafafa; }
+    .lane { position: relative; min-width: 640px; height: 38px; border-bottom: 1px dashed #888; }
+    .lane:last-child { border-bottom: 0; }
+    .lane-label { position: absolute; left: -38px; top: 11px; width: 28px; font-size: 11px; font-weight: 800; }
+    .spawn-marker {
+      position: absolute;
+      top: 7px;
+      width: 24px;
+      height: 24px;
+      min-height: 0;
+      padding: 0;
+      border: 2px solid #111;
+      border-radius: 50%;
+      background: #fff;
+      transform: translateX(-50%);
+      box-shadow: 2px 2px 0 #777;
+      cursor: pointer;
+    }
+    .spawn-marker::after { content: attr(data-index); display: grid; place-items: center; height: 100%; font-size: 10px; font-weight: 900; }
+    .timeline-scale { display: flex; justify-content: space-between; min-width: 640px; margin-top: 7px; color: var(--muted); font-size: 10px; }
+
+    .table-wrap { overflow: auto; }
+    table { width: 100%; min-width: 920px; border-collapse: collapse; }
+    th, td { padding: 7px 6px; border-bottom: 1px solid #bbb; text-align: left; vertical-align: middle; }
+    th { position: sticky; top: 0; z-index: 2; background: #e7e7e7; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+    td input, td select { height: 32px; padding: 4px 6px; }
+    td .mini { width: 70px; }
+    .row-actions { display: flex; gap: 5px; }
+    .row-actions button { min-height: 30px; padding: 4px 8px; box-shadow: none; font-size: 11px; }
+
+    .json-editor { min-height: 520px; font: 12px/1.5 Consolas, "Courier New", monospace; tab-size: 2; }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      border: 2px solid #111;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e6e6e6;
+    }
+    .status.error { color: #fff; background: var(--danger); }
+    .status-dot { width: 10px; height: 10px; border: 2px solid currentColor; border-radius: 50%; background: currentColor; }
+    .json-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+
+    .drop-zone {
+      display: grid;
+      place-items: center;
+      min-height: 90px;
+      padding: 12px;
+      border: 2px dashed #555;
+      border-radius: 4px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .drop-zone.dragging { color: #111; border-style: solid; background: #ddd; }
+
+    .footer-note { color: #bbb; padding: 0 18px 18px; text-align: center; font-size: 11px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+    @media (max-width: 1250px) {
+      .workspace { grid-template-columns: 300px 1fr; }
+      .json-column { grid-column: 1 / -1; }
+      .json-editor { min-height: 340px; }
+    }
+
+    @media (max-width: 780px) {
+      .app-header { position: static; align-items: flex-start; flex-direction: column; }
+      .header-actions { justify-content: flex-start; }
+      .workspace { display: flex; flex-direction: column; padding: 10px; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field.span-2 { grid-column: auto; }
+      .card-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <h1>BULLET FOUNDRY / LEVEL EDITOR</h1>
+      <p>Offline JSON authoring tool for the shared Levels scene</p>
+    </div>
+    <div class="header-actions">
+      <button id="new-level">New</button>
+      <button id="import-button">Import JSON</button>
+      <button id="copy-json">Copy JSON</button>
+      <button id="export-json" class="primary">Export JSON</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="column">
+      <article class="panel">
+        <div class="panel-header"><h2>Level Setup</h2></div>
+        <div class="panel-body field-grid">
+          <div class="field"><label for="level-id">Level ID</label><input id="level-id" value="level-01"></div>
+          <div class="field"><label for="display-name">Display Name</label><input id="display-name" value="Level 1"></div>
+          <div class="field"><label for="starting-coins">Starting Coins</label><input id="starting-coins" type="number" min="0" step="1" value="75"></div>
+          <div class="field"><label for="schema-version">Schema</label><input id="schema-version" type="number" value="1" readonly></div>
+          <div class="field span-2 check-row"><input id="show-selection" type="checkbox" checked><label for="show-selection">Show card selection before the level</label></div>
+          <div class="field span-2 check-row"><input id="wait-selection" type="checkbox" checked><label for="wait-selection">Wait before loading gameplay cards</label></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header"><h2>Card Rules</h2></div>
+        <div class="panel-body">
+          <div class="field">
+            <label for="card-mode">Availability Mode</label>
+            <select id="card-mode">
+              <option value="allowed">Only selected cards are allowed</option>
+              <option value="banned">All cards except selected cards</option>
+            </select>
+          </div>
+          <p id="card-mode-help" class="mode-help"></p>
+          <div id="card-list" class="card-list" aria-label="Card rules"></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header"><h2>Import</h2></div>
+        <div class="panel-body">
+          <div id="drop-zone" class="drop-zone">Drop a level JSON here<br>or click to choose a file</div>
+          <input id="file-input" class="sr-only" type="file" accept=".json,application/json">
+        </div>
+      </article>
+    </section>
+
+    <section class="column">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>Spawn Timeline</h2>
+          <div><button id="sort-spawns">Sort by Time</button> <button id="add-spawn" class="primary">Add Spawn</button></div>
+        </div>
+        <div class="timeline-canvas">
+          <div id="lanes"></div>
+          <div id="timeline-scale" class="timeline-scale"></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-header"><h2>Enemy Spawns</h2><span id="spawn-count">0 events</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Time</th><th>Enemy ID</th><th>Lane</th><th>Spawn X</th><th>Offset X</th><th>Offset Y</th><th>Offset Z</th><th>Actions</th></tr></thead>
+            <tbody id="spawn-rows"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="column json-column">
+      <article class="panel">
+        <div class="panel-header"><h2>JSON Output</h2><span id="source-label">Autosaved locally</span></div>
+        <div class="panel-body">
+          <div id="validation-status" class="status"><span class="status-dot"></span><span>Valid level JSON</span></div>
+          <textarea id="json-editor" class="json-editor" spellcheck="false"></textarea>
+          <div class="json-actions">
+            <button id="apply-json">Apply Edited JSON</button>
+            <button id="format-json">Format JSON</button>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <p class="footer-note">Export into Assets/Levels, then drag the JSON file onto a LevelSelectNode in Unity.</p>
+
+  <datalist id="enemy-options">
+    <option value="Goblin"></option>
+    <option value="SpeedGoblin"></option>
+    <option value="Barbarian"></option>
+    <option value="PigLeader"></option>
+    <option value="FrogPrincess"></option>
+  </datalist>
+
+  <script>
+    const CARD_CATALOG = [
+      "SplitTower", "CoinTower", "IceTower", "ShieldTower", "FireTower",
+      "TriwayTower", "DoubleHeadCoinTower", "TransitTower", "HomingTower",
+      "ElectricTower", "OrbitTower", "RandomBulletTower", "RocketTower"
+    ];
+
+    const DEFAULT_LEVEL = {
+      schemaVersion: 1,
+      id: "level-01",
+      displayName: "Level 1",
+      startingCoins: 75,
+      showCardSelectionOnStart: true,
+      waitForCardSelectionBeforeLoadingCards: true,
+      cardRules: {
+        restrictAvailableCards: true,
+        allowedCards: ["CoinTower", "SplitTower"],
+        bannedCards: []
+      },
+      enemySpawns: [
+        { time: 2, enemy: "Goblin", lane: 3, spawnX: 8.5, offset: { x: 0, y: 0, z: 0 } }
+      ]
+    };
+
+    let state = loadDraft() || structuredClone(DEFAULT_LEVEL);
+    let activeCardNames = new Set();
+    let applyingJson = false;
+
+    const $ = selector => document.querySelector(selector);
+    const elements = {
+      levelId: $("#level-id"), displayName: $("#display-name"), startingCoins: $("#starting-coins"),
+      showSelection: $("#show-selection"), waitSelection: $("#wait-selection"), cardMode: $("#card-mode"),
+      cardList: $("#card-list"), cardHelp: $("#card-mode-help"), spawnRows: $("#spawn-rows"),
+      spawnCount: $("#spawn-count"), lanes: $("#lanes"), timelineScale: $("#timeline-scale"),
+      json: $("#json-editor"), status: $("#validation-status"), source: $("#source-label"),
+      file: $("#file-input"), drop: $("#drop-zone")
+    };
+
+    function normalizeLevel(raw) {
+      const level = raw && typeof raw === "object" ? raw : {};
+      const rules = level.cardRules && typeof level.cardRules === "object" ? level.cardRules : {};
+      const spawns = Array.isArray(level.enemySpawns) ? level.enemySpawns : [];
+      return {
+        schemaVersion: 1,
+        id: String(level.id || "custom-level").trim(),
+        displayName: String(level.displayName || level.id || "Custom Level").trim(),
+        startingCoins: Math.max(0, integer(level.startingCoins, 75)),
+        showCardSelectionOnStart: level.showCardSelectionOnStart !== false,
+        waitForCardSelectionBeforeLoadingCards: level.waitForCardSelectionBeforeLoadingCards !== false,
+        cardRules: {
+          restrictAvailableCards: Boolean(rules.restrictAvailableCards),
+          allowedCards: uniqueStrings(rules.allowedCards),
+          bannedCards: uniqueStrings(rules.bannedCards)
+        },
+        enemySpawns: spawns.map(spawn => ({
+          time: Math.max(0, number(spawn?.time, 0)),
+          enemy: String(spawn?.enemy || "Goblin").trim(),
+          lane: clamp(integer(spawn?.lane, 3), 1, 5),
+          spawnX: number(spawn?.spawnX, 8.5),
+          offset: {
+            x: number(spawn?.offset?.x, 0),
+            y: number(spawn?.offset?.y, 0),
+            z: number(spawn?.offset?.z, 0)
+          }
+        }))
+      };
+    }
+
+    function uniqueStrings(values) {
+      return [...new Set((Array.isArray(values) ? values : []).map(value => String(value).trim()).filter(Boolean))];
+    }
+    function number(value, fallback) { const parsed = Number(value); return Number.isFinite(parsed) ? parsed : fallback; }
+    function integer(value, fallback) { return Math.round(number(value, fallback)); }
+    function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+
+    function hydrateForm() {
+      state = normalizeLevel(state);
+      elements.levelId.value = state.id;
+      elements.displayName.value = state.displayName;
+      elements.startingCoins.value = state.startingCoins;
+      elements.showSelection.checked = state.showCardSelectionOnStart;
+      elements.waitSelection.checked = state.waitForCardSelectionBeforeLoadingCards;
+      elements.cardMode.value = state.cardRules.restrictAvailableCards ? "allowed" : "banned";
+      activeCardNames = new Set(state.cardRules.restrictAvailableCards ? state.cardRules.allowedCards : state.cardRules.bannedCards);
+      renderCards();
+      renderSpawns();
+      commit();
+    }
+
+    function readForm() {
+      state.id = elements.levelId.value.trim() || "custom-level";
+      state.displayName = elements.displayName.value.trim() || state.id;
+      state.startingCoins = Math.max(0, integer(elements.startingCoins.value, 0));
+      state.showCardSelectionOnStart = elements.showSelection.checked;
+      state.waitForCardSelectionBeforeLoadingCards = elements.waitSelection.checked;
+      const allowedMode = elements.cardMode.value === "allowed";
+      state.cardRules.restrictAvailableCards = allowedMode;
+      state.cardRules.allowedCards = allowedMode ? [...activeCardNames] : [];
+      state.cardRules.bannedCards = allowedMode ? [] : [...activeCardNames];
+    }
+
+    function renderCards() {
+      const importedNames = [...state.cardRules.allowedCards, ...state.cardRules.bannedCards];
+      const catalog = [...new Set([...CARD_CATALOG, ...importedNames])];
+      elements.cardList.replaceChildren(...catalog.map(name => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "card-toggle" + (activeCardNames.has(name) ? " active" : "");
+        button.textContent = name;
+        button.title = name;
+        button.addEventListener("click", () => {
+          activeCardNames.has(name) ? activeCardNames.delete(name) : activeCardNames.add(name);
+          renderCards();
+          commit();
+        });
+        return button;
+      }));
+      elements.cardHelp.textContent = elements.cardMode.value === "allowed"
+        ? "Dark buttons are available. Every other card will appear disabled in the game."
+        : "Dark buttons are banned. Every other card remains available in the game.";
+    }
+
+    function renderSpawns() {
+      elements.spawnRows.replaceChildren(...state.enemySpawns.map((spawn, index) => makeSpawnRow(spawn, index)));
+      elements.spawnCount.textContent = `${state.enemySpawns.length} event${state.enemySpawns.length === 1 ? "" : "s"}`;
+      renderTimeline();
+    }
+
+    function makeSpawnRow(spawn, index) {
+      const row = document.createElement("tr");
+      row.dataset.index = index;
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td><input class="mini" data-key="time" type="number" min="0" step="0.1" value="${spawn.time}"></td>
+        <td><input data-key="enemy" list="enemy-options" value="${escapeHtml(spawn.enemy)}"></td>
+        <td><select class="mini" data-key="lane">${[1,2,3,4,5].map(lane => `<option ${lane === spawn.lane ? "selected" : ""}>${lane}</option>`).join("")}</select></td>
+        <td><input class="mini" data-key="spawnX" type="number" step="0.1" value="${spawn.spawnX}"></td>
+        <td><input class="mini" data-offset="x" type="number" step="0.1" value="${spawn.offset.x}"></td>
+        <td><input class="mini" data-offset="y" type="number" step="0.1" value="${spawn.offset.y}"></td>
+        <td><input class="mini" data-offset="z" type="number" step="0.1" value="${spawn.offset.z}"></td>
+        <td><div class="row-actions"><button type="button" data-action="duplicate">Copy</button><button type="button" data-action="delete" class="danger">Delete</button></div></td>`;
+      row.addEventListener("input", event => updateSpawnFromRow(index, event.target));
+      row.addEventListener("change", event => updateSpawnFromRow(index, event.target));
+      row.addEventListener("click", event => {
+        const action = event.target.dataset.action;
+        if (action === "delete") { state.enemySpawns.splice(index, 1); renderSpawns(); commit(); }
+        if (action === "duplicate") {
+          const copy = structuredClone(state.enemySpawns[index]);
+          copy.time = +(copy.time + 1).toFixed(2);
+          state.enemySpawns.splice(index + 1, 0, copy);
+          renderSpawns(); commit();
+        }
+      });
+      return row;
+    }
+
+    function updateSpawnFromRow(index, input) {
+      const spawn = state.enemySpawns[index];
+      if (!spawn) return;
+      if (input.dataset.offset) spawn.offset[input.dataset.offset] = number(input.value, 0);
+      if (input.dataset.key === "enemy") spawn.enemy = input.value.trim();
+      if (input.dataset.key === "lane") spawn.lane = clamp(integer(input.value, 3), 1, 5);
+      if (input.dataset.key === "time") spawn.time = Math.max(0, number(input.value, 0));
+      if (input.dataset.key === "spawnX") spawn.spawnX = number(input.value, 8.5);
+      renderTimeline();
+      commit();
+    }
+
+    function renderTimeline() {
+      const maxTime = Math.max(10, ...state.enemySpawns.map(spawn => spawn.time));
+      elements.lanes.replaceChildren(...[1,2,3,4,5].map(laneNumber => {
+        const lane = document.createElement("div");
+        lane.className = "lane";
+        lane.innerHTML = `<span class="lane-label">L${laneNumber}</span>`;
+        state.enemySpawns.forEach((spawn, index) => {
+          if (spawn.lane !== laneNumber) return;
+          const marker = document.createElement("button");
+          marker.type = "button";
+          marker.className = "spawn-marker";
+          marker.dataset.index = index + 1;
+          marker.style.left = `${(spawn.time / maxTime) * 100}%`;
+          marker.title = `${spawn.enemy} at ${spawn.time}s — Lane ${spawn.lane}`;
+          marker.addEventListener("click", () => document.querySelector(`tr[data-index="${index}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+          lane.append(marker);
+        });
+        return lane;
+      }));
+      elements.timelineScale.innerHTML = `<span>0s</span><span>${(maxTime / 2).toFixed(1)}s</span><span>${maxTime.toFixed(1)}s</span>`;
+    }
+
+    function validate(level) {
+      const errors = [];
+      if (!level.id) errors.push("Level ID is required.");
+      if (!level.displayName) errors.push("Display name is required.");
+      if (level.startingCoins < 0) errors.push("Starting coins cannot be negative.");
+      if (level.cardRules.restrictAvailableCards && level.cardRules.allowedCards.length === 0) errors.push("Restricted mode needs at least one allowed card.");
+      level.enemySpawns.forEach((spawn, index) => {
+        if (!spawn.enemy) errors.push(`Spawn ${index + 1} needs an enemy ID.`);
+        if (spawn.time < 0) errors.push(`Spawn ${index + 1} has a negative time.`);
+        if (spawn.lane < 1 || spawn.lane > 5) errors.push(`Spawn ${index + 1} lane must be 1–5.`);
+      });
+      return errors;
+    }
+
+    function commit(updateJson = true) {
+      if (!applyingJson) readForm();
+      state = normalizeLevel(state);
+      const errors = validate(state);
+      elements.status.classList.toggle("error", errors.length > 0);
+      elements.status.lastElementChild.textContent = errors.length ? errors[0] : `Valid level JSON · ${state.enemySpawns.length} spawns`;
+      if (updateJson) elements.json.value = JSON.stringify(state, null, 2);
+      localStorage.setItem("bullet-foundry-level-editor", JSON.stringify(state));
+    }
+
+    function applyJsonText(text, source = "Imported JSON") {
+      try {
+        applyingJson = true;
+        state = normalizeLevel(JSON.parse(text));
+        elements.source.textContent = source;
+        hydrateForm();
+      } catch (error) {
+        elements.status.classList.add("error");
+        elements.status.lastElementChild.textContent = `JSON error: ${error.message}`;
+      } finally {
+        applyingJson = false;
+      }
+    }
+
+    function loadFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => applyJsonText(reader.result, file.name);
+      reader.onerror = () => applyJsonText("", "Import failed");
+      reader.readAsText(file);
+    }
+
+    function exportJson() {
+      commit();
+      const errors = validate(state);
+      if (errors.length && !confirm(`This level has validation warnings:\n\n${errors.join("\n")}\n\nExport anyway?`)) return;
+      const blob = new Blob([JSON.stringify(state, null, 2) + "\n"], { type: "application/json" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${state.id.replace(/[^a-z0-9_-]+/gi, "-") || "level"}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+
+    function loadDraft() {
+      try {
+        const saved = localStorage.getItem("bullet-foundry-level-editor");
+        return saved ? normalizeLevel(JSON.parse(saved)) : null;
+      }
+      catch { return null; }
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
+    }
+
+    document.querySelectorAll("#level-id, #display-name, #starting-coins, #show-selection, #wait-selection").forEach(input => input.addEventListener("input", () => commit()));
+    elements.cardMode.addEventListener("change", () => { activeCardNames.clear(); renderCards(); commit(); });
+    $("#add-spawn").addEventListener("click", () => { state.enemySpawns.push({ time: 0, enemy: "Goblin", lane: 3, spawnX: 8.5, offset: { x: 0, y: 0, z: 0 } }); renderSpawns(); commit(); });
+    $("#sort-spawns").addEventListener("click", () => { state.enemySpawns.sort((a,b) => a.time - b.time || a.lane - b.lane); renderSpawns(); commit(); });
+    $("#new-level").addEventListener("click", () => { if (confirm("Start a new level? The current draft will be replaced.")) { state = structuredClone(DEFAULT_LEVEL); elements.source.textContent = "New level"; hydrateForm(); } });
+    $("#export-json").addEventListener("click", exportJson);
+    $("#copy-json").addEventListener("click", async () => {
+      commit();
+      try {
+        await navigator.clipboard.writeText(elements.json.value);
+      } catch {
+        elements.json.focus();
+        elements.json.select();
+        document.execCommand("copy");
+      }
+      elements.source.textContent = "Copied to clipboard";
+    });
+    $("#apply-json").addEventListener("click", () => applyJsonText(elements.json.value, "Edited JSON"));
+    $("#format-json").addEventListener("click", () => { try { elements.json.value = JSON.stringify(JSON.parse(elements.json.value), null, 2); } catch (error) { elements.status.classList.add("error"); elements.status.lastElementChild.textContent = error.message; } });
+    $("#import-button").addEventListener("click", () => elements.file.click());
+    elements.drop.addEventListener("click", () => elements.file.click());
+    elements.file.addEventListener("change", () => loadFile(elements.file.files[0]));
+    ["dragenter", "dragover"].forEach(type => elements.drop.addEventListener(type, event => { event.preventDefault(); elements.drop.classList.add("dragging"); }));
+    ["dragleave", "drop"].forEach(type => elements.drop.addEventListener(type, event => { event.preventDefault(); elements.drop.classList.remove("dragging"); }));
+    elements.drop.addEventListener("drop", event => loadFile(event.dataTransfer.files[0]));
+
+    hydrateForm();
+  </script>
+</body>
+</html>

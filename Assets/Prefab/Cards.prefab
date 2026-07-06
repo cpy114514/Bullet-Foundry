@@ -441,45 +441,45 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardCatalog
   cards:
-  - towerPrefab: {fileID: 5721149959220154368, guid: 4f7be27a34d9459db09ad91f76c7ae25, type: 3}
-    displayName: FireTower
-    price: 35
   - towerPrefab: {fileID: 4813214607448151296, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
     displayName: SplitTower
-    price: 40
-  - towerPrefab: {fileID: 6832251060331262468, guid: f9db28b7c6a04e31b5f60718293a4b5c, type: 3}
-    displayName: IceTower
-    price: 30
-  - towerPrefab: {fileID: 2183715628236857674, guid: 04f972ad9fd4fe041988104cf0525a8f, type: 3}
-    displayName: TriwayTower
-    price: 50
+    price: 100
   - towerPrefab: {fileID: 7931142071442373578, guid: 3df4716b0a5c4285e9da4b5c6d7e8f90, type: 3}
     displayName: CoinTower
-    price: 10
-  - towerPrefab: {fileID: 640000000000000001, guid: 76fc78cc3f754415a37b2000de000004, type: 3}
-    displayName: DoubleCoinTower
-    price: 22
-  - towerPrefab: {fileID: 610000000000000001, guid: 76fc78cc3f754415a37b2000de000001, type: 3}
-    displayName: TransitTower
-    price: 45
-  - towerPrefab: {fileID: 680000000000000001, guid: 76fc78cc3f754415a37b2000de000008, type: 3}
-    displayName: HomingTower
-    price: 50
-  - towerPrefab: {fileID: 630000000000000001, guid: 76fc78cc3f754415a37b2000de000003, type: 3}
-    displayName: ElectricTower
-    price: 45
-  - towerPrefab: {fileID: 620000000000000001, guid: 76fc78cc3f754415a37b2000de000002, type: 3}
-    displayName: OrbitTower
-    price: 55
-  - towerPrefab: {fileID: 650000000000000001, guid: 76fc78cc3f754415a37b2000de000005, type: 3}
-    displayName: RandomTower
-    price: 40
-  - towerPrefab: {fileID: 660000000000000001, guid: 76fc78cc3f754415a37b2000de000006, type: 3}
-    displayName: RocketTower
-    price: 60
+    price: 30
+  - towerPrefab: {fileID: 6832251060331262468, guid: f9db28b7c6a04e31b5f60718293a4b5c, type: 3}
+    displayName: IceTower
+    price: 65
   - towerPrefab: {fileID: 670000000000000001, guid: 76fc78cc3f754415a37b2000de000007, type: 3}
     displayName: ShieldTower
-    price: 30
+    price: 45
+  - towerPrefab: {fileID: 5721149959220154368, guid: 4f7be27a34d9459db09ad91f76c7ae25, type: 3}
+    displayName: FireTower
+    price: 75
+  - towerPrefab: {fileID: 2183715628236857674, guid: 04f972ad9fd4fe041988104cf0525a8f, type: 3}
+    displayName: TriwayTower
+    price: 150
+  - towerPrefab: {fileID: 640000000000000001, guid: 76fc78cc3f754415a37b2000de000004, type: 3}
+    displayName: CoinTower Pro
+    price: 65
+  - towerPrefab: {fileID: 610000000000000001, guid: 76fc78cc3f754415a37b2000de000001, type: 3}
+    displayName: TransitTower
+    price: 70
+  - towerPrefab: {fileID: 680000000000000001, guid: 76fc78cc3f754415a37b2000de000008, type: 3}
+    displayName: HomingTower
+    price: 75
+  - towerPrefab: {fileID: 630000000000000001, guid: 76fc78cc3f754415a37b2000de000003, type: 3}
+    displayName: ElectricTower
+    price: 100
+  - towerPrefab: {fileID: 620000000000000001, guid: 76fc78cc3f754415a37b2000de000002, type: 3}
+    displayName: OrbitTower
+    price: 150
+  - towerPrefab: {fileID: 650000000000000001, guid: 76fc78cc3f754415a37b2000de000005, type: 3}
+    displayName: RandomTower
+    price: 80
+  - towerPrefab: {fileID: 660000000000000001, guid: 76fc78cc3f754415a37b2000de000006, type: 3}
+    displayName: RocketTower
+    price: 175
   cardSpacing: 3.6
 --- !u!61 &2468379232294503861
 BoxCollider2D:

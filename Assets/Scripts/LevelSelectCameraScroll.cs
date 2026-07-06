@@ -46,6 +46,13 @@ public sealed class LevelSelectCameraScroll : MonoBehaviour
 
     private void Update()
     {
+        SettingsMenuController settings = FindFirstObjectByType<SettingsMenuController>();
+        if (settings != null && settings.IsOpen)
+        {
+            isDragging = false;
+            return;
+        }
+
         HandleKeyboardScroll();
         HandleWheelScroll();
         HandleDragScroll();
@@ -143,7 +150,8 @@ public sealed class LevelSelectCameraScroll : MonoBehaviour
         Collider2D hit = Physics2D.OverlapPoint(worldPosition);
         return hit != null && (
             hit.GetComponent<LevelSelectNode>() != null ||
-            hit.GetComponent<LevelSelectReturnButton>() != null);
+            hit.GetComponent<LevelSelectReturnButton>() != null ||
+            hit.GetComponent<LevelSelectSettingsButton>() != null);
     }
 
     private float GetWorldUnitsPerScreenPixel()

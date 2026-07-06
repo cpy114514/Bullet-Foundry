@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "level-11",
+  "displayName": "Level 11",
+  "startingCoins": 125,
+  "showCardSelectionOnStart": true,
+  "waitForCardSelectionBeforeLoadingCards": true,
+  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": [] },
+  "enemySpawns": [
+    { "time": 1, "enemy": "SpeedGoblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 2.5, "enemy": "SpeedGoblin", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 5, "enemy": "Barbarian", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 8, "enemy": "Barbarian", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+  ]
+}
