@@ -2591,6 +2591,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitlePageGoblinDemo
   clickArea: {fileID: 1598439900}
+  settingsMenu: {fileID: 0}
   goblinAnimator: {fileID: 595527992}
   speedGoblinObject: {fileID: 595527990}
   speedGoblinAnimator: {fileID: 595527992}

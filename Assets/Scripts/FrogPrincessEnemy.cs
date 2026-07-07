@@ -51,7 +51,8 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
     {
         ResolveReferences();
         CacheRestPose();
-        SetTongueVisible(false);
+        RestoreTonguePose();
+        SetTongueRestVisible();
     }
 
     private void OnEnable()
@@ -60,7 +61,8 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
         CacheRestPose();
         nextAttackTime = Time.time + 0.5f;
         isAttacking = false;
-        SetTongueVisible(false);
+        RestoreTonguePose();
+        SetTongueRestVisible();
     }
 
     private void OnDisable()
@@ -68,7 +70,7 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
         StopAllCoroutines();
         isAttacking = false;
         RestoreTonguePose();
-        SetTongueVisible(false);
+        SetTongueRestVisible();
     }
 
     private void Update()
@@ -94,7 +96,7 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
 
         Vector3 start = GetTongueOriginPosition();
         Vector3 end = GetTargetPoint(target, start);
-        SetTongueVisible(true);
+        SetTongueAttackVisible();
 
         yield return AnimateTongue(start, end, extendDuration, true);
 
@@ -110,7 +112,7 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
 
         yield return AnimateTongue(start, end, retractDuration, false);
         RestoreTonguePose();
-        SetTongueVisible(false);
+        SetTongueRestVisible();
         isAttacking = false;
     }
 
@@ -137,6 +139,11 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
     {
         if (tongueTip != null)
         {
+            if (!tongueTip.gameObject.activeSelf)
+            {
+                tongueTip.gameObject.SetActive(true);
+            }
+
             tongueTip.position = tipPosition;
         }
 
@@ -226,19 +233,33 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
 
         if (tongueOrigin == null)
         {
-            tongueOrigin = transform.Find("Body/Tongue Origin");
+            tongueOrigin = FindDescendant("Tongue Origin");
         }
 
         if (tongueTip == null)
         {
-            tongueTip = transform.Find("Body/Tongue Tip");
+            tongueTip = FindDescendant("Tongue Tip");
         }
 
         if (tongueLine == null)
         {
-            Transform line = transform.Find("Body/Tongue Line");
+            Transform line = FindDescendant("Tongue Line");
             tongueLine = line != null ? line.GetComponent<SpriteRenderer>() : null;
         }
+    }
+
+    private Transform FindDescendant(string objectName)
+    {
+        Transform[] descendants = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < descendants.Length; i++)
+        {
+            if (descendants[i].name == objectName)
+            {
+                return descendants[i];
+            }
+        }
+
+        return null;
     }
 
     private void CacheRestPose()
@@ -259,19 +280,36 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
         if (tongueLine != null)
         {
             tongueLine.transform.localScale = Vector3.one;
+            if (tongueOrigin != null)
+            {
+                tongueLine.transform.position = tongueOrigin.position;
+            }
         }
     }
 
-    private void SetTongueVisible(bool visible)
+    private void SetTongueRestVisible()
     {
         if (tongueTip != null)
         {
-            tongueTip.gameObject.SetActive(visible);
+            tongueTip.gameObject.SetActive(true);
         }
 
         if (tongueLine != null)
         {
-            tongueLine.enabled = visible;
+            tongueLine.enabled = false;
+        }
+    }
+
+    private void SetTongueAttackVisible()
+    {
+        if (tongueTip != null)
+        {
+            tongueTip.gameObject.SetActive(true);
+        }
+
+        if (tongueLine != null)
+        {
+            tongueLine.enabled = true;
         }
     }
 }
