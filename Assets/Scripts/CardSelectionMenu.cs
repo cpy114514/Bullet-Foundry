@@ -132,6 +132,29 @@ public sealed class CardSelectionMenu : MonoBehaviour
         menu.Open(targetSceneName);
     }
 
+    public static void HideAll()
+    {
+        CardSelectionMenu[] menus = FindObjectsByType<CardSelectionMenu>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < menus.Length; i++)
+        {
+            if (menus[i] == null)
+            {
+                continue;
+            }
+
+            menus[i].Close(true);
+            menus[i].enabled = false;
+            if (menus[i].gameObject != null)
+            {
+                menus[i].gameObject.SetActive(false);
+            }
+        }
+
+        IsOpen = false;
+    }
+
     private void Awake()
     {
         ResolveSceneReferences();

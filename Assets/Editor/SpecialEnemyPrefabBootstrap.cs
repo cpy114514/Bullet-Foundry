@@ -11,19 +11,15 @@ public static class SpecialEnemyPrefabBootstrap
 {
     private const string PigSpritePath = "Assets/Image/PigLeader.png";
     private const string FrogSpritePath = "Assets/Image/FrogPrincess.png";
-    private const string MathTeacherSpritePath = "Assets/Image/MyMathTeacher.png";
     private const string TongueLineSpritePath = "Assets/Image/UI2.png";
     private const string GoblinPrefabPath = "Assets/Prefab/Goblin.prefab";
     private const string PigPrefabPath = "Assets/Prefab/PigLeader.prefab";
     private const string FrogPrefabPath = "Assets/Prefab/FrogPrincess.prefab";
-    private const string MathTeacherPrefabPath = "Assets/Prefab/MyMathTeacher.prefab";
     private const string PigControllerPath = "Assets/Animation/PigLeader.controller";
     private const string FrogControllerPath = "Assets/Animation/FrogPrincess.controller";
-    private const string MathTeacherControllerPath = "Assets/Animation/MyMathTeacher.controller";
     private const string RigSignaturePrefix = "BulletFoundryRig:";
     private const string PigRigSchema = "BulletFoundryHybridPigBones:v1";
     private const string FrogRigSchema = "BulletFoundryUnityBonesNoHeart:v1";
-    private const string MathTeacherRigSchema = "BulletFoundryUnityBonesMathTeacher:v1";
 
     private static readonly PartDefinition[] PigParts =
     {
@@ -42,16 +38,6 @@ public static class SpecialEnemyPrefabBootstrap
         new("beautifulFrog 1_6", "Right Arm", 2, "Right Upper Arm Bone", "Right Forearm Bone"),
         new("beautifulFrog 1_7", "Left Leg", 0, "Left Thigh Bone", "Left Knee Bone", "Left Shin Bone", "Left Ankle Bone", "Left Foot Bone"),
         new("beautifulFrog 1_8", "Right Leg", 0, "Right Thigh Bone", "Right Knee Bone", "Right Shin Bone", "Right Ankle Bone", "Right Foot Bone")
-    };
-
-    private static readonly PartDefinition[] MathTeacherParts =
-    {
-        new("MyMathTeacher_0", "Body", 1, "Torso Bone", "Head Bone"),
-        new("MyMathTeacher_1", "Left Arm", 2, "Left Upper Arm Bone", "Left Forearm Bone"),
-        new("MyMathTeacher_2", "Right Arm", 2, "Right Upper Arm Bone", "Right Forearm Bone"),
-        new("MyMathTeacher_3", "Left Leg", 0, "Left Thigh Bone", "Left Shin Bone", "Left Foot Bone"),
-        new("MyMathTeacher_4", "Right Leg", 0, "Right Thigh Bone", "Right Shin Bone", "Right Foot Bone"),
-        new("MyMathTeacher_5", "Ruler", 3, "Ruler Bone")
     };
 
     private static readonly Vector2[] FrogAssemblyPositions =
@@ -79,7 +65,6 @@ public static class SpecialEnemyPrefabBootstrap
 
         CreatePigLeaderPrefab();
         CreateFrogPrincessPrefab();
-        CreateMathTeacherPrefab();
     }
 
     [MenuItem("Tools/Bullet Foundry/Rebuild Frog Princess Prefab")]
@@ -152,70 +137,6 @@ public static class SpecialEnemyPrefabBootstrap
     {
         AssetDatabase.DeleteAsset(PigPrefabPath);
         CreatePigLeaderPrefab();
-    }
-
-    [MenuItem("Tools/Bullet Foundry/Rebuild My Math Teacher Prefab")]
-    public static void RebuildMathTeacherPrefab()
-    {
-        AssetDatabase.DeleteAsset(MathTeacherPrefabPath);
-        CreateMathTeacherPrefab();
-    }
-
-    private static void CreateMathTeacherPrefab()
-    {
-        AnimatorController controller = EnsureController(
-            MathTeacherControllerPath,
-            "mymathteacher_walk",
-            "mymathteacher_attack",
-            "mymathteacher_die");
-
-        GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(MathTeacherPrefabPath);
-        if (existing != null && HasExpectedWeightedHierarchy(
-                existing,
-                MathTeacherSpritePath,
-                MathTeacherParts,
-                MathTeacherRigSchema))
-        {
-            ConfigureExistingMathTeacherPrefab(controller);
-            return;
-        }
-
-        GameObject root = BuildRiggedRoot(
-            "MyMathTeacher",
-            MathTeacherSpritePath,
-            MathTeacherParts,
-            2.55f,
-            true);
-        if (root == null)
-        {
-            return;
-        }
-
-        try
-        {
-            AddEnemyFoundation(root, controller);
-            GoblinEnemy enemy = root.AddComponent<GoblinEnemy>();
-            ConfigureGoblinEnemy(
-                enemy,
-                35,
-                0.65f,
-                3,
-                1.35f,
-                "mymathteacher_walk",
-                "mymathteacher_attack",
-                "mymathteacher_die",
-                1.2f);
-
-            FitHitbox(root);
-            PrefabUtility.SaveAsPrefabAsset(root, MathTeacherPrefabPath);
-            StampPrefabUserData(MathTeacherPrefabPath, MathTeacherRigSchema);
-            AssetDatabase.SaveAssets();
-            Debug.Log("MyMathTeacher prefab created with Unity SpriteSkin bones.");
-        }
-        finally
-        {
-            UnityEngine.Object.DestroyImmediate(root);
-        }
     }
 
     private static void CreateFrogPrincessPrefab(bool forceRebuild = false)
@@ -862,23 +783,6 @@ public static class SpecialEnemyPrefabBootstrap
                 FindDescendant(body, "Tongue Tip"),
                 FindDescendant(body, "Tongue Line").GetComponent<SpriteRenderer>());
             PrefabUtility.SaveAsPrefabAsset(root, FrogPrefabPath);
-        }
-        finally
-        {
-            PrefabUtility.UnloadPrefabContents(root);
-        }
-    }
-
-    private static void ConfigureExistingMathTeacherPrefab(AnimatorController controller)
-    {
-        GameObject root = PrefabUtility.LoadPrefabContents(MathTeacherPrefabPath);
-        try
-        {
-            Animator animator = root.GetComponent<Animator>() ?? root.AddComponent<Animator>();
-            animator.runtimeAnimatorController = controller;
-            GoblinEnemy enemy = root.GetComponent<GoblinEnemy>() ?? root.AddComponent<GoblinEnemy>();
-            ConfigureGoblinEnemy(enemy, 35, 0.65f, 3, 1.35f, "mymathteacher_walk", "mymathteacher_attack", "mymathteacher_die", 1.2f);
-            PrefabUtility.SaveAsPrefabAsset(root, MathTeacherPrefabPath);
         }
         finally
         {

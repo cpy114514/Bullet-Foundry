@@ -159,6 +159,8 @@ public sealed class LevelSelectNode : MonoBehaviour
             return;
         }
 
+        LevelSceneModeRequest.Clear();
+
         if (preferExternalJson && !string.IsNullOrWhiteSpace(externalJsonLocation))
         {
             LoadExternalJson();

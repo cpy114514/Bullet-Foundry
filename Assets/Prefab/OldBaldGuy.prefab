@@ -1249,9 +1249,9 @@ MonoBehaviour:
   attackCooldown: 1.35
   towerAttackRange: 0.02
   towerLaneTolerance: 0.6
-  walkStateName: mymathteacher_walk
-  attackStateName: mymathteacher_attack
-  dieStateName: mymathteacher_die
+  walkStateName: OldBaldGuy
+  attackStateName: OldBaldGuy_attack
+  dieStateName: OldBaldGuy_Die
   animationFadeTime: 0.08
   destroyDelayAfterDeath: 1.2
   hitFlashColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
