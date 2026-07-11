@@ -2,4 +2,4 @@ this is a game that allows player to grow different towers to upgrate or change 
 the towers won't attack by themself, they will only have react when bullets hits them
 fight against enemies by combination of different towers.
 there is also a sandbox mode
-You can also use level editor to make your own levels
+You can also use level editor to make your own levels, you can also export it as a .json file to share with others

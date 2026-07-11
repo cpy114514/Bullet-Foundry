@@ -36,16 +36,16 @@ public static class LevelEditorSceneBuilder
         Image background = CreateImage("Editor Background", root, new Color(0.94f, 0.94f, 0.91f, 1f));
         Stretch(background.rectTransform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        Text title = CreateText("Title", root, "LEVEL EDITOR", 48, TextAnchor.MiddleLeft, Color.black);
-        TopLeft(title.rectTransform, 28f, 18f, 470f, 64f);
+        Text title = CreateText("Title", root, "LEVEL EDITOR", 66, TextAnchor.MiddleLeft, Color.black);
+        TopLeft(title.rectTransform, 28f, 14f, 520f, 76f);
 
         RectTransform enemyPanel = CreatePanel(root, "Enemy Panel", new Color(1f, 1f, 1f, 0.88f));
         Stretch(enemyPanel, new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(24f, 96f), new Vector2(326f, -96f));
         CreatePanelLabel(enemyPanel, "ENEMIES");
         ScrollRect enemyScroll = CreateScroll(enemyPanel, "Enemy Scroll", out RectTransform enemyContent, new Vector2(18f, 18f), new Vector2(-18f, -76f));
         GridLayoutGroup enemyGrid = enemyContent.gameObject.AddComponent<GridLayoutGroup>();
-        enemyGrid.cellSize = new Vector2(126f, 54f);
-        enemyGrid.spacing = new Vector2(12f, 12f);
+        enemyGrid.cellSize = new Vector2(132f, 66f);
+        enemyGrid.spacing = new Vector2(10f, 12f);
         enemyGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         enemyGrid.constraintCount = 2;
         ContentSizeFitter enemyFit = enemyContent.gameObject.AddComponent<ContentSizeFitter>();
@@ -56,27 +56,22 @@ public static class LevelEditorSceneBuilder
         Stretch(timelinePanel, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(348f, 96f), new Vector2(-588f, -96f));
         CreatePanelLabel(timelinePanel, "TIMELINE");
 
-        RectTransform toolbar = CreateRect("Timeline Toolbar", timelinePanel);
-        TopStretch(toolbar, 18f, 68f, 18f, 42f);
-        HorizontalLayoutGroup toolbarLayout = toolbar.gameObject.AddComponent<HorizontalLayoutGroup>();
-        toolbarLayout.spacing = 10f;
-        toolbarLayout.childControlHeight = true;
-        toolbarLayout.childControlWidth = false;
-        toolbarLayout.childForceExpandHeight = true;
-        toolbarLayout.childForceExpandWidth = false;
-
-        Button undoButton = CreateButton("Undo Button", toolbar, "UNDO", 22);
-        AddLayout(undoButton.gameObject, 100f, 42f);
-        Button clearButton = CreateButton("Clear Button", toolbar, "CLEAR", 22);
-        AddLayout(clearButton.gameObject, 100f, 42f);
-        Button deleteModeButton = CreateButton("Delete Mode Button", toolbar, "DELETE: OFF", 18);
-        AddLayout(deleteModeButton.gameObject, 150f, 42f);
-
-        Text timelineHint = CreateText("Timeline Hint", timelinePanel, "DRAG ENEMY CARDS ONTO TRACKS. SELECT/DRAG MARKERS. DELETE/BACKSPACE REMOVES. CTRL + WHEEL ZOOMS.", 18, TextAnchor.MiddleLeft, Color.black);
-        TopStretch(timelineHint.rectTransform, 18f, 118f, 18f, 32f);
+        Image timelineOverview = CreateImage("Timeline Overview", timelinePanel, new Color(0.84f, 0.84f, 0.8f, 1f));
+        Outline overviewOutline = timelineOverview.gameObject.AddComponent<Outline>();
+        overviewOutline.effectColor = Color.black;
+        overviewOutline.effectDistance = new Vector2(1.5f, -1.5f);
+        TopStretch(timelineOverview.rectTransform, 18f, 66f, 18f, 48f);
+        RectTransform timelineOverviewDotRoot = CreateRect("Timeline Overview Dot Root", timelineOverview.rectTransform);
+        Stretch(timelineOverviewDotRoot, Vector2.zero, Vector2.one, new Vector2(8f, 4f), new Vector2(-8f, -4f));
+        Image timelineOverviewViewport = CreateImage("Timeline Overview Viewport", timelineOverview.rectTransform, new Color(0f, 0f, 0f, 0.08f));
+        timelineOverviewViewport.raycastTarget = false;
+        Outline overviewViewportOutline = timelineOverviewViewport.gameObject.AddComponent<Outline>();
+        overviewViewportOutline.effectColor = new Color(0f, 0f, 0f, 0.82f);
+        overviewViewportOutline.effectDistance = new Vector2(1.5f, -1.5f);
+        Stretch(timelineOverviewViewport.rectTransform, Vector2.zero, Vector2.one, new Vector2(8f, 4f), new Vector2(-8f, -4f));
 
         ScrollRect timelineScroll = CreateTimelineScrollArea(timelinePanel, out RectTransform timelineViewport, out RectTransform timelineArea, out RectTransform timelineGuideRoot, out RectTransform markerRoot);
-        Stretch(timelineScroll.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, new Vector2(18f, 26f), new Vector2(-18f, -160f));
+        Stretch(timelineScroll.GetComponent<RectTransform>(), Vector2.zero, Vector2.one, new Vector2(18f, 26f), new Vector2(-18f, -114f));
 
         RectTransform settingsPanel = CreatePanel(root, "Settings Panel", new Color(1f, 1f, 1f, 0.9f));
         Stretch(settingsPanel, new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-560f, 96f), new Vector2(-24f, -96f));
@@ -89,35 +84,45 @@ public static class LevelEditorSceneBuilder
         InputField outputInput = CreateInput(settingsPanel, "Output File Input", "CustomLevel.json", "Output Json File", 370f);
 
         RectTransform actionRow = CreateRect("Action Row", settingsPanel);
-        TopStretch(actionRow, 18f, 444f, 18f, 58f);
+        TopStretch(actionRow, 18f, 444f, 18f, 46f);
         HorizontalLayoutGroup actionLayout = actionRow.gameObject.AddComponent<HorizontalLayoutGroup>();
-        actionLayout.spacing = 10f;
+        actionLayout.spacing = 8f;
+        actionLayout.childControlHeight = true;
         actionLayout.childControlWidth = true;
+        actionLayout.childForceExpandHeight = true;
         actionLayout.childForceExpandWidth = true;
-        Button saveButton = CreateButton("Save Button", actionRow, "SAVE", 20);
-        Button loadButton = CreateButton("Load Button", actionRow, "LOAD", 20);
-        Button testButton = CreateButton("Test Button", actionRow, "TEST", 20);
+        Button saveButton = CreateButton("Save Button", actionRow, "SAVE", 26);
+        Button loadButton = CreateButton("Load Button", actionRow, "LOAD", 26);
+        Button testButton = CreateButton("Test Button", actionRow, "TEST", 26);
+        Button clearButton = CreateButton("Clear Button", actionRow, "CLEAR", 26);
+        AddLayout(saveButton.gameObject, 0f, 46f);
+        AddLayout(loadButton.gameObject, 0f, 46f);
+        AddLayout(testButton.gameObject, 0f, 46f);
+        AddLayout(clearButton.gameObject, 0f, 46f);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(actionRow);
 
-        Button backButton = CreateButton("Back Button", settingsPanel, "BACK", 22);
+        Button backButton = CreateButton("Exit Button", settingsPanel, "EXIT", 34);
         Stretch(backButton.GetComponent<RectTransform>(), new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(18f, 18f), new Vector2(-18f, 68f));
 
-        Text towersLabel = CreateText("Tower Allow Label", settingsPanel, "ALLOWED TOWERS", 22, TextAnchor.MiddleLeft, Color.black);
-        TopStretch(towersLabel.rectTransform, 18f, 548f, 18f, 28f);
-        ScrollRect towerScroll = CreateScroll(settingsPanel, "Tower Scroll", out RectTransform towerContent, new Vector2(18f, 90f), new Vector2(-18f, -592f));
-        VerticalLayoutGroup towerLayout = towerContent.gameObject.AddComponent<VerticalLayoutGroup>();
-        towerLayout.spacing = 8f;
-        towerLayout.childControlHeight = true;
-        towerLayout.childControlWidth = true;
-        towerLayout.childForceExpandHeight = false;
-        towerLayout.childForceExpandWidth = true;
+        Text towersLabel = CreateText("Tower Allow Label", settingsPanel, "ALLOWED TOWERS", 34, TextAnchor.MiddleLeft, Color.black);
+        TopStretch(towersLabel.rectTransform, 18f, 520f, 18f, 28f);
+        ScrollRect towerScroll = CreateScroll(settingsPanel, "Tower Scroll", out RectTransform towerContent, new Vector2(18f, 90f), new Vector2(-18f, -564f));
+        GridLayoutGroup towerLayout = towerContent.gameObject.AddComponent<GridLayoutGroup>();
+        towerLayout.cellSize = new Vector2(236f, 50f);
+        towerLayout.spacing = new Vector2(10f, 10f);
+        towerLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        towerLayout.constraintCount = 2;
         ContentSizeFitter towerFit = towerContent.gameObject.AddComponent<ContentSizeFitter>();
         towerFit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         towerScroll.horizontal = false;
 
-        Text statusText = CreateText("Status Text", root, "Click an enemy, choose a lane, then click the timeline.", 22, TextAnchor.MiddleLeft, Color.black);
-        Stretch(statusText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 24f), new Vector2(-28f, 72f));
+        Text timelineHint = CreateText("Timeline Hint", root, "OVERVIEW: EACH DOT IS ONE ENEMY. MIDDLE-DRAG PANS. RIGHT-CLICK MARKERS FOR COUNT/DELETE; RIGHT-CLICK EMPTY SPACE FOR UNDO/REDO. CTRL + WHEEL ZOOMS.", 24, TextAnchor.MiddleLeft, Color.black);
+        Stretch(timelineHint.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 48f), new Vector2(-28f, 76f));
 
-        GameObject buttonTemplate = CreateButton("Level Editor Button Template", root, "BUTTON", 20).gameObject;
+        Text statusText = CreateText("Status Text", root, "Click an enemy, choose a lane, then click the timeline.", 28, TextAnchor.MiddleLeft, Color.black);
+        Stretch(statusText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(28f, 18f), new Vector2(-28f, 44f));
+
+        GameObject buttonTemplate = CreateButton("Level Editor Button Template", root, "BUTTON", 32).gameObject;
         AddLayout(buttonTemplate, 150f, 48f);
         buttonTemplate.SetActive(false);
         RectTransform buttonTemplateRect = buttonTemplate.GetComponent<RectTransform>();
@@ -146,14 +151,16 @@ public static class LevelEditorSceneBuilder
         SetObject(serializedController, "timelineScrollRect", timelineScroll);
         SetObject(serializedController, "timelineGuideRoot", timelineGuideRoot);
         SetObject(serializedController, "markerRoot", markerRoot);
+        SetObject(serializedController, "timelineOverviewDotRoot", timelineOverviewDotRoot);
+        SetObject(serializedController, "timelineOverviewViewportIndicator", timelineOverviewViewport.rectTransform);
         SetObject(serializedController, "statusText", statusText);
         SetObject(serializedController, "saveButton", saveButton);
         SetObject(serializedController, "loadButton", loadButton);
         SetObject(serializedController, "testButton", testButton);
         SetObject(serializedController, "backButton", backButton);
-        SetObject(serializedController, "undoButton", undoButton);
         SetObject(serializedController, "clearButton", clearButton);
-        SetObject(serializedController, "deleteModeButton", deleteModeButton);
+        SetObject(serializedController, "undoButton", null);
+        SetObject(serializedController, "deleteModeButton", null);
         SetObject(serializedController, "buttonPrefab", buttonTemplate);
         SetObject(serializedController, "markerPrefab", markerTemplate);
         SetString(serializedController, "levelId", "level-001");
@@ -218,8 +225,8 @@ public static class LevelEditorSceneBuilder
 
     private static void CreatePanelLabel(RectTransform parent, string text)
     {
-        Text label = CreateText("Label", parent, text, 26, TextAnchor.MiddleLeft, Color.black);
-        TopStretch(label.rectTransform, 18f, 14f, 18f, 40f);
+        Text label = CreateText("Label", parent, text, 38, TextAnchor.MiddleLeft, Color.black);
+        TopStretch(label.rectTransform, 18f, 10f, 18f, 52f);
     }
 
     private static ScrollRect CreateScroll(RectTransform parent, string name, out RectTransform content, Vector2 offsetMin, Vector2 offsetMax)
@@ -315,7 +322,7 @@ public static class LevelEditorSceneBuilder
 
     private static InputField CreateInput(RectTransform parent, string name, string value, string label, float top)
     {
-        Text labelText = CreateText(name + " Label", parent, label.ToUpperInvariant(), 17, TextAnchor.MiddleLeft, Color.black);
+        Text labelText = CreateText(name + " Label", parent, label.ToUpperInvariant(), 26, TextAnchor.MiddleLeft, Color.black);
         TopStretch(labelText.rectTransform, 18f, top, 18f, 24f);
 
         Image background = CreateImage(name, parent, Color.white);
@@ -324,7 +331,7 @@ public static class LevelEditorSceneBuilder
         outline.effectDistance = new Vector2(1f, -1f);
         TopStretch(background.rectTransform, 18f, top + 26f, 18f, 44f);
 
-        Text text = CreateText("Text", background.rectTransform, value, 20, TextAnchor.MiddleLeft, Color.black);
+        Text text = CreateText("Text", background.rectTransform, value, 30, TextAnchor.MiddleLeft, Color.black);
         Stretch(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(12f, 4f), new Vector2(-12f, -4f));
 
         InputField input = background.gameObject.AddComponent<InputField>();
@@ -336,16 +343,16 @@ public static class LevelEditorSceneBuilder
 
     private static Button CreateButton(string name, RectTransform parent, string label, int fontSize)
     {
-        Image image = CreateImage(name, parent, Color.white);
+        Image image = CreateImage(name, parent, new Color(0.98f, 0.98f, 0.96f, 1f));
         Outline outline = image.gameObject.AddComponent<Outline>();
         outline.effectColor = Color.black;
         outline.effectDistance = new Vector2(1.5f, -1.5f);
 
         Button button = image.gameObject.AddComponent<Button>();
         ColorBlock colors = button.colors;
-        colors.normalColor = Color.white;
-        colors.highlightedColor = new Color(0.88f, 0.88f, 0.88f, 1f);
-        colors.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+        colors.normalColor = new Color(0.98f, 0.98f, 0.96f, 1f);
+        colors.highlightedColor = new Color(0.86f, 0.86f, 0.84f, 1f);
+        colors.pressedColor = new Color(0.68f, 0.68f, 0.66f, 1f);
         colors.selectedColor = colors.highlightedColor;
         button.colors = colors;
 
@@ -356,21 +363,21 @@ public static class LevelEditorSceneBuilder
 
     private static GameObject CreateMarkerTemplate(RectTransform parent)
     {
-        Image marker = CreateImage("Level Editor Marker Template", parent, new Color(0.08f, 0.08f, 0.08f, 1f));
+        Image marker = CreateImage("Level Editor Marker Template", parent, new Color(0.98f, 0.98f, 0.96f, 1f));
         marker.raycastTarget = true;
         Center(marker.rectTransform, 0f, 0f, 142f, 38f);
         Outline outline = marker.gameObject.AddComponent<Outline>();
-        outline.effectColor = Color.white;
-        outline.effectDistance = new Vector2(1f, -1f);
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
         Button button = marker.gameObject.AddComponent<Button>();
         ColorBlock colors = button.colors;
-        colors.normalColor = new Color(0.08f, 0.08f, 0.08f, 1f);
-        colors.highlightedColor = new Color(0.22f, 0.22f, 0.22f, 1f);
-        colors.pressedColor = new Color(0.34f, 0.34f, 0.34f, 1f);
+        colors.normalColor = new Color(0.98f, 0.98f, 0.96f, 1f);
+        colors.highlightedColor = new Color(0.9f, 0.9f, 0.88f, 1f);
+        colors.pressedColor = new Color(0.72f, 0.72f, 0.7f, 1f);
         colors.selectedColor = colors.highlightedColor;
         button.colors = colors;
 
-        Text text = CreateText("Text", marker.rectTransform, "Goblin 0s L1", 16, TextAnchor.MiddleCenter, Color.white);
+        Text text = CreateText("Text", marker.rectTransform, "Goblin 0s L1", 28, TextAnchor.MiddleCenter, Color.black);
         Stretch(text.rectTransform, Vector2.zero, Vector2.one, new Vector2(6f, 2f), new Vector2(-6f, -2f));
         return marker.gameObject;
     }

@@ -11,6 +11,11 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class LevelEditorController : MonoBehaviour
 {
+    private static readonly Color CardNormalColor = new(0.98f, 0.98f, 0.96f, 1f);
+    private static readonly Color CardSelectedColor = new(0.82f, 0.82f, 0.8f, 1f);
+    private static readonly Color CardDisabledColor = new(0.62f, 0.62f, 0.6f, 1f);
+    private const float TimelineMarkerBaseWidth = 124f;
+
     [Header("Data")]
     [SerializeField]
     private string levelId = "custom-level";
@@ -114,6 +119,12 @@ public sealed class LevelEditorController : MonoBehaviour
     private RectTransform markerRoot;
 
     [SerializeField]
+    private RectTransform timelineOverviewDotRoot;
+
+    [SerializeField]
+    private RectTransform timelineOverviewViewportIndicator;
+
+    [SerializeField]
     private Text statusText;
 
     [SerializeField]
@@ -157,16 +168,33 @@ public sealed class LevelEditorController : MonoBehaviour
     private readonly Dictionary<string, bool> towerAllowed = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<GameObject> generatedButtons = new();
     private readonly List<GameObject> generatedMarkers = new();
+    private readonly Dictionary<int, RectTransform> generatedMarkerRects = new();
+    private readonly List<GameObject> generatedOverviewDots = new();
+    private readonly Stack<List<LevelEditorSpawn>> undoHistory = new();
+    private readonly Stack<List<LevelEditorSpawn>> redoHistory = new();
+    private readonly HashSet<int> selectedSpawnIds = new();
+    private readonly Dictionary<int, Vector2> dragStartPositions = new();
 
     private string selectedEnemyId;
     private int selectedLane = 3;
     private bool deleteMode;
     private Canvas rootCanvas;
     private GameObject dragGhost;
+    private GameObject timelinePreview;
     private bool pendingTimelineLayoutRefresh;
     private int nextSpawnId = 1;
     private int selectedSpawnId = -1;
     private bool draggingSpawnMarker;
+    private List<LevelEditorSpawn> dragStartSnapshot;
+    private RectTransform boxSelectionRect;
+    private Vector2 boxSelectionStart;
+    private bool boxSelecting;
+    private bool timelinePanning;
+    private Vector2 timelinePanStartPointer;
+    private float timelinePanStartPosition;
+    private GameObject markerContextMenu;
+    private InputField markerContextCountInput;
+    private int markerContextSpawnId = -1;
 
     public float TimelineDuration => Mathf.Max(5f, timelineDuration);
 
@@ -174,7 +202,9 @@ public sealed class LevelEditorController : MonoBehaviour
     {
         NormalizeCatalogs();
         ResetTowerRules();
-        selectedEnemyId = enemyIds.Count > 0 ? enemyIds[0] : "Goblin";
+        // Opening the editor should not arm a placement card. The player must
+        // explicitly click or drag an enemy card before placing anything.
+        selectedEnemyId = null;
         selectedLane = Mathf.Clamp(selectedLane, 1, laneCount);
     }
 
@@ -212,27 +242,51 @@ public sealed class LevelEditorController : MonoBehaviour
         }
 
         if ((keyboard.deleteKey.wasPressedThisFrame || keyboard.backspaceKey.wasPressedThisFrame) &&
-            selectedSpawnId >= 0)
+            selectedSpawnIds.Count > 0)
         {
-            DeleteSelectedSpawn();
+            DeleteSelectedSpawns();
+        }
+
+        if (IsCtrlHeld() && keyboard.zKey.wasPressedThisFrame)
+        {
+            UndoLastChange();
+            return;
+        }
+
+        if (IsCtrlHeld() && keyboard.yKey.wasPressedThisFrame)
+        {
+            RedoLastChange();
         }
     }
 
     public void DeleteSelectedSpawn()
     {
-        if (selectedSpawnId >= 0)
-        {
-            RemoveSpawn(selectedSpawnId);
-        }
+        DeleteSelectedSpawns();
     }
 
-    public void DeselectSpawnMarker()
+    private void DeleteSelectedSpawns()
     {
-        if (selectedSpawnId < 0)
+        if (selectedSpawnIds.Count == 0)
         {
             return;
         }
 
+        PushUndoSnapshot();
+        int removedCount = spawns.RemoveAll(spawn => selectedSpawnIds.Contains(spawn.Id));
+        selectedSpawnIds.Clear();
+        selectedSpawnId = -1;
+        RebuildMarkers();
+        SetStatus($"Removed {removedCount} marker{(removedCount == 1 ? string.Empty : "s")}.");
+    }
+
+    public void DeselectSpawnMarker()
+    {
+        if (selectedSpawnIds.Count == 0)
+        {
+            return;
+        }
+
+        selectedSpawnIds.Clear();
         selectedSpawnId = -1;
         RebuildMarkers();
         SetStatus("Selection cleared.");
@@ -243,15 +297,230 @@ public sealed class LevelEditorController : MonoBehaviour
         LevelEditorSpawn spawn = FindSpawn(spawnId);
         if (spawn == null)
         {
+            selectedSpawnIds.Clear();
             selectedSpawnId = -1;
             return;
         }
 
+        selectedSpawnIds.Clear();
+        selectedSpawnIds.Add(spawnId);
         selectedSpawnId = spawnId;
         deleteMode = false;
         UpdateDeleteModeVisual();
         RebuildMarkers();
         SetStatus($"Selected {PrettyName(spawn.Enemy)} at {spawn.Time:0.0}s on lane {spawn.Lane}. Drag it or press Delete.");
+    }
+
+    public void OpenMarkerContextMenu(int spawnId, PointerEventData eventData)
+    {
+        LevelEditorSpawn spawn = FindSpawn(spawnId);
+        RectTransform canvasRect = GetRootCanvasRect();
+        if (spawn == null || canvasRect == null || eventData == null)
+        {
+            return;
+        }
+
+        if (!selectedSpawnIds.Contains(spawnId))
+        {
+            SelectSpawnMarker(spawnId);
+        }
+
+        CloseMarkerContextMenu();
+        markerContextSpawnId = spawnId;
+
+        const float menuWidth = 220f;
+        const float menuHeight = 84f;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            eventData.position,
+            eventData.pressEventCamera,
+            out Vector2 localPoint);
+
+        GameObject menu = new("Marker Context Menu", typeof(RectTransform), typeof(Image));
+        menu.transform.SetParent(canvasRect, false);
+        markerContextMenu = menu;
+        RectTransform menuRect = menu.GetComponent<RectTransform>();
+        menuRect.anchorMin = new Vector2(0.5f, 0.5f);
+        menuRect.anchorMax = new Vector2(0.5f, 0.5f);
+        menuRect.pivot = new Vector2(0f, 1f);
+        menuRect.sizeDelta = new Vector2(menuWidth, menuHeight);
+        menuRect.anchoredPosition = new Vector2(
+            Mathf.Clamp(localPoint.x + 12f, canvasRect.rect.xMin, canvasRect.rect.xMax - menuWidth),
+            Mathf.Clamp(localPoint.y - 12f, canvasRect.rect.yMin + menuHeight, canvasRect.rect.yMax));
+
+        Image menuImage = menu.GetComponent<Image>();
+        menuImage.color = new Color(0.98f, 0.98f, 0.96f, 1f);
+        Outline menuOutline = menu.AddComponent<Outline>();
+        menuOutline.effectColor = Color.black;
+        menuOutline.effectDistance = new Vector2(2f, -2f);
+
+        CreateContextText(menuRect, "COUNT", 26, TextAnchor.MiddleLeft, 12f, 8f, 64f, 30f);
+        markerContextCountInput = CreateContextCountInput(menuRect, spawn.Count, 80f, 8f, 128f, 30f);
+        markerContextCountInput.onEndEdit.AddListener(_ => ApplyMarkerContextCount());
+        CreateContextButton(menuRect, "DELETE SELECTED", 24, 12f, 46f, 196f, 28f, DeleteSelectedMarkersFromContextMenu);
+        SetStatus($"Set count for {selectedSpawnIds.Count} selected marker{(selectedSpawnIds.Count == 1 ? string.Empty : "s")}.");
+    }
+
+    private void ApplyMarkerContextCount()
+    {
+        if (markerContextSpawnId < 0 || markerContextCountInput == null ||
+            !int.TryParse(markerContextCountInput.text, out int parsed))
+        {
+            return;
+        }
+
+        int count = Mathf.Clamp(parsed, 1, 999);
+        List<LevelEditorSpawn> targets = spawns
+            .Where(spawn => selectedSpawnIds.Contains(spawn.Id))
+            .ToList();
+        if (targets.Count == 0)
+        {
+            LevelEditorSpawn contextSpawn = FindSpawn(markerContextSpawnId);
+            if (contextSpawn != null)
+            {
+                targets.Add(contextSpawn);
+            }
+        }
+
+        if (targets.Count == 0 || targets.All(spawn => spawn.Count == count))
+        {
+            return;
+        }
+
+        PushUndoSnapshot();
+        for (int i = 0; i < targets.Count; i++)
+        {
+            targets[i].Count = count;
+        }
+
+        RebuildMarkers();
+        SetStatus($"Set {targets.Count} card{(targets.Count == 1 ? string.Empty : "s")} to {(count == 1 ? "1 enemy" : $"{count} enemies")}.");
+    }
+
+    private void DeleteSelectedMarkersFromContextMenu()
+    {
+        CloseMarkerContextMenu();
+        DeleteSelectedSpawns();
+    }
+
+    private void OpenTimelineContextMenu(PointerEventData eventData)
+    {
+        RectTransform canvasRect = GetRootCanvasRect();
+        if (canvasRect == null || eventData == null)
+        {
+            return;
+        }
+
+        CloseMarkerContextMenu();
+        const float menuWidth = 190f;
+        const float menuHeight = 76f;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvasRect,
+            eventData.position,
+            eventData.pressEventCamera,
+            out Vector2 localPoint);
+
+        GameObject menu = new("Timeline Context Menu", typeof(RectTransform), typeof(Image));
+        menu.transform.SetParent(canvasRect, false);
+        markerContextMenu = menu;
+        RectTransform menuRect = menu.GetComponent<RectTransform>();
+        menuRect.anchorMin = new Vector2(0.5f, 0.5f);
+        menuRect.anchorMax = new Vector2(0.5f, 0.5f);
+        menuRect.pivot = new Vector2(0f, 1f);
+        menuRect.sizeDelta = new Vector2(menuWidth, menuHeight);
+        menuRect.anchoredPosition = new Vector2(
+            Mathf.Clamp(localPoint.x + 12f, canvasRect.rect.xMin, canvasRect.rect.xMax - menuWidth),
+            Mathf.Clamp(localPoint.y - 12f, canvasRect.rect.yMin + menuHeight, canvasRect.rect.yMax));
+
+        Image menuImage = menu.GetComponent<Image>();
+        menuImage.color = new Color(0.98f, 0.98f, 0.96f, 1f);
+        Outline menuOutline = menu.AddComponent<Outline>();
+        menuOutline.effectColor = Color.black;
+        menuOutline.effectDistance = new Vector2(2f, -2f);
+        CreateContextButton(menuRect, "UNDO", 24, 10f, 8f, 170f, 26f, UndoFromContextMenu);
+        CreateContextButton(menuRect, "REDO", 24, 10f, 42f, 170f, 26f, RedoFromContextMenu);
+    }
+
+    private void UndoFromContextMenu()
+    {
+        CloseMarkerContextMenu();
+        UndoLastChange();
+    }
+
+    private void RedoFromContextMenu()
+    {
+        CloseMarkerContextMenu();
+        RedoLastChange();
+    }
+
+    private void CloseMarkerContextMenu()
+    {
+        markerContextCountInput = null;
+        markerContextSpawnId = -1;
+        if (markerContextMenu != null)
+        {
+            DestroyGeneratedObject(markerContextMenu);
+            markerContextMenu = null;
+        }
+    }
+
+    private Text CreateContextText(RectTransform parent, string value, int fontSize, TextAnchor alignment, float left, float top, float width, float height)
+    {
+        GameObject textObject = new("Text", typeof(RectTransform), typeof(Text));
+        textObject.transform.SetParent(parent, false);
+        RectTransform textRect = textObject.GetComponent<RectTransform>();
+        SetTopLeft(textRect, left, top, width, height);
+        Text text = textObject.GetComponent<Text>();
+        text.font = GetUiFont();
+        text.text = value;
+        text.fontSize = fontSize;
+        text.alignment = alignment;
+        text.color = Color.black;
+        text.raycastTarget = false;
+        return text;
+    }
+
+    private InputField CreateContextCountInput(RectTransform parent, int value, float left, float top, float width, float height)
+    {
+        GameObject inputObject = new("Count Input", typeof(RectTransform), typeof(Image), typeof(InputField));
+        inputObject.transform.SetParent(parent, false);
+        RectTransform inputRect = inputObject.GetComponent<RectTransform>();
+        SetTopLeft(inputRect, left, top, width, height);
+        Image background = inputObject.GetComponent<Image>();
+        background.color = Color.white;
+        Outline outline = inputObject.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(1f, -1f);
+
+        Text text = CreateContextText(inputRect, value.ToString(), 28, TextAnchor.MiddleCenter, 6f, 2f, width - 12f, height - 4f);
+        text.raycastTarget = false;
+        InputField input = inputObject.GetComponent<InputField>();
+        input.textComponent = text;
+        input.text = value.ToString();
+        input.contentType = InputField.ContentType.IntegerNumber;
+        return input;
+    }
+
+    private Button CreateContextButton(RectTransform parent, string label, int fontSize, float left, float top, float width, float height, Action action)
+    {
+        GameObject buttonObject = new(label + " Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+        RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+        SetTopLeft(buttonRect, left, top, width, height);
+        Image image = buttonObject.GetComponent<Image>();
+        image.color = new Color(0.9f, 0.9f, 0.88f, 1f);
+        Outline outline = buttonObject.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(1f, -1f);
+        Button button = buttonObject.GetComponent<Button>();
+        ColorBlock colors = button.colors;
+        colors.normalColor = new Color(0.9f, 0.9f, 0.88f, 1f);
+        colors.highlightedColor = new Color(0.78f, 0.78f, 0.76f, 1f);
+        colors.pressedColor = new Color(0.62f, 0.62f, 0.6f, 1f);
+        button.colors = colors;
+        CreateContextText(buttonRect, label, fontSize, TextAnchor.MiddleCenter, 4f, 1f, width - 8f, height - 2f);
+        button.onClick.AddListener(() => action.Invoke());
+        return button;
     }
 
     private void WireStaticUi()
@@ -284,9 +553,7 @@ public sealed class LevelEditorController : MonoBehaviour
         AddButtonListener(loadButton, LoadJson);
         AddButtonListener(testButton, TestPlay);
         AddButtonListener(backButton, () => SceneTransitionController.LoadScene(levelSelectSceneName));
-        AddButtonListener(undoButton, UndoSpawn);
         AddButtonListener(clearButton, ClearSpawns);
-        AddButtonListener(deleteModeButton, ToggleDeleteMode);
 
         LevelEditorTimelineClickArea clickArea = timelineArea != null
             ? timelineArea.GetComponent<LevelEditorTimelineClickArea>()
@@ -294,6 +561,11 @@ public sealed class LevelEditorController : MonoBehaviour
         if (clickArea != null)
         {
             clickArea.SetController(this);
+        }
+
+        if (timelineScrollRect != null)
+        {
+            timelineScrollRect.onValueChanged.AddListener(_ => UpdateTimelineOverviewViewportIndicator());
         }
     }
 
@@ -334,15 +606,28 @@ public sealed class LevelEditorController : MonoBehaviour
 
             drag.Configure(this, enemyId);
             bool isSelected = string.Equals(enemyId, selectedEnemyId, StringComparison.OrdinalIgnoreCase);
-            SetButtonColor(button, isSelected ? new Color(0.45f, 0.45f, 0.45f, 1f) : Color.white);
+            SetButtonColor(button, isSelected ? CardSelectedColor : CardNormalColor);
+            SetButtonTextColor(button, Color.black);
+            SetButtonTextSize(button, 24, 12, 26);
             button.onClick.AddListener(() =>
             {
                 selectedEnemyId = enemyId;
                 deleteMode = false;
                 RebuildDynamicUi();
-                SetStatus($"Selected enemy: {PrettyName(enemyId)}. Drag it onto the timeline.");
+                SetStatus($"Selected enemy: {PrettyName(enemyId)}. Click the timeline to place it, or drag the card onto a lane.");
             });
         }
+    }
+
+    private void ClearEnemySelection()
+    {
+        if (string.IsNullOrWhiteSpace(selectedEnemyId))
+        {
+            return;
+        }
+
+        selectedEnemyId = null;
+        RebuildEnemyButtons();
     }
 
     private void RebuildLaneButtons()
@@ -381,9 +666,11 @@ public sealed class LevelEditorController : MonoBehaviour
             bool allowed = IsTowerAllowed(towerName);
             Button button = CreateUiButton(
                 towerListRoot,
-                $"{PrettyName(towerName)}  {(allowed ? "ALLOW" : "BLOCK")}",
+                $"{(allowed ? "[✓]" : "[ ]")} {PrettyName(towerName)}",
                 $"Tower Button - {towerName}");
-            SetButtonColor(button, allowed ? Color.white : new Color(0.35f, 0.35f, 0.35f, 1f));
+            SetButtonColor(button, allowed ? CardNormalColor : CardDisabledColor);
+            SetButtonTextColor(button, Color.black);
+            SetButtonTextSize(button, 20, 10, 22);
             button.onClick.AddListener(() =>
             {
                 towerAllowed[towerName] = !IsTowerAllowed(towerName);
@@ -398,6 +685,77 @@ public sealed class LevelEditorController : MonoBehaviour
         ResizeTimelineContent();
         RebuildTimelineGuides();
         RebuildMarkers();
+    }
+
+    private void RebuildTimelineOverview()
+    {
+        ClearGeneratedOverviewDots();
+        UpdateTimelineOverviewViewportIndicator();
+        if (timelineOverviewDotRoot == null || spawns.Count == 0)
+        {
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        float width = timelineOverviewDotRoot.rect.width;
+        float height = timelineOverviewDotRoot.rect.height;
+        if (width <= 0f || height <= 0f)
+        {
+            return;
+        }
+
+        const float dotSize = 9f;
+        float leftPadding = dotSize * 0.5f;
+        float usableWidth = Mathf.Max(0f, width - dotSize);
+        float usableHeight = Mathf.Max(0f, height - dotSize);
+        for (int i = 0; i < spawns.Count; i++)
+        {
+            LevelEditorSpawn spawn = spawns[i];
+            GameObject dot = new("Timeline Overview Dot", typeof(RectTransform), typeof(Image));
+            dot.transform.SetParent(timelineOverviewDotRoot, false);
+            generatedOverviewDots.Add(dot);
+
+            RectTransform rect = dot.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0f, 1f);
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            float timePercent = Mathf.Clamp01(spawn.Time / TimelineDuration);
+            float lanePercent = (Mathf.Clamp(spawn.Lane, 1, laneCount) - 0.5f) / Mathf.Max(1, laneCount);
+            float stackOffset = ((spawn.Id % 3) - 1) * 2f;
+            rect.anchoredPosition = new Vector2(
+                leftPadding + usableWidth * timePercent,
+                -(leftPadding + usableHeight * lanePercent + stackOffset));
+            rect.sizeDelta = new Vector2(dotSize, dotSize);
+
+            Image image = dot.GetComponent<Image>();
+            image.color = Color.black;
+            image.raycastTarget = false;
+        }
+    }
+
+    private void UpdateTimelineOverviewViewportIndicator()
+    {
+        if (timelineOverviewViewportIndicator == null || timelineOverviewDotRoot == null ||
+            timelineArea == null || timelineViewport == null || timelineScrollRect == null)
+        {
+            return;
+        }
+
+        Canvas.ForceUpdateCanvases();
+        float overviewWidth = timelineOverviewDotRoot.rect.width;
+        float overviewHeight = timelineOverviewDotRoot.rect.height;
+        float contentWidth = timelineArea.rect.width;
+        float visibleWidth = timelineViewport.rect.width;
+        if (overviewWidth <= 0f || overviewHeight <= 0f || contentWidth <= 0f || visibleWidth <= 0f)
+        {
+            return;
+        }
+
+        float visibleFraction = Mathf.Clamp01(visibleWidth / contentWidth);
+        float indicatorWidth = Mathf.Clamp(overviewWidth * visibleFraction, 16f, overviewWidth);
+        float horizontalRange = Mathf.Max(0f, overviewWidth - indicatorWidth);
+        float left = horizontalRange * Mathf.Clamp01(timelineScrollRect.horizontalNormalizedPosition);
+        SetTopLeft(timelineOverviewViewportIndicator, 8f + left, 4f, indicatorWidth, overviewHeight);
     }
 
     private void ResizeTimelineContent()
@@ -454,7 +812,7 @@ public sealed class LevelEditorController : MonoBehaviour
 
         for (int i = timelineGuideRoot.childCount - 1; i >= 0; i--)
         {
-            Destroy(timelineGuideRoot.GetChild(i).gameObject);
+            DestroyGeneratedObject(timelineGuideRoot.GetChild(i).gameObject);
         }
 
         float width = timelineArea.rect.width;
@@ -466,7 +824,7 @@ public sealed class LevelEditorController : MonoBehaviour
             float top = timelineHeaderHeight + (lane - 1) * timelineLaneHeight;
             Color laneColor = lane % 2 == 0 ? new Color(0.9f, 0.9f, 0.86f, 1f) : new Color(0.84f, 0.84f, 0.8f, 1f);
             CreateGuideImage($"Lane {lane} Background", timelineGuideRoot, laneColor, 0f, top, width, timelineLaneHeight);
-            CreateGuideText($"Lane {lane} Label", timelineGuideRoot, $"Lane {lane}", 14, TextAnchor.MiddleLeft, Color.black, 8f, top + 6f, 78f, 24f);
+            CreateGuideText($"Lane {lane} Label", timelineGuideRoot, $"Lane {lane}", 22, TextAnchor.MiddleLeft, Color.black, 8f, top + 6f, 78f, 24f);
             CreateGuideImage($"Lane {lane} Bottom Line", timelineGuideRoot, new Color(0f, 0f, 0f, 0.28f), 0f, top + timelineLaneHeight - 1f, width, 1.5f);
         }
 
@@ -489,7 +847,7 @@ public sealed class LevelEditorController : MonoBehaviour
             CreateGuideImage($"Tick {second}s", timelineGuideRoot, major ? new Color(0f, 0f, 0f, 0.36f) : new Color(0f, 0f, 0f, 0.12f), x, 0f, major ? 2f : 1f, height);
             if (major)
             {
-                CreateGuideText($"Tick Label {second}s", timelineGuideRoot, $"{second}s", 14, TextAnchor.UpperLeft, Color.black, x + 4f, 6f, 58f, 28f);
+                CreateGuideText($"Tick Label {second}s", timelineGuideRoot, $"{second}s", 22, TextAnchor.UpperLeft, Color.black, x + 4f, 6f, 58f, 28f);
             }
         }
     }
@@ -515,25 +873,27 @@ public sealed class LevelEditorController : MonoBehaviour
             RectTransform rect = markerObject.GetComponent<RectTransform>();
             if (rect != null)
             {
-                float x = Mathf.Clamp(spawn.Time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
-                float y = timelineHeaderHeight + (Mathf.Clamp(spawn.Lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
-                SetTopLeft(rect, x, y, 154f, timelineLaneHeight - 16f);
+                ApplyMarkerLayout(rect, spawn);
+                generatedMarkerRects[spawnId] = rect;
             }
 
             Text label = markerObject.GetComponentInChildren<Text>(true);
             if (label != null)
             {
-                label.font = GetUiFont();
-                label.text = $"{PrettyName(spawn.Enemy)}\n{spawn.Time:0.0}s  L{spawn.Lane}";
-                label.resizeTextForBestFit = true;
-                label.resizeTextMinSize = 8;
-                label.resizeTextMaxSize = 18;
-                label.color = spawn.Id == selectedSpawnId ? Color.black : Color.white;
+                ConfigureMarkerLabel(label, spawn);
             }
 
             Button button = markerObject.GetComponent<Button>();
             if (button != null)
             {
+                ColorBlock colors = button.colors;
+                colors.normalColor = selectedSpawnIds.Contains(spawn.Id) ? CardSelectedColor : CardNormalColor;
+                colors.highlightedColor = new Color(0.9f, 0.9f, 0.88f, 1f);
+                colors.pressedColor = new Color(0.72f, 0.72f, 0.7f, 1f);
+                colors.selectedColor = CardSelectedColor;
+                colors.disabledColor = CardDisabledColor;
+                button.colors = colors;
+
                 button.onClick.RemoveAllListeners();
                 button.onClick.AddListener(() =>
                 {
@@ -551,14 +911,14 @@ public sealed class LevelEditorController : MonoBehaviour
             Image image = markerObject.GetComponent<Image>();
             if (image != null)
             {
-                image.color = spawn.Id == selectedSpawnId ? Color.white : Color.black;
+                image.color = selectedSpawnIds.Contains(spawn.Id) ? CardSelectedColor : CardNormalColor;
             }
 
             Outline outline = markerObject.GetComponent<Outline>();
             if (outline != null)
             {
-                outline.effectColor = spawn.Id == selectedSpawnId ? Color.black : Color.white;
-                outline.effectDistance = spawn.Id == selectedSpawnId ? new Vector2(3f, -3f) : new Vector2(1f, -1f);
+                outline.effectColor = Color.black;
+                outline.effectDistance = selectedSpawnIds.Contains(spawn.Id) ? new Vector2(4f, -4f) : new Vector2(1.5f, -1.5f);
             }
 
             LevelEditorSpawnMarkerDrag drag = markerObject.GetComponent<LevelEditorSpawnMarkerDrag>();
@@ -569,11 +929,13 @@ public sealed class LevelEditorController : MonoBehaviour
 
             drag.Configure(this, spawnId);
 
-            if (spawn.Id == selectedSpawnId)
+            if (selectedSpawnIds.Contains(spawn.Id))
             {
                 markerObject.transform.SetAsLastSibling();
             }
         }
+
+        RebuildTimelineOverview();
     }
 
     public void BeginSpawnMarkerDrag(int spawnId)
@@ -583,11 +945,26 @@ public sealed class LevelEditorController : MonoBehaviour
             return;
         }
 
-        selectedSpawnId = spawnId;
+        if (!selectedSpawnIds.Contains(spawnId))
+        {
+            SelectSpawnMarker(spawnId);
+            SetStatus("Marker selected. Drag it again to move it.");
+            return;
+        }
+
         draggingSpawnMarker = true;
         deleteMode = false;
         UpdateDeleteModeVisual();
-        RebuildMarkers();
+        dragStartSnapshot = CaptureSpawnSnapshot();
+        dragStartPositions.Clear();
+        foreach (int selectedId in selectedSpawnIds)
+        {
+            LevelEditorSpawn selected = FindSpawn(selectedId);
+            if (selected != null)
+            {
+                dragStartPositions[selectedId] = new Vector2(selected.Time, selected.Lane);
+            }
+        }
     }
 
     public void DragSpawnMarker(int spawnId, PointerEventData eventData)
@@ -599,17 +976,33 @@ public sealed class LevelEditorController : MonoBehaviour
 
         if (TryGetTimelinePlacementFromScreenPoint(eventData.position, eventData.pressEventCamera, out float time, out int lane))
         {
-            MoveSpawn(spawnId, time, lane, false);
+            MoveSelectedSpawns(spawnId, time, lane);
         }
     }
 
     public void EndSpawnMarkerDrag(int spawnId)
     {
+        bool wasDragging = draggingSpawnMarker;
         draggingSpawnMarker = false;
         LevelEditorSpawn spawn = FindSpawn(spawnId);
         if (spawn != null)
         {
-            SetStatus($"Moved {PrettyName(spawn.Enemy)} to {spawn.Time:0.0}s on lane {spawn.Lane}.");
+            if (wasDragging)
+            {
+                if (dragStartSnapshot != null && !SpawnSnapshotsMatch(dragStartSnapshot, spawns))
+                {
+                    PushUndoSnapshot(dragStartSnapshot);
+                }
+
+                dragStartSnapshot = null;
+                dragStartPositions.Clear();
+                RebuildMarkers();
+                SetStatus($"Moved {selectedSpawnIds.Count} selected marker{(selectedSpawnIds.Count == 1 ? string.Empty : "s")}.");
+            }
+            else
+            {
+                SetStatus($"Selected {PrettyName(spawn.Enemy)}. Drag again to move it.");
+            }
         }
     }
 
@@ -630,8 +1023,117 @@ public sealed class LevelEditorController : MonoBehaviour
         }
         else
         {
-            RebuildMarkers();
+            UpdateMarkerVisual(spawn);
         }
+    }
+
+    private void MoveSelectedSpawns(int anchorSpawnId, float time, int lane)
+    {
+        if (!dragStartPositions.TryGetValue(anchorSpawnId, out Vector2 anchorStart))
+        {
+            MoveSpawn(anchorSpawnId, time, lane, false);
+            return;
+        }
+
+        float timeDelta = time - anchorStart.x;
+        int laneDelta = lane - Mathf.RoundToInt(anchorStart.y);
+        foreach (KeyValuePair<int, Vector2> pair in dragStartPositions)
+        {
+            LevelEditorSpawn spawn = FindSpawn(pair.Key);
+            if (spawn == null)
+            {
+                continue;
+            }
+
+            spawn.Time = Mathf.Clamp(pair.Value.x + timeDelta, 0f, TimelineDuration);
+            spawn.Lane = Mathf.Clamp(Mathf.RoundToInt(pair.Value.y) + laneDelta, 1, laneCount);
+        }
+
+        selectedSpawnId = anchorSpawnId;
+        UpdateMarkerVisual(FindSpawn(anchorSpawnId));
+    }
+
+    private void UpdateMarkerVisual(LevelEditorSpawn spawn)
+    {
+        if (spawn == null)
+        {
+            return;
+        }
+
+        spawns.Sort((a, b) => a.Time.CompareTo(b.Time));
+        for (int i = 0; i < spawns.Count; i++)
+        {
+            LevelEditorSpawn current = spawns[i];
+            if (!generatedMarkerRects.TryGetValue(current.Id, out RectTransform rect) || rect == null)
+            {
+                RebuildMarkers();
+                return;
+            }
+
+            ApplyMarkerLayout(rect, current);
+            Text label = rect.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                ConfigureMarkerLabel(label, current);
+            }
+        }
+
+        RebuildTimelineOverview();
+    }
+
+    private void ApplyMarkerLayout(RectTransform rect, LevelEditorSpawn spawn)
+    {
+        GetMarkerStackInfo(spawn, out int stackIndex, out int stackCount);
+        float x = Mathf.Clamp(spawn.Time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
+        float y = timelineHeaderHeight + (Mathf.Clamp(spawn.Lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
+        float width = TimelineMarkerBaseWidth;
+        float height = timelineLaneHeight - 16f;
+        if (stackCount > 1)
+        {
+            int shrinkSteps = Mathf.Min(stackCount - 1, 4);
+            width = Mathf.Max(82f, TimelineMarkerBaseWidth - shrinkSteps * 10f);
+            height = Mathf.Max(38f, height - shrinkSteps * 5f);
+            x += stackIndex * 8f;
+            y += stackIndex * 5f;
+        }
+
+        SetTopLeft(rect, x, y, width, height);
+    }
+
+    private void GetMarkerStackInfo(LevelEditorSpawn target, out int stackIndex, out int stackCount)
+    {
+        stackIndex = 0;
+        stackCount = 0;
+        int lane = Mathf.Clamp(target.Lane, 1, laneCount);
+        int timeCell = Mathf.FloorToInt(Mathf.Clamp(target.Time, 0f, TimelineDuration));
+        for (int i = 0; i < spawns.Count; i++)
+        {
+            LevelEditorSpawn candidate = spawns[i];
+            if (Mathf.Clamp(candidate.Lane, 1, laneCount) != lane ||
+                Mathf.FloorToInt(Mathf.Clamp(candidate.Time, 0f, TimelineDuration)) != timeCell)
+            {
+                continue;
+            }
+
+            if (candidate.Id == target.Id)
+            {
+                stackIndex = stackCount;
+            }
+
+            stackCount++;
+        }
+    }
+
+    private void ConfigureMarkerLabel(Text label, LevelEditorSpawn spawn)
+    {
+        label.font = GetUiFont();
+        string countSuffix = spawn.Count > 1 ? $"  x{spawn.Count}" : string.Empty;
+        label.text = $"{PrettyName(spawn.Enemy)}{countSuffix}\n{spawn.Time:0.0}s  L{spawn.Lane}";
+        label.fontSize = 30;
+        label.resizeTextForBestFit = true;
+        label.resizeTextMinSize = 16;
+        label.resizeTextMaxSize = 32;
+        label.color = Color.black;
     }
 
     private void RemoveSpawn(int spawnId)
@@ -643,7 +1145,9 @@ public sealed class LevelEditorController : MonoBehaviour
         }
 
         LevelEditorSpawn removed = spawns[index];
+        PushUndoSnapshot();
         spawns.RemoveAt(index);
+        selectedSpawnIds.Remove(spawnId);
         if (selectedSpawnId == spawnId)
         {
             selectedSpawnId = -1;
@@ -693,11 +1197,14 @@ public sealed class LevelEditorController : MonoBehaviour
             eventData.pressEventCamera,
             out Vector2 localPoint);
         ghostRect.anchoredPosition = localPoint + new Vector2(18f, -18f);
+
+        UpdateTimelinePreview(selectedEnemyId, eventData);
     }
 
     public void EndEnemyCardDrag(string enemyId, PointerEventData eventData)
     {
         DestroyDragGhost();
+        DestroyTimelinePreview();
         if (eventData == null)
         {
             return;
@@ -705,12 +1212,182 @@ public sealed class LevelEditorController : MonoBehaviour
 
         if (TryAddSpawnAtScreenPoint(enemyId, eventData.position, eventData.pressEventCamera, out float time, out int lane))
         {
+            ClearEnemySelection();
             SetStatus($"Added {PrettyName(enemyId)} at {time:0.0}s on lane {lane}.");
         }
         else
         {
             SetStatus("Drop enemy cards onto the timeline lanes.");
         }
+    }
+
+    public void HandleTimelineClick(PointerEventData eventData)
+    {
+        if (eventData == null)
+        {
+            return;
+        }
+
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            OpenTimelineContextMenu(eventData);
+            eventData.Use();
+            return;
+        }
+
+        CloseMarkerContextMenu();
+
+        if (!deleteMode && !string.IsNullOrWhiteSpace(selectedEnemyId) &&
+            TryAddSpawnAtScreenPoint(selectedEnemyId, eventData.position, eventData.pressEventCamera, out float time, out int lane))
+        {
+            string addedEnemyId = selectedEnemyId;
+            ClearEnemySelection();
+            SetStatus($"Added {PrettyName(addedEnemyId)} at {time:0.0}s on lane {lane}.");
+            eventData.Use();
+            return;
+        }
+
+        DeselectSpawnMarker();
+    }
+
+    public void BeginTimelineBoxSelection(PointerEventData eventData)
+    {
+        if (eventData == null || eventData.button != PointerEventData.InputButton.Left ||
+            !string.IsNullOrWhiteSpace(selectedEnemyId) || timelineViewport == null ||
+            !RectTransformUtility.RectangleContainsScreenPoint(timelineViewport, eventData.position, eventData.pressEventCamera) ||
+            !TryGetTimelineTopLeftPoint(eventData.position, eventData.pressEventCamera, out boxSelectionStart))
+        {
+            return;
+        }
+
+        boxSelecting = true;
+        EnsureBoxSelectionRect();
+        UpdateBoxSelectionRect(boxSelectionStart);
+        boxSelectionRect.gameObject.SetActive(true);
+    }
+
+    public void UpdateTimelineBoxSelection(PointerEventData eventData)
+    {
+        if (!boxSelecting || eventData == null ||
+            !TryGetTimelineTopLeftPoint(eventData.position, eventData.pressEventCamera, out Vector2 currentPoint))
+        {
+            return;
+        }
+
+        UpdateBoxSelectionRect(currentPoint);
+    }
+
+    public void EndTimelineBoxSelection(PointerEventData eventData)
+    {
+        if (!boxSelecting)
+        {
+            return;
+        }
+
+        boxSelecting = false;
+        if (boxSelectionRect != null)
+        {
+            boxSelectionRect.gameObject.SetActive(false);
+        }
+
+        if (eventData == null ||
+            !TryGetTimelineTopLeftPoint(eventData.position, eventData.pressEventCamera, out Vector2 endPoint))
+        {
+            return;
+        }
+
+        Rect selection = MakeTopLeftRect(boxSelectionStart, endPoint);
+        if (selection.width < 8f && selection.height < 8f)
+        {
+            return;
+        }
+
+        selectedSpawnIds.Clear();
+        foreach (KeyValuePair<int, RectTransform> pair in generatedMarkerRects)
+        {
+            RectTransform marker = pair.Value;
+            if (marker == null)
+            {
+                continue;
+            }
+
+            float left = marker.anchoredPosition.x;
+            float top = -marker.anchoredPosition.y;
+            Rect markerRect = new(left, top, marker.rect.width, marker.rect.height);
+            if (selection.Overlaps(markerRect, true))
+            {
+                selectedSpawnIds.Add(pair.Key);
+            }
+        }
+
+        selectedSpawnId = selectedSpawnIds.Count > 0 ? selectedSpawnIds.First() : -1;
+        RebuildMarkers();
+        SetStatus(selectedSpawnIds.Count > 0
+            ? $"Selected {selectedSpawnIds.Count} marker{(selectedSpawnIds.Count == 1 ? string.Empty : "s")}. Drag one to move the group."
+            : "No markers inside selection box.");
+    }
+
+    private void EnsureBoxSelectionRect()
+    {
+        if (boxSelectionRect != null || timelineArea == null)
+        {
+            return;
+        }
+
+        GameObject box = new("Timeline Box Selection", typeof(RectTransform), typeof(Image));
+        box.transform.SetParent(timelineArea, false);
+        boxSelectionRect = box.GetComponent<RectTransform>();
+        boxSelectionRect.anchorMin = new Vector2(0f, 1f);
+        boxSelectionRect.anchorMax = new Vector2(0f, 1f);
+        boxSelectionRect.pivot = new Vector2(0f, 1f);
+        if (markerRoot != null)
+        {
+            boxSelectionRect.SetSiblingIndex(markerRoot.GetSiblingIndex());
+        }
+
+        Image image = box.GetComponent<Image>();
+        image.color = new Color(0f, 0f, 0f, 0.08f);
+        image.raycastTarget = false;
+        Outline outline = box.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        box.SetActive(false);
+    }
+
+    private void UpdateBoxSelectionRect(Vector2 currentPoint)
+    {
+        if (boxSelectionRect == null)
+        {
+            return;
+        }
+
+        Rect selection = MakeTopLeftRect(boxSelectionStart, currentPoint);
+        SetTopLeft(boxSelectionRect, selection.xMin, selection.yMin, selection.width, selection.height);
+    }
+
+    private static Rect MakeTopLeftRect(Vector2 first, Vector2 second)
+    {
+        return Rect.MinMaxRect(
+            Mathf.Min(first.x, second.x),
+            Mathf.Min(first.y, second.y),
+            Mathf.Max(first.x, second.x),
+            Mathf.Max(first.y, second.y));
+    }
+
+    private bool TryGetTimelineTopLeftPoint(Vector2 screenPoint, Camera eventCamera, out Vector2 point)
+    {
+        point = Vector2.zero;
+        if (timelineArea == null ||
+            !RectTransformUtility.ScreenPointToLocalPointInRectangle(timelineArea, screenPoint, eventCamera, out Vector2 localPoint))
+        {
+            return false;
+        }
+
+        Rect areaRect = timelineArea.rect;
+        point = new Vector2(
+            Mathf.Clamp(localPoint.x - areaRect.xMin, 0f, areaRect.width),
+            Mathf.Clamp(areaRect.yMax - localPoint.y, 0f, areaRect.height));
+        return true;
     }
 
     private bool TryAddSpawnAtScreenPoint(string enemyId, Vector2 screenPoint, Camera eventCamera, out float time, out int lane)
@@ -723,8 +1400,11 @@ public sealed class LevelEditorController : MonoBehaviour
             return false;
         }
 
+        PushUndoSnapshot();
         LevelEditorSpawn spawn = new(nextSpawnId++, time, enemyId, lane);
         spawns.Add(spawn);
+        selectedSpawnIds.Clear();
+        selectedSpawnIds.Add(spawn.Id);
         selectedSpawnId = spawn.Id;
         RebuildMarkers();
         return true;
@@ -780,8 +1460,42 @@ public sealed class LevelEditorController : MonoBehaviour
         {
             timelineScrollRect.horizontalNormalizedPosition = Mathf.Clamp01(
                 timelineScrollRect.horizontalNormalizedPosition - eventData.scrollDelta.y * 0.035f);
+            UpdateTimelineOverviewViewportIndicator();
             eventData.Use();
         }
+    }
+
+    public void BeginTimelinePan(PointerEventData eventData)
+    {
+        if (eventData == null || eventData.button != PointerEventData.InputButton.Middle ||
+            timelineScrollRect == null || timelineArea == null || timelineViewport == null)
+        {
+            return;
+        }
+
+        timelinePanning = true;
+        timelinePanStartPointer = eventData.position;
+        timelinePanStartPosition = timelineScrollRect.horizontalNormalizedPosition;
+    }
+
+    public void UpdateTimelinePan(PointerEventData eventData)
+    {
+        if (!timelinePanning || eventData == null || timelineScrollRect == null ||
+            timelineArea == null || timelineViewport == null)
+        {
+            return;
+        }
+
+        float scrollableWidth = Mathf.Max(1f, timelineArea.rect.width - timelineViewport.rect.width);
+        float horizontalDelta = eventData.position.x - timelinePanStartPointer.x;
+        timelineScrollRect.horizontalNormalizedPosition = Mathf.Clamp01(
+            timelinePanStartPosition - horizontalDelta / scrollableWidth);
+        UpdateTimelineOverviewViewportIndicator();
+    }
+
+    public void EndTimelinePan(PointerEventData eventData)
+    {
+        timelinePanning = false;
     }
 
     public void ZoomTimelineAtScreenPoint(Vector2 screenPoint, float scrollDelta, Camera eventCamera)
@@ -884,13 +1598,13 @@ public sealed class LevelEditorController : MonoBehaviour
         dragGhost = new GameObject($"Dragging Enemy - {enemyId}");
         dragGhost.transform.SetParent(canvasRect, false);
         RectTransform rect = dragGhost.AddComponent<RectTransform>();
-        SetTopLeft(rect, 0f, 0f, 150f, 58f);
+        SetTopLeft(rect, 0f, 0f, 180f, 70f);
         Image image = dragGhost.AddComponent<Image>();
-        image.color = new Color(1f, 1f, 1f, 0.78f);
+        image.color = new Color(0.98f, 0.98f, 0.96f, 0.96f);
         image.raycastTarget = false;
         Outline outline = dragGhost.AddComponent<Outline>();
         outline.effectColor = Color.black;
-        outline.effectDistance = new Vector2(1.5f, -1.5f);
+        outline.effectDistance = new Vector2(3f, -3f);
 
         GameObject textObject = new("Text");
         textObject.transform.SetParent(dragGhost.transform, false);
@@ -902,10 +1616,12 @@ public sealed class LevelEditorController : MonoBehaviour
         Text text = textObject.AddComponent<Text>();
         text.font = GetUiFont();
         text.text = PrettyName(enemyId);
-        text.fontSize = 18;
+        text.fontSize = 34;
         text.alignment = TextAnchor.MiddleCenter;
         text.color = Color.black;
         text.raycastTarget = false;
+
+        dragGhost.transform.SetAsLastSibling();
     }
 
     private void DestroyDragGhost()
@@ -914,6 +1630,90 @@ public sealed class LevelEditorController : MonoBehaviour
         {
             Destroy(dragGhost);
             dragGhost = null;
+        }
+    }
+
+    private void UpdateTimelinePreview(string enemyId, PointerEventData eventData)
+    {
+        if (eventData == null || markerRoot == null ||
+            !TryGetTimelinePlacementFromScreenPoint(eventData.position, eventData.pressEventCamera, out float time, out int lane))
+        {
+            HideTimelinePreview();
+            return;
+        }
+
+        EnsureTimelinePreview(enemyId);
+        if (timelinePreview == null)
+        {
+            return;
+        }
+
+        timelinePreview.SetActive(true);
+        RectTransform rect = timelinePreview.transform as RectTransform;
+        if (rect != null)
+        {
+            float x = Mathf.Clamp(time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
+            float y = timelineHeaderHeight + (Mathf.Clamp(lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
+            SetTopLeft(rect, x, y, 154f, timelineLaneHeight - 16f);
+        }
+
+        Text text = timelinePreview.GetComponentInChildren<Text>(true);
+        if (text != null)
+        {
+            text.text = $"{PrettyName(enemyId)}\n{time:0.0}s  L{lane}";
+        }
+
+        timelinePreview.transform.SetAsLastSibling();
+    }
+
+    private void EnsureTimelinePreview(string enemyId)
+    {
+        if (timelinePreview != null)
+        {
+            return;
+        }
+
+        timelinePreview = new GameObject("Timeline Enemy Preview");
+        timelinePreview.transform.SetParent(markerRoot, false);
+        RectTransform rect = timelinePreview.AddComponent<RectTransform>();
+        SetTopLeft(rect, 0f, 0f, 154f, Mathf.Max(48f, timelineLaneHeight - 16f));
+        Image image = timelinePreview.AddComponent<Image>();
+        image.color = new Color(0.98f, 0.98f, 0.96f, 0.72f);
+        image.raycastTarget = false;
+        Outline outline = timelinePreview.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(2.5f, -2.5f);
+
+        GameObject textObject = new("Text");
+        textObject.transform.SetParent(timelinePreview.transform, false);
+        RectTransform textRect = textObject.AddComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.offsetMin = new Vector2(6f, 2f);
+        textRect.offsetMax = new Vector2(-6f, -2f);
+        Text text = textObject.AddComponent<Text>();
+        text.font = GetUiFont();
+        text.text = PrettyName(enemyId);
+        text.fontSize = 30;
+        text.alignment = TextAnchor.MiddleCenter;
+        text.color = Color.black;
+        text.raycastTarget = false;
+    }
+
+    private void HideTimelinePreview()
+    {
+        if (timelinePreview != null)
+        {
+            timelinePreview.SetActive(false);
+        }
+    }
+
+    private void DestroyTimelinePreview()
+    {
+        if (timelinePreview != null)
+        {
+            Destroy(timelinePreview);
+            timelinePreview = null;
         }
     }
 
@@ -955,8 +1755,8 @@ public sealed class LevelEditorController : MonoBehaviour
             text.font = GetUiFont();
             text.text = label;
             text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = 8;
-            text.resizeTextMaxSize = 20;
+            text.resizeTextMinSize = 14;
+            text.resizeTextMaxSize = 32;
         }
 
         Button button = buttonObject.GetComponent<Button>();
@@ -990,7 +1790,7 @@ public sealed class LevelEditorController : MonoBehaviour
         text.alignment = TextAnchor.MiddleCenter;
         text.color = Color.black;
         text.font = GetUiFont();
-        text.fontSize = 18;
+        text.fontSize = 30;
         buttonPrefab = buttonObject;
         return buttonObject;
     }
@@ -1072,25 +1872,100 @@ public sealed class LevelEditorController : MonoBehaviour
         SceneTransitionController.LoadScene(playSceneName);
     }
 
-    private void UndoSpawn()
+    private void UndoLastChange()
     {
-        if (spawns.Count <= 0)
+        if (undoHistory.Count == 0)
         {
-            SetStatus("No spawn to undo.");
+            SetStatus("Nothing to undo.");
             return;
         }
 
-        spawns.RemoveAt(spawns.Count - 1);
-        RebuildMarkers();
-        SetStatus("Removed last spawn.");
+        redoHistory.Push(CaptureSpawnSnapshot());
+        RestoreSpawnSnapshot(undoHistory.Pop());
+        SetStatus("Undid last timeline change.");
+    }
+
+    private void RedoLastChange()
+    {
+        if (redoHistory.Count == 0)
+        {
+            SetStatus("Nothing to redo.");
+            return;
+        }
+
+        undoHistory.Push(CaptureSpawnSnapshot());
+        RestoreSpawnSnapshot(redoHistory.Pop());
+        SetStatus("Redid timeline change.");
     }
 
     private void ClearSpawns()
     {
+        if (spawns.Count == 0)
+        {
+            SetStatus("Timeline is already clear.");
+            return;
+        }
+
+        PushUndoSnapshot();
         spawns.Clear();
+        selectedSpawnIds.Clear();
         selectedSpawnId = -1;
         RebuildMarkers();
         SetStatus("Timeline cleared.");
+    }
+
+    private void PushUndoSnapshot()
+    {
+        PushUndoSnapshot(CaptureSpawnSnapshot());
+    }
+
+    private void PushUndoSnapshot(List<LevelEditorSpawn> snapshot)
+    {
+        undoHistory.Push(CloneSpawnSnapshot(snapshot));
+        redoHistory.Clear();
+    }
+
+    private List<LevelEditorSpawn> CaptureSpawnSnapshot()
+    {
+        return CloneSpawnSnapshot(spawns);
+    }
+
+    private static List<LevelEditorSpawn> CloneSpawnSnapshot(IEnumerable<LevelEditorSpawn> source)
+    {
+        return source
+            .Select(spawn => new LevelEditorSpawn(spawn.Id, spawn.Time, spawn.Enemy, spawn.Lane, spawn.Count))
+            .ToList();
+    }
+
+    private void RestoreSpawnSnapshot(List<LevelEditorSpawn> snapshot)
+    {
+        spawns.Clear();
+        spawns.AddRange(CloneSpawnSnapshot(snapshot));
+        selectedSpawnIds.Clear();
+        selectedSpawnId = -1;
+        nextSpawnId = Mathf.Max(nextSpawnId, spawns.Count == 0 ? 1 : spawns.Max(spawn => spawn.Id) + 1);
+        RebuildMarkers();
+    }
+
+    private static bool SpawnSnapshotsMatch(IReadOnlyList<LevelEditorSpawn> left, IReadOnlyList<LevelEditorSpawn> right)
+    {
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < left.Count; i++)
+        {
+            LevelEditorSpawn a = left[i];
+            LevelEditorSpawn b = right[i];
+            if (a.Id != b.Id || !Mathf.Approximately(a.Time, b.Time) || a.Lane != b.Lane || a.Count != b.Count ||
+                !string.Equals(a.Enemy, b.Enemy, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void ToggleDeleteMode()
@@ -1124,14 +1999,15 @@ public sealed class LevelEditorController : MonoBehaviour
             cardRules = BuildCardRules(),
             enemySpawns = spawns
                 .OrderBy(spawn => spawn.Time)
-                .Select(spawn => new LevelEnemySpawnJson
+                .SelectMany(spawn => Enumerable.Range(0, Mathf.Clamp(spawn.Count, 1, 999))
+                    .Select(_ => new LevelEnemySpawnJson
                 {
                     time = Mathf.Max(0f, spawn.Time),
                     enemy = spawn.Enemy,
                     lane = Mathf.Clamp(spawn.Lane, 1, laneCount),
                     spawnX = spawnX,
                     offset = new LevelVector3Json()
-                })
+                }))
                 .ToList()
         };
 
@@ -1156,11 +2032,13 @@ public sealed class LevelEditorController : MonoBehaviour
         displayName = data.displayName;
         startingCoins = data.startingCoins;
         spawns.Clear();
+        selectedSpawnIds.Clear();
         selectedSpawnId = -1;
-        for (int i = 0; i < data.enemySpawns.Count; i++)
+        foreach (IGrouping<string, LevelEnemySpawnJson> group in data.enemySpawns.GroupBy(spawn =>
+                     $"{spawn.enemy}|{spawn.time:0.###}|{spawn.lane}|{spawn.spawnX:0.###}"))
         {
-            LevelEnemySpawnJson spawn = data.enemySpawns[i];
-            spawns.Add(new LevelEditorSpawn(nextSpawnId++, spawn.time, spawn.enemy, spawn.lane));
+            LevelEnemySpawnJson spawn = group.First();
+            spawns.Add(new LevelEditorSpawn(nextSpawnId++, spawn.time, spawn.enemy, spawn.lane, group.Count()));
         }
 
         ResetTowerRules();
@@ -1287,6 +2165,29 @@ public sealed class LevelEditorController : MonoBehaviour
         }
     }
 
+    private static void SetButtonTextColor(Button button, Color color)
+    {
+        Text text = button != null ? button.GetComponentInChildren<Text>(true) : null;
+        if (text != null)
+        {
+            text.color = color;
+        }
+    }
+
+    private static void SetButtonTextSize(Button button, int maxSize, int minSize, int fallbackSize)
+    {
+        Text text = button != null ? button.GetComponentInChildren<Text>(true) : null;
+        if (text == null)
+        {
+            return;
+        }
+
+        text.fontSize = fallbackSize;
+        text.resizeTextForBestFit = true;
+        text.resizeTextMinSize = minSize;
+        text.resizeTextMaxSize = maxSize;
+    }
+
     private void ClearGeneratedButtonsUnder(RectTransform root)
     {
         if (root == null)
@@ -1302,15 +2203,35 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void ClearGeneratedMarkers()
     {
+        generatedMarkerRects.Clear();
+        timelinePreview = null;
         for (int i = markerRoot != null ? markerRoot.childCount - 1 : -1; i >= 0; i--)
         {
             DestroyGeneratedObject(markerRoot.GetChild(i).gameObject);
         }
     }
 
+    private void ClearGeneratedOverviewDots()
+    {
+        generatedOverviewDots.Clear();
+        for (int i = timelineOverviewDotRoot != null ? timelineOverviewDotRoot.childCount - 1 : -1; i >= 0; i--)
+        {
+            DestroyGeneratedObject(timelineOverviewDotRoot.GetChild(i).gameObject);
+        }
+    }
+
     private static void DestroyGeneratedObject(GameObject target)
     {
-        if (target != null)
+        if (target == null)
+        {
+            return;
+        }
+
+        if (Application.isPlaying)
+        {
+            Destroy(target);
+        }
+        else
         {
             DestroyImmediate(target);
         }
@@ -1346,12 +2267,13 @@ public sealed class LevelEditorController : MonoBehaviour
     [Serializable]
     private sealed class LevelEditorSpawn
     {
-        public LevelEditorSpawn(int id, float time, string enemy, int lane)
+        public LevelEditorSpawn(int id, float time, string enemy, int lane, int count = 1)
         {
             Id = id;
             Time = Mathf.Max(0f, time);
             Enemy = Clean(enemy, "Goblin");
             Lane = Mathf.Max(1, lane);
+            Count = Mathf.Max(1, count);
         }
 
         public int Id { get; }
@@ -1361,5 +2283,7 @@ public sealed class LevelEditorController : MonoBehaviour
         public string Enemy { get; }
 
         public int Lane { get; set; }
+
+        public int Count { get; set; }
     }
 }

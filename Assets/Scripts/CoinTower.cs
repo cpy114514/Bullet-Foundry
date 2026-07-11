@@ -8,7 +8,11 @@ public sealed class CoinTower : MonoBehaviour
     private int coinsPerBullet = 1;
 
     [SerializeField, Min(1)]
-    private int coinValue = 1;
+    private int coinValue = 5;
+
+    [Header("Production Limit")]
+    [SerializeField, Min(0.1f)]
+    private float maxProductionEventsPerSecond = 5f;
 
     [SerializeField]
     private CoinPickup coinPickupPrefab;
@@ -24,6 +28,8 @@ public sealed class CoinTower : MonoBehaviour
 
     private readonly HashSet<Bullet> rewardedBullets = new();
     private SpriteRenderer spriteRenderer;
+    private float productionWindowEndTime;
+    private int productionEventsInWindow;
 
     private void Awake()
     {
@@ -52,10 +58,27 @@ public sealed class CoinTower : MonoBehaviour
 
     private void TryReward(Bullet bullet)
     {
-        if (bullet == null || !rewardedBullets.Add(bullet))
+        if (bullet == null || rewardedBullets.Contains(bullet))
         {
             return;
         }
+
+        // A tower receives five immediate production charges per second. This
+        // avoids inserting a forced 0.2-second dead spot between every bullet.
+        if (Time.time >= productionWindowEndTime)
+        {
+            productionWindowEndTime = Time.time + 1f;
+            productionEventsInWindow = 0;
+        }
+
+        int productionLimit = Mathf.Max(1, Mathf.FloorToInt(maxProductionEventsPerSecond));
+        if (productionEventsInWindow >= productionLimit)
+        {
+            return;
+        }
+
+        rewardedBullets.Add(bullet);
+        productionEventsInWindow++;
 
         for (int i = 0; i < coinsPerBullet; i++)
         {

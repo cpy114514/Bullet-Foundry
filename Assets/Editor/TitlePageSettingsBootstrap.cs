@@ -125,6 +125,43 @@ public static class TitlePageSettingsBootstrap
         }
     }
 
+    /// <summary>
+    /// Adds the same asset-based Settings panel used by the title page to a
+    /// different loaded scene. This prevents runtime fallback settings UIs.
+    /// </summary>
+    public static SettingsMenuController EnsureSharedSettingsPanel(Scene scene, int canvasSortingOrder = 100)
+    {
+        if (!scene.IsValid() || !scene.isLoaded)
+        {
+            return null;
+        }
+
+        SettingsMenuController settingsMenu = FindInScene<SettingsMenuController>(scene);
+        if (settingsMenu == null)
+        {
+            GameObject root = new("Settings Menu Controller");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            settingsMenu = root.AddComponent<SettingsMenuController>();
+        }
+
+        EnsureSettingsMenuDefaults(settingsMenu);
+        WireExistingSettingsPanel(scene, settingsMenu);
+        EnsureSceneSettingsPanel(scene, settingsMenu);
+
+        Transform canvasTransform = FindSceneTransform(scene, SettingsCanvasName);
+        Canvas settingsCanvas = canvasTransform != null ? canvasTransform.GetComponent<Canvas>() : null;
+        if (settingsCanvas != null)
+        {
+            settingsCanvas.sortingOrder = canvasSortingOrder;
+            EditorUtility.SetDirty(settingsCanvas);
+        }
+
+        EditorUtility.SetDirty(settingsMenu);
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        return settingsMenu;
+    }
+
     private static bool EnsureSettingsMenuDefaults(SettingsMenuController settingsMenu)
     {
         if (settingsMenu == null)

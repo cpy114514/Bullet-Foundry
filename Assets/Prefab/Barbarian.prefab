@@ -597,6 +597,7 @@ MonoBehaviour:
   stunTintMultiplier: 0.45
   dropCoinsOnDeath: 1
   coinDropCount: 10
+  coinDropMultiplier: 5
   coinDropValue: 1
   coinPickupPrefab: {fileID: 0}
   coinPickupSprite: {fileID: 7843416716369364892, guid: ca4bd6f34e291a74d8e5d39b2a665606, type: 3}

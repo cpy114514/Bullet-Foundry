@@ -53,7 +53,9 @@ public static class LevelSelectModeButtonsBootstrap
             return;
         }
 
-        Sprite buttonSprite = LoadSprite(Ui2Path, "UI2_4") ?? LoadSprite(Ui2Path, "UI2_9");
+        // UI2_8 is the wide paper-button artwork already used by the game's
+        // other menu controls.  Keep these two mode buttons editable in scene.
+        Sprite buttonSprite = LoadSprite(Ui2Path, "UI2_8");
         if (buttonSprite == null)
         {
             Debug.LogError("Could not set up LevelSelect mode buttons: missing UI2 button sprite.");
@@ -70,10 +72,18 @@ public static class LevelSelectModeButtonsBootstrap
 
         CreateModeButton(
             hud,
+            "Level Editor Button",
+            "EDITOR",
+            LevelSceneMode.LevelEditor,
+            settingsLocalPosition + new Vector3(-5f, 0f, 0f),
+            buttonSprite);
+
+        CreateModeButton(
+            hud,
             "Sandbox Button",
             "SANDBOX",
             LevelSceneMode.Sandbox,
-            settingsLocalPosition + new Vector3(-1.45f, 0f, 0f),
+            settingsLocalPosition + new Vector3(-2.45f, 0f, 0f),
             buttonSprite);
 
         EditorSceneManager.MarkSceneDirty(scene);
@@ -125,21 +135,15 @@ public static class LevelSelectModeButtonsBootstrap
         renderer.color = Color.white;
 
         Vector2 spriteSize = buttonSprite.bounds.size;
-        Vector2 targetSize = mode == LevelSceneMode.Sandbox
-            ? new Vector2(1.15f, 1.15f)
-            : new Vector2(1.0f, 1.0f);
+        Vector2 targetSize = new(2.45f, 0.94f);
         buttonTransform.localScale = new Vector3(
             targetSize.x / Mathf.Max(0.001f, spriteSize.x),
             targetSize.y / Mathf.Max(0.001f, spriteSize.y),
             1f);
 
-        CircleCollider2D collider = button.AddComponent<CircleCollider2D>();
+        BoxCollider2D collider = button.AddComponent<BoxCollider2D>();
         collider.isTrigger = true;
-        float largestScale = Mathf.Max(
-            Mathf.Abs(buttonTransform.lossyScale.x),
-            Mathf.Abs(buttonTransform.lossyScale.y),
-            0.001f);
-        collider.radius = 0.72f / largestScale;
+        collider.size = spriteSize;
 
         LevelSelectModeButton modeButton = button.AddComponent<LevelSelectModeButton>();
         modeButton.Configure(mode, TargetSceneName);
@@ -153,8 +157,10 @@ public static class LevelSelectModeButtonsBootstrap
 
         TextMesh text = textObject.AddComponent<TextMesh>();
         text.text = label;
-        text.fontSize = 72;
-        text.characterSize = mode == LevelSceneMode.Sandbox ? 0.035f : 0.042f;
+        text.fontSize = 128;
+        // Sandbox has one extra character, so it is just slightly smaller
+        // while still filling the same rectangular button cleanly.
+        text.characterSize = mode == LevelSceneMode.Sandbox ? 0.075f : 0.09f;
         text.anchor = TextAnchor.MiddleCenter;
         text.alignment = TextAlignment.Center;
         text.color = Color.black;

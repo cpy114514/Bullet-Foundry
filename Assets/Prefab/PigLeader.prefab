@@ -1365,6 +1365,7 @@ MonoBehaviour:
   stunTintMultiplier: 0.45
   dropCoinsOnDeath: 1
   coinDropCount: 1
+  coinDropMultiplier: 5
   coinDropValue: 1
   coinPickupPrefab: {fileID: 0}
   coinPickupSprite: {fileID: 0}

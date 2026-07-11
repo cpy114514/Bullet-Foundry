@@ -106,7 +106,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinTower
   coinsPerBullet: 2
-  coinValue: 1
+  coinValue: 5
   coinPickupPrefab: {fileID: 0}
   coinPickupSprite: {fileID: 7843416716369364892, guid: ca4bd6f34e291a74d8e5d39b2a665606, type: 3}
   coinSpawnSpread: 0.25

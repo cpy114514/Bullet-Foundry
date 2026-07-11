@@ -35,6 +35,9 @@ public sealed class CardSelectionMenu : MonoBehaviour
     [SerializeField]
     private Collider2D backButtonCollider;
 
+    [SerializeField]
+    private string levelSelectSceneName = "LevelSelect";
+
     [Header("Card Feedback")]
     [SerializeField]
     private Color selectedColor = new(0.55f, 0.55f, 0.55f, 1f);
@@ -340,7 +343,11 @@ public sealed class CardSelectionMenu : MonoBehaviour
             if (i < slots.Length && slots[i] != null)
             {
                 float scale = GetScaleForSlot(card, slots[i]);
-                ApplyCardPlacement(card, slots[i].transform.position, slots[i].transform.rotation, Vector3.one * scale);
+                ApplyCardPlacement(
+                    card,
+                    slots[i].transform.position,
+                    slots[i].transform.rotation,
+                    Vector3.one * scale);
             }
             else if (TryGetOverflowPlacement(
                 i,
@@ -457,7 +464,7 @@ public sealed class CardSelectionMenu : MonoBehaviour
 
         if (backButtonCollider != null && backButtonCollider.OverlapPoint(worldPosition))
         {
-            Close(true);
+            ExitToLevelSelect();
             return;
         }
 
@@ -724,6 +731,14 @@ public sealed class CardSelectionMenu : MonoBehaviour
         pausedTimeScale = false;
     }
 
+    private void ExitToLevelSelect()
+    {
+        Time.timeScale = 1f;
+        IsOpen = false;
+        CardSelectionState.ClearAll();
+        SceneTransitionController.LoadScene(levelSelectSceneName);
+    }
+
     private void ClearRuntimeCards()
     {
         cardCatalog = null;
@@ -802,7 +817,6 @@ public sealed class CardSelectionMenu : MonoBehaviour
             .ToList();
         selectedDockCatalog.BuildCardsInOrder(selectedTowerNames);
 
-        CardSlotPoint[] dockSlots = FindGameplayDockSlots();
         IReadOnlyList<CardView> dockCards = selectedDockCatalog.ActiveCards;
         for (int i = 0; i < dockCards.Count; i++)
         {
@@ -813,10 +827,9 @@ public sealed class CardSelectionMenu : MonoBehaviour
             }
 
             SetCardVisibility(dockCard, true);
-            if (i < dockSlots.Length && dockSlots[i] != null)
+            if (TryGetSelectionPreviewPlacement(i, dockCards.Count, out Vector3 previewPosition, out Vector3 previewScale))
             {
-                float scale = GetScaleForSlot(dockCard, dockSlots[i]);
-                Vector3 targetScale = Vector3.one * scale;
+                Vector3 targetScale = previewScale;
                 string towerName = dockCard.TowerPrefab != null
                     ? dockCard.TowerPrefab.name
                     : string.Empty;
@@ -850,13 +863,31 @@ public sealed class CardSelectionMenu : MonoBehaviour
 
                 StartCardMotion(
                     dockCard,
-                    dockSlots[i].transform.position,
-                    dockSlots[i].transform.rotation,
+                    previewPosition,
+                    Quaternion.identity,
                     targetScale);
             }
 
             SetCardSortingOrder(dockCard, 94);
         }
+    }
+
+    private bool TryGetSelectionPreviewPlacement(int cardIndex, int cardCount, out Vector3 position, out Vector3 scale)
+    {
+        position = default;
+        scale = Vector3.one * Mathf.Max(0.35f, cardScale * 0.65f);
+        if (scrollViewport == null || cardIndex < 0 || cardCount <= 0)
+        {
+            return false;
+        }
+
+        Bounds panelBounds = scrollViewport.bounds;
+        float spacing = 1f;
+        position = new Vector3(
+            panelBounds.center.x + ((cardIndex - ((cardCount - 1) * 0.5f)) * spacing),
+            panelBounds.max.y + 0.32f,
+            -0.25f);
+        return true;
     }
 
     private CardSlotPoint[] FindGameplayDockSlots()
@@ -1124,6 +1155,13 @@ public sealed class CardSelectionMenu : MonoBehaviour
 
     private void BeginScrollDrag(Vector2 screenPosition)
     {
+        if (IsPointerOverInteractiveElement(screenPosition))
+        {
+            scrollPointerDown = false;
+            scrollPointerDragged = false;
+            return;
+        }
+
         bool hasScrollableContent = maximumScrollOffset - minimumScrollOffset > 0.001f;
         scrollPointerDown = scrollInitialized &&
             hasScrollableContent &&
@@ -1131,6 +1169,22 @@ public sealed class CardSelectionMenu : MonoBehaviour
         scrollPointerDragged = false;
         scrollPointerStartPosition = screenPosition;
         scrollPointerLastPosition = screenPosition;
+    }
+
+    private bool IsPointerOverInteractiveElement(Vector2 screenPosition)
+    {
+        if (!TryGetWorldPosition(screenPosition, out Vector2 worldPosition))
+        {
+            return false;
+        }
+
+        if ((startButtonCollider != null && startButtonCollider.OverlapPoint(worldPosition)) ||
+            (backButtonCollider != null && backButtonCollider.OverlapPoint(worldPosition)))
+        {
+            return true;
+        }
+
+        return FindCardAt(worldPosition) != null || FindSelectedDockCardAt(worldPosition) != null;
     }
 
     private void UpdateScrollDrag(Vector2 screenPosition)
@@ -1265,10 +1319,11 @@ public sealed class CardSelectionMenu : MonoBehaviour
 
     private static CardSelectionMenu FindSceneMenu()
     {
-        CardSelectionMenu[] menus = FindObjectsByType<CardSelectionMenu>(
-            FindObjectsInactive.Include,
-            FindObjectsSortMode.None);
-        return menus.FirstOrDefault(menu => menu != null);
+        // The selection panel starts inactive in each level scene.  Unity's
+        // FindObjectsByType can omit inactive scene objects in play mode, so
+        // search loaded objects and reject prefab assets explicitly.
+        CardSelectionMenu[] menus = Resources.FindObjectsOfTypeAll<CardSelectionMenu>();
+        return menus.FirstOrDefault(menu => menu != null && menu.gameObject.scene.IsValid());
     }
 
     private void CacheCardRendererColors(CardView card)

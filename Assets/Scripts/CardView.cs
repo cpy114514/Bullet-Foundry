@@ -42,7 +42,7 @@ public sealed class CardView : MonoBehaviour
     private int labelMaxCharactersPerLine = 9;
 
     [SerializeField, Range(0.45f, 1f)]
-    private float labelMinimumScale = 0.68f;
+    private float labelMinimumScale = 0.4f;
 
     [SerializeField, Min(1)]
     private int labelMaximumLines = 2;
@@ -269,8 +269,10 @@ public sealed class CardView : MonoBehaviour
         float widthScale = longestLine > 0
             ? Mathf.Min(1f, maxCharactersPerLine / (float)longestLine)
             : 1f;
+        // Reserve a little vertical breathing room for wrapped card names.
+        // TextMesh glyph bounds are slightly taller than their visible strokes.
         float heightScale = lines.Length > maxLines
-            ? maxLines / (float)lines.Length
+            ? (maxLines / (float)lines.Length) * 0.88f
             : 1f;
         float scale = Mathf.Clamp(
             Mathf.Min(widthScale, heightScale),

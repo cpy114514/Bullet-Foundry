@@ -5,6 +5,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class GoblinEnemy : MonoBehaviour
 {
+    private const int EnemyCoinCountDivisor = 5;
+    private const int EnemyCoinValueMultiplier = 5;
     [Header("Stats")]
     [SerializeField, Min(1)]
     private int maxHealth = 3;
@@ -60,6 +62,9 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     [SerializeField, Min(0)]
     private int coinDropCount = 1;
+
+    [SerializeField, Min(1)]
+    private int coinDropMultiplier = 5;
 
     [SerializeField, Min(1)]
     private int coinDropValue = 1;
@@ -450,8 +455,13 @@ public sealed class GoblinEnemy : MonoBehaviour
 
         coinsDropped = true;
         Vector3 spawnPosition = CalculateDropPosition();
+        int previousCoinDropTotal = coinDropCount * Mathf.Max(1, coinDropMultiplier);
+        int totalCoinDrops = Mathf.Max(
+            1,
+            Mathf.CeilToInt(previousCoinDropTotal / (float)EnemyCoinCountDivisor));
+        int valuePerCoin = Mathf.Max(1, coinDropValue) * EnemyCoinValueMultiplier;
 
-        for (int i = 0; i < coinDropCount; i++)
+        for (int i = 0; i < totalCoinDrops; i++)
         {
             CoinPickup pickup = SpawnCoinPickup(spawnPosition);
             if (pickup == null)
@@ -459,8 +469,8 @@ public sealed class GoblinEnemy : MonoBehaviour
                 continue;
             }
 
-            pickup.SetValue(coinDropValue);
-            pickup.ScatterTo(GetCoinScatterPosition(spawnPosition, i, coinDropCount));
+            pickup.SetValue(valuePerCoin);
+            pickup.ScatterTo(GetCoinScatterPosition(spawnPosition, i, totalCoinDrops));
         }
     }
 

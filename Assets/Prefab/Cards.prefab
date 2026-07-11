@@ -27,7 +27,7 @@ Transform:
   m_GameObject: {fileID: 1996124426145562788}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.013, y: -0.68, z: -0.05}
+  m_LocalPosition: {x: -0.013, y: -0.64, z: -0.05}
   m_LocalScale: {x: 0.1, y: 0.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -92,7 +92,7 @@ TextMesh:
   m_GameObject: {fileID: 1996124426145562788}
   m_Text: $0
   m_OffsetZ: 0
-  m_CharacterSize: 0.28
+  m_CharacterSize: 0.24
   m_LineSpacing: 0.5
   m_Anchor: 4
   m_Alignment: 1
@@ -131,7 +131,7 @@ Transform:
   m_GameObject: {fileID: 4388007835140903433}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.345, z: -0.05}
+  m_LocalPosition: {x: 0, y: -0.385, z: -0.05}
   m_LocalScale: {x: 0.09, y: 0.1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -196,7 +196,7 @@ TextMesh:
   m_GameObject: {fileID: 4388007835140903433}
   m_Text: Firetower
   m_OffsetZ: 0
-  m_CharacterSize: 0.28
+  m_CharacterSize: 0.24
   m_LineSpacing: 0.5
   m_Anchor: 4
   m_Alignment: 1
@@ -419,14 +419,14 @@ MonoBehaviour:
   towerPrefab: {fileID: 0}
   autoFitLabelText: 1
   labelMaxCharactersPerLine: 9
-  labelMinimumScale: 0.68
+  labelMinimumScale: 0.45
   labelMaximumLines: 2
   autoFitPriceText: 1
   priceMaxCharactersPerLine: 5
   priceMinimumScale: 0.72
-  baseLabelCharacterSize: 0.28
+  baseLabelCharacterSize: 0.24
   baseLabelFontSize: 110
-  basePriceCharacterSize: 0.28
+  basePriceCharacterSize: 0.24
   basePriceFontSize: 110
 --- !u!114 &6900000000000000001
 MonoBehaviour:
