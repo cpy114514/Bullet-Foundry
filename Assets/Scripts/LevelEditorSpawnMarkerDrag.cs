@@ -15,6 +15,13 @@ public sealed class LevelEditorSpawnMarkerDrag : MonoBehaviour, IPointerClickHan
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            controller?.OpenMarkerContextMenu(spawnId, eventData);
+            eventData.Use();
+            return;
+        }
+
         controller?.SelectSpawnMarker(spawnId);
         eventData.Use();
     }

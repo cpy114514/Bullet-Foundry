@@ -95,6 +95,8 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     private void Awake()
     {
+        ResolveSceneUiReferences();
+
         if (buildDefaultUiIfMissing && settingsPanel == null)
         {
             BuildDefaultUi();
@@ -115,6 +117,68 @@ public sealed class SettingsMenuController : MonoBehaviour
         {
             OpenSettingsImmediate();
         }
+    }
+
+    // A settings canvas is deliberately stored in each scene so its layout can
+    // be edited in Unity.  These name-based fallbacks keep that editable UI
+    // connected even after a designer rearranges the hierarchy.
+    private void ResolveSceneUiReferences()
+    {
+        if (settingsPanel != null)
+        {
+            return;
+        }
+
+        Transform panel = FindNamed(transform, "Settings Panel");
+        if (panel == null)
+        {
+            return;
+        }
+
+        settingsPanel = panel.gameObject;
+        closeSettingsButton = FindComponent<Button>(panel, "Close Settings Button");
+        resolutionDropdown = FindComponent<Dropdown>(panel, "RESOLUTION Dropdown");
+        fullscreenToggle = FindComponent<Toggle>(panel, "FULLSCREEN Toggle");
+        masterVolumeToggle = FindComponent<Toggle>(panel, "VOLUME Toggle");
+        masterVolumeSlider = FindComponent<Slider>(panel, "VOLUME Slider");
+        masterVolumeValueText = FindComponent<Text>(panel, "VOLUME Value");
+        musicToggle = FindComponent<Toggle>(panel, "MUSIC Toggle");
+        musicVolumeSlider = FindComponent<Slider>(panel, "MUSIC Slider");
+        musicVolumeValueText = FindComponent<Text>(panel, "MUSIC Value");
+        soundEffectsToggle = FindComponent<Toggle>(panel, "SOUND EFFECTS Toggle");
+        soundEffectsVolumeSlider = FindComponent<Slider>(panel, "SOUND EFFECTS Slider");
+        soundEffectsVolumeValueText = FindComponent<Text>(panel, "SOUND EFFECTS Value");
+        clickEffectToggle = FindComponent<Toggle>(panel, "CLICK EFFECT Toggle");
+    }
+
+    private static T FindComponent<T>(Transform root, string objectName) where T : Component
+    {
+        Transform found = FindNamed(root, objectName);
+        return found != null ? found.GetComponent<T>() : null;
+    }
+
+    private static Transform FindNamed(Transform root, string objectName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        if (root.name == objectName)
+        {
+            return root;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform found = FindNamed(root.GetChild(i), objectName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     public void OpenSettings()
@@ -239,7 +303,6 @@ public sealed class SettingsMenuController : MonoBehaviour
         if (!open)
         {
             settingsPanel.SetActive(false);
-            root.SetActive(false);
         }
 
         settingsAnimationRoutine = null;
@@ -286,7 +349,6 @@ public sealed class SettingsMenuController : MonoBehaviour
             settingsCanvasGroup.interactable = false;
         }
 
-        GetSettingsRoot().SetActive(false);
     }
 
     private GameObject GetSettingsRoot()
