@@ -13,6 +13,9 @@ public sealed class CardRuntimeLoader : MonoBehaviour
     [SerializeField]
     private FireTowerPlacementSystem placementSystem;
 
+    [SerializeField]
+    private Transform cardSlotsRoot;
+
     private CardCatalog loadedCatalog;
 
     public CardCatalog LoadedCatalog => loadedCatalog;
@@ -48,6 +51,8 @@ public sealed class CardRuntimeLoader : MonoBehaviour
             return;
         }
 
+        ResolveCardSlotsRoot();
+
         if (loadedCatalog == null)
         {
             if (cardsPrefab == null)
@@ -69,6 +74,8 @@ public sealed class CardRuntimeLoader : MonoBehaviour
         {
             return;
         }
+
+        loadedCatalog.SetCardSlotsRoot(cardSlotsRoot, cardSlotsRoot == null);
 
         IReadOnlyCollection<string> selectedTowerNames = CardSelectionState.SelectionConfirmed
             ? CardSelectionState.SelectedTowerNames
@@ -108,6 +115,29 @@ public sealed class CardRuntimeLoader : MonoBehaviour
         if (placementSystem != null)
         {
             placementSystem.SetCardCatalog(loadedCatalog);
+        }
+    }
+
+    private void ResolveCardSlotsRoot()
+    {
+        if (cardSlotsRoot != null && cardSlotsRoot.gameObject.activeInHierarchy)
+        {
+            return;
+        }
+
+        CardSlotPoint[] slots = FindObjectsByType<CardSlotPoint>(
+            FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < slots.Length; i++)
+        {
+            CardSlotPoint slot = slots[i];
+            if (slot == null || slot.GetComponentInParent<CardSelectionMenu>(true) != null)
+            {
+                continue;
+            }
+
+            cardSlotsRoot = slot.transform.parent;
+            return;
         }
     }
 }

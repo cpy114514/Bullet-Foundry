@@ -328,7 +328,7 @@ public sealed class LevelEditorController : MonoBehaviour
         markerContextSpawnId = spawnId;
 
         const float menuWidth = 220f;
-        const float menuHeight = 84f;
+        const float menuHeight = 104f;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             eventData.position,
@@ -353,10 +353,11 @@ public sealed class LevelEditorController : MonoBehaviour
         menuOutline.effectColor = Color.black;
         menuOutline.effectDistance = new Vector2(2f, -2f);
 
-        CreateContextText(menuRect, "COUNT", 26, TextAnchor.MiddleLeft, 12f, 8f, 64f, 30f);
-        markerContextCountInput = CreateContextCountInput(menuRect, spawn.Count, 80f, 8f, 128f, 30f);
+        CreateContextText(menuRect, "COUNT", 24, TextAnchor.MiddleLeft, 12f, 6f, 64f, 36f);
+        markerContextCountInput = CreateContextCountInput(menuRect, spawn.Count, 80f, 6f, 128f, 36f);
         markerContextCountInput.onEndEdit.AddListener(_ => ApplyMarkerContextCount());
-        CreateContextButton(menuRect, "DELETE SELECTED", 24, 12f, 46f, 196f, 28f, DeleteSelectedMarkersFromContextMenu);
+        CreateContextButton(menuRect, "DELETE SELECTED", 22, 12f, 54f, 196f, 40f, DeleteSelectedMarkersFromContextMenu);
+        RefreshContextMenuText(menu);
         SetStatus($"Set count for {selectedSpawnIds.Count} selected marker{(selectedSpawnIds.Count == 1 ? string.Empty : "s")}.");
     }
 
@@ -412,7 +413,7 @@ public sealed class LevelEditorController : MonoBehaviour
 
         CloseMarkerContextMenu();
         const float menuWidth = 190f;
-        const float menuHeight = 76f;
+        const float menuHeight = 104f;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
             eventData.position,
@@ -436,8 +437,9 @@ public sealed class LevelEditorController : MonoBehaviour
         Outline menuOutline = menu.AddComponent<Outline>();
         menuOutline.effectColor = Color.black;
         menuOutline.effectDistance = new Vector2(2f, -2f);
-        CreateContextButton(menuRect, "UNDO", 24, 10f, 8f, 170f, 26f, UndoFromContextMenu);
-        CreateContextButton(menuRect, "REDO", 24, 10f, 42f, 170f, 26f, RedoFromContextMenu);
+        CreateContextButton(menuRect, "UNDO", 22, 10f, 8f, 170f, 40f, UndoFromContextMenu);
+        CreateContextButton(menuRect, "REDO", 22, 10f, 56f, 170f, 40f, RedoFromContextMenu);
+        RefreshContextMenuText(menu);
     }
 
     private void UndoFromContextMenu()
@@ -471,12 +473,42 @@ public sealed class LevelEditorController : MonoBehaviour
         SetTopLeft(textRect, left, top, width, height);
         Text text = textObject.GetComponent<Text>();
         text.font = GetUiFont();
+        // Runtime-created legacy Text defaults to the generic UI material in
+        // this project, which does not render the hand-drawn font glyphs.
+        // Use the font material explicitly so context-menu labels are visible.
+        if (text.font != null && text.font.material != null)
+        {
+            text.material = text.font.material;
+        }
         text.text = value;
         text.fontSize = fontSize;
         text.alignment = alignment;
         text.color = Color.black;
+        text.resizeTextForBestFit = true;
+        text.resizeTextMinSize = 10;
+        text.resizeTextMaxSize = Mathf.Max(10, fontSize);
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Truncate;
         text.raycastTarget = false;
         return text;
+    }
+
+    // Context menus are spawned during an input event. Mark their labels dirty
+    // so Unity rebuilds them on the next UI pass without re-entering PlayerLoop.
+    private static void RefreshContextMenuText(GameObject menu)
+    {
+        if (menu == null)
+        {
+            return;
+        }
+
+        Text[] labels = menu.GetComponentsInChildren<Text>(true);
+        for (int i = 0; i < labels.Length; i++)
+        {
+            Text label = labels[i];
+            label.SetAllDirty();
+        }
+
     }
 
     private InputField CreateContextCountInput(RectTransform parent, int value, float left, float top, float width, float height)
@@ -1083,10 +1115,36 @@ public sealed class LevelEditorController : MonoBehaviour
     private void ApplyMarkerLayout(RectTransform rect, LevelEditorSpawn spawn)
     {
         GetMarkerStackInfo(spawn, out int stackIndex, out int stackCount);
-        float x = Mathf.Clamp(spawn.Time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
-        float y = timelineHeaderHeight + (Mathf.Clamp(spawn.Lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
-        float width = TimelineMarkerBaseWidth;
-        float height = timelineLaneHeight - 16f;
+        GetMarkerLayout(spawn.Time, spawn.Lane, stackIndex, stackCount, out float x, out float y, out float width, out float height);
+        SetTopLeft(rect, x, y, width, height);
+    }
+
+    private void GetPreviewMarkerLayout(float time, int lane, out float x, out float y, out float width, out float height)
+    {
+        int normalizedLane = Mathf.Clamp(lane, 1, laneCount);
+        int timeCell = Mathf.FloorToInt(Mathf.Clamp(time, 0f, TimelineDuration));
+        int existingCount = 0;
+        for (int i = 0; i < spawns.Count; i++)
+        {
+            LevelEditorSpawn candidate = spawns[i];
+            if (Mathf.Clamp(candidate.Lane, 1, laneCount) == normalizedLane &&
+                Mathf.FloorToInt(Mathf.Clamp(candidate.Time, 0f, TimelineDuration)) == timeCell)
+            {
+                existingCount++;
+            }
+        }
+
+        // The preview is the next card in this stack, which is exactly where
+        // the card will end up after the player releases the pointer.
+        GetMarkerLayout(time, normalizedLane, existingCount, existingCount + 1, out x, out y, out width, out height);
+    }
+
+    private void GetMarkerLayout(float time, int lane, int stackIndex, int stackCount, out float x, out float y, out float width, out float height)
+    {
+        x = Mathf.Clamp(time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
+        y = timelineHeaderHeight + (Mathf.Clamp(lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
+        width = TimelineMarkerBaseWidth;
+        height = timelineLaneHeight - 16f;
         if (stackCount > 1)
         {
             int shrinkSteps = Mathf.Min(stackCount - 1, 4);
@@ -1096,7 +1154,7 @@ public sealed class LevelEditorController : MonoBehaviour
             y += stackIndex * 5f;
         }
 
-        SetTopLeft(rect, x, y, width, height);
+        height = Mathf.Max(38f, height);
     }
 
     private void GetMarkerStackInfo(LevelEditorSpawn target, out int stackIndex, out int stackCount)
@@ -1649,15 +1707,14 @@ public sealed class LevelEditorController : MonoBehaviour
         RectTransform rect = timelinePreview.transform as RectTransform;
         if (rect != null)
         {
-            float x = Mathf.Clamp(time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
-            float y = timelineHeaderHeight + (Mathf.Clamp(lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
-            SetTopLeft(rect, x, y, 154f, timelineLaneHeight - 16f);
+            GetPreviewMarkerLayout(time, lane, out float x, out float y, out float width, out float height);
+            SetTopLeft(rect, x, y, width, height);
         }
 
         Text text = timelinePreview.GetComponentInChildren<Text>(true);
         if (text != null)
         {
-            text.text = $"{PrettyName(enemyId)}\n{time:0.0}s  L{lane}";
+            ConfigureMarkerLabel(text, new LevelEditorSpawn(-1, time, enemyId, lane));
         }
 
         timelinePreview.transform.SetAsLastSibling();
@@ -1673,7 +1730,7 @@ public sealed class LevelEditorController : MonoBehaviour
         timelinePreview = new GameObject("Timeline Enemy Preview");
         timelinePreview.transform.SetParent(markerRoot, false);
         RectTransform rect = timelinePreview.AddComponent<RectTransform>();
-        SetTopLeft(rect, 0f, 0f, 154f, Mathf.Max(48f, timelineLaneHeight - 16f));
+        SetTopLeft(rect, 0f, 0f, TimelineMarkerBaseWidth, Mathf.Max(38f, timelineLaneHeight - 16f));
         Image image = timelinePreview.AddComponent<Image>();
         image.color = new Color(0.98f, 0.98f, 0.96f, 0.72f);
         image.raycastTarget = false;
@@ -1695,7 +1752,7 @@ public sealed class LevelEditorController : MonoBehaviour
         text.alignment = TextAnchor.MiddleCenter;
         text.color = Color.black;
         text.raycastTarget = false;
-        ConfigureTextToFit(text, 10, 24, 20);
+        ConfigureTextToFit(text, 10, 28, 24);
     }
 
     private void HideTimelinePreview()

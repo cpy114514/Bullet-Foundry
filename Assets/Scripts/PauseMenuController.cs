@@ -10,6 +10,12 @@ using UnityEngine.InputSystem;
 public sealed class PauseMenuController : MonoBehaviour
 {
     [SerializeField] private string levelSelectSceneName = "LevelSelect";
+    [Header("Title-page visual style")]
+    [SerializeField] private Sprite panelSprite;
+    [SerializeField] private Sprite buttonSprite;
+    [SerializeField] private Sprite pauseIconSprite;
+    [SerializeField] private Font uiFont;
+
     [SerializeField] private Canvas canvas;
     [SerializeField] private GameObject overlay;
     [SerializeField] private GameObject window;
@@ -25,8 +31,17 @@ public sealed class PauseMenuController : MonoBehaviour
 
     private void Update()
     {
-        if (!WasEscapePressed()) return;
         SettingsMenuController settings = FindFirstObjectByType<SettingsMenuController>();
+
+        // Settings needs to appear above the paused game. Once it closes,
+        // restore the pause window without unpausing the level.
+        if (isPaused && settings != null && !settings.IsOpen && overlay != null && !overlay.activeSelf)
+        {
+            overlay.SetActive(true);
+            if (window != null) window.SetActive(true);
+        }
+
+        if (!WasEscapePressed()) return;
         if (settings != null && settings.IsOpen)
         {
             settings.CloseSettings();
@@ -42,7 +57,9 @@ public sealed class PauseMenuController : MonoBehaviour
     {
         SettingsMenuController settings = FindFirstObjectByType<SettingsMenuController>();
         if (settings == null) return;
-        window.SetActive(false);
+        // The shared settings canvas is below this pause canvas. Disable the
+        // whole overlay instead of only its window so it remains clickable.
+        if (overlay != null) overlay.SetActive(false);
         settings.OpenSettings();
     }
 
@@ -55,7 +72,9 @@ public sealed class PauseMenuController : MonoBehaviour
 
     private void SetPaused(bool value)
     {
-        if (value == isPaused && overlay != null) return;
+        // A newly built overlay starts active. Do not early-out until its
+        // visible state actually matches the requested pause state.
+        if (value == isPaused && overlay != null && overlay.activeSelf == value) return;
         if (value)
         {
             resumeTimeScale = Time.timeScale;
@@ -83,39 +102,75 @@ public sealed class PauseMenuController : MonoBehaviour
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920f, 1080f);
 
-        pauseButton = CreateButton(canvas.transform, "Pause Button", "II");
-        SetRect(pauseButton.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(-138f, -88f), new Vector2(94f, 64f));
+        pauseButton = CreatePauseIconButton(canvas.transform);
+        // This sits directly beside the shortened gameplay card dock.
+        SetRect(pauseButton.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(-116f, -86f), new Vector2(72f, 70f));
         pauseButton.onClick.AddListener(Pause);
 
         overlay = new GameObject("Pause Overlay", typeof(RectTransform), typeof(Image));
         overlay.transform.SetParent(canvas.transform, false);
         RectTransform overlayRect = overlay.GetComponent<RectTransform>();
         overlayRect.anchorMin = Vector2.zero; overlayRect.anchorMax = Vector2.one; overlayRect.offsetMin = Vector2.zero; overlayRect.offsetMax = Vector2.zero;
-        overlay.GetComponent<Image>().color = new Color(0f, 0f, 0f, .62f);
+        overlay.GetComponent<Image>().color = new Color(0f, 0f, 0f, .48f);
 
         window = new GameObject("Pause Window", typeof(RectTransform), typeof(Image));
         window.transform.SetParent(overlay.transform, false);
-        Image background = window.GetComponent<Image>(); background.color = new Color(.96f, .96f, .93f, 1f);
-        window.AddComponent<Outline>().effectColor = Color.black;
-        SetRect(window.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-250f, -220f), new Vector2(500f, 440f));
-        CreateLabel(window.transform, "PAUSED", new Vector2(0f, 120f), 54);
-        Button resume = CreateButton(window.transform, "Resume", "RESUME"); SetRect(resume.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-175f, -55f), new Vector2(350f, 64f)); resume.onClick.AddListener(Resume);
-        Button settings = CreateButton(window.transform, "Settings", "SETTINGS"); SetRect(settings.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-175f, -130f), new Vector2(350f, 64f)); settings.onClick.AddListener(OpenSettings);
-        Button exit = CreateButton(window.transform, "Exit", "EXIT"); SetRect(exit.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-175f, -205f), new Vector2(350f, 64f)); exit.onClick.AddListener(ExitToLevelSelect);
+        Image background = window.GetComponent<Image>();
+        ApplySprite(background, panelSprite, new Color(.98f, .98f, .96f, 1f));
+        SetRect(window.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-270f, -260f), new Vector2(540f, 520f));
+        CreateLabel(window.transform, "PAUSED", new Vector2(0f, 155f), 72);
+        Button resume = CreateButton(window.transform, "Resume", "RESUME", 42); SetRect(resume.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-185f, 30f), new Vector2(370f, 78f)); resume.onClick.AddListener(Resume);
+        Button settings = CreateButton(window.transform, "Settings", "SETTINGS", 42); SetRect(settings.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-185f, -72f), new Vector2(370f, 78f)); settings.onClick.AddListener(OpenSettings);
+        Button exit = CreateButton(window.transform, "Exit", "EXIT", 42); SetRect(exit.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-185f, -174f), new Vector2(370f, 78f)); exit.onClick.AddListener(ExitToLevelSelect);
     }
 
-    private static Button CreateButton(Transform parent, string name, string label)
+    private Button CreateButton(Transform parent, string name, string label, int fontSize)
     {
         GameObject go = new(name, typeof(RectTransform), typeof(Image), typeof(Button)); go.transform.SetParent(parent, false);
-        go.GetComponent<Image>().color = Color.white; go.AddComponent<Outline>().effectColor = Color.black;
-        CreateLabel(go.transform, label, Vector2.zero, 28);
+        ApplySprite(go.GetComponent<Image>(), buttonSprite, Color.white);
+        CreateLabel(go.transform, label, Vector2.zero, fontSize);
         return go.GetComponent<Button>();
     }
-    private static void CreateLabel(Transform parent, string value, Vector2 position, int size)
+
+    private Button CreatePauseIconButton(Transform parent)
+    {
+        GameObject go = new("Pause Button", typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(parent, false);
+        ApplySprite(go.GetComponent<Image>(), pauseIconSprite != null ? pauseIconSprite : buttonSprite, Color.white);
+        CreatePauseBar(go.transform, "Left Bar", -10f);
+        CreatePauseBar(go.transform, "Right Bar", 10f);
+        return go.GetComponent<Button>();
+    }
+
+    private static void CreatePauseBar(Transform parent, string name, float x)
+    {
+        GameObject bar = new(name, typeof(RectTransform), typeof(Image));
+        bar.transform.SetParent(parent, false);
+        RectTransform rect = bar.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
+        rect.anchoredPosition = new Vector2(x, 0f);
+        rect.sizeDelta = new Vector2(7f, 28f);
+        Image image = bar.GetComponent<Image>();
+        image.color = Color.black;
+        image.raycastTarget = false;
+    }
+
+    private void CreateLabel(Transform parent, string value, Vector2 position, int size)
     {
         GameObject go = new("Text", typeof(RectTransform), typeof(Text)); go.transform.SetParent(parent, false);
         RectTransform rect = go.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f); rect.anchoredPosition = position; rect.sizeDelta = new Vector2(460f, 70f);
-        Text text = go.GetComponent<Text>(); text.text = value; text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); text.fontSize = size; text.alignment = TextAnchor.MiddleCenter; text.color = Color.black; text.raycastTarget = false;
+        Text text = go.GetComponent<Text>(); text.text = value; text.font = uiFont != null ? uiFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); text.fontSize = size; text.alignment = TextAnchor.MiddleCenter; text.color = Color.black; text.raycastTarget = false;
+        text.resizeTextForBestFit = true; text.resizeTextMinSize = 14; text.resizeTextMaxSize = size;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap; text.verticalOverflow = VerticalWrapMode.Truncate;
+    }
+
+    private static void ApplySprite(Image image, Sprite sprite, Color fallbackColor)
+    {
+        image.sprite = sprite;
+        image.type = Image.Type.Simple;
+        image.preserveAspect = false;
+        image.color = fallbackColor;
+        if (sprite == null) image.gameObject.AddComponent<Outline>().effectColor = Color.black;
     }
     private static void SetRect(RectTransform rect, Vector2 anchor, Vector2 position, Vector2 size)
     { rect.anchorMin = rect.anchorMax = anchor; rect.anchoredPosition = position; rect.sizeDelta = size; }

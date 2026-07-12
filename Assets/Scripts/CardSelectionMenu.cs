@@ -289,6 +289,7 @@ public sealed class CardSelectionMenu : MonoBehaviour
             return;
         }
 
+        cardCatalog.SetCardSlotsRoot(cardSlotsRoot);
         cardCatalog.BuildCards();
         ResolveRestrictedCards();
 
@@ -764,6 +765,11 @@ public sealed class CardSelectionMenu : MonoBehaviour
             selectedDockObject = Instantiate(cardsPrefab);
             selectedDockObject.name = "Selected Cards Dock";
             selectedDockCatalog = selectedDockObject.GetComponent<CardCatalog>();
+            if (selectedDockCatalog != null)
+            {
+                selectedDockCatalog.SetCardSlotsRoot(null);
+            }
+
             createdDock = true;
         }
 
@@ -800,6 +806,7 @@ public sealed class CardSelectionMenu : MonoBehaviour
             .Select(card => card.TowerPrefab.name)
             .Distinct()
             .ToList();
+        selectedDockCatalog.SetCardSlotsRoot(null);
         selectedDockCatalog.BuildCardsInOrder(selectedTowerNames);
 
         CardSlotPoint[] dockSlots = FindGameplayDockSlots();

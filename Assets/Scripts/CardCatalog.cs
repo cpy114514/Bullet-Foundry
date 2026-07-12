@@ -45,6 +45,12 @@ public sealed class CardCatalog : MonoBehaviour
     [SerializeField, HideInInspector, Min(0.1f)]
     private float cardSpacing = 3.6f;
 
+    [SerializeField]
+    private Transform cardSlotsRoot;
+
+    [SerializeField]
+    private bool useGlobalCardSlots;
+
     private readonly List<CardView> activeCards = new List<CardView>();
 
     public IReadOnlyList<CardEntry> Cards => cards;
@@ -54,6 +60,12 @@ public sealed class CardCatalog : MonoBehaviour
     private void Awake()
     {
         BuildCards();
+    }
+
+    public void SetCardSlotsRoot(Transform root, bool useGlobalFallback = false)
+    {
+        cardSlotsRoot = root;
+        useGlobalCardSlots = useGlobalFallback;
     }
 
     public void BuildCards()
@@ -257,8 +269,22 @@ public sealed class CardCatalog : MonoBehaviour
         }
     }
 
-    private static CardSlotPoint[] FindCardSlots()
+    private CardSlotPoint[] FindCardSlots()
     {
+        if (cardSlotsRoot != null)
+        {
+            return cardSlotsRoot.GetComponentsInChildren<CardSlotPoint>(true)
+                .Where(slot => slot != null && slot.gameObject.activeInHierarchy)
+                .OrderBy(slot => slot.SlotIndex)
+                .ThenBy(slot => slot.name)
+                .ToArray();
+        }
+
+        if (!useGlobalCardSlots)
+        {
+            return Array.Empty<CardSlotPoint>();
+        }
+
         return FindObjectsByType<CardSlotPoint>(FindObjectsSortMode.None)
             .OrderBy(slot => slot.SlotIndex)
             .ThenBy(slot => slot.name)

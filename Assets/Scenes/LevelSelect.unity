@@ -5383,72 +5383,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!1 &2600000000
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2600000001}
-  - component: {fileID: 2600000002}
-  m_Layer: 0
-  m_Name: Level Select Settings
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2600000001
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2600000000}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2600000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2600000000}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c4619b18b3fd71443a32acf115556a02, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SettingsMenuController
-  buildDefaultUiIfMissing: 1
-  startClosed: 1
-  fontScale: 1.75
-  musicSources: []
-  soundEffectSources: []
-  settingsPanel: {fileID: 0}
-  panelAnimationDuration: 0.18
-  panelClosedScale: 0.9
-  openSettingsButton: {fileID: 0}
-  closeSettingsButton: {fileID: 0}
-  resolutionDropdown: {fileID: 0}
-  fullscreenToggle: {fileID: 0}
-  masterVolumeToggle: {fileID: 0}
-  masterVolumeSlider: {fileID: 0}
-  masterVolumeValueText: {fileID: 0}
-  musicToggle: {fileID: 0}
-  musicVolumeSlider: {fileID: 0}
-  musicVolumeValueText: {fileID: 0}
-  soundEffectsToggle: {fileID: 0}
-  soundEffectsVolumeSlider: {fileID: 0}
-  soundEffectsVolumeValueText: {fileID: 0}
-  clickEffectToggle: {fileID: 0}
 --- !u!1 &2600000100
 GameObject:
   m_ObjectHideFlags: 0
@@ -5600,7 +5534,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9ff122c34fc42c1b374142f444ea377, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelSelectSettingsButton
-  settingsMenu: {fileID: 2600000002}
+  settingsMenu: {fileID: 1658164525}
   hoverScale: 1.08
   pressedScale: 0.94
   scaleSpeed: 14
@@ -5839,5 +5773,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 1095437615}
   - {fileID: 1648466612}
-  - {fileID: 2600000001}
   - {fileID: 1658164523}
