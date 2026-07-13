@@ -55,6 +55,11 @@ public sealed class CardRuntimeLoader : MonoBehaviour
 
         if (loadedCatalog == null)
         {
+            loadedCatalog = FindSceneGameplayCatalog();
+        }
+
+        if (loadedCatalog == null)
+        {
             if (cardsPrefab == null)
             {
                 cardsPrefab = Resources.Load<GameObject>(CardsResourcePath);
@@ -139,5 +144,48 @@ public sealed class CardRuntimeLoader : MonoBehaviour
             cardSlotsRoot = slot.transform.parent;
             return;
         }
+    }
+
+    private CardCatalog FindSceneGameplayCatalog()
+    {
+        CardCatalog[] catalogs = FindObjectsByType<CardCatalog>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < catalogs.Length; i++)
+        {
+            CardCatalog catalog = catalogs[i];
+            if (catalog == null ||
+                catalog.GetComponentInParent<CardSelectionMenu>(true) != null ||
+                IsTransientSelectionDock(catalog))
+            {
+                continue;
+            }
+
+            if (catalog.gameObject.name == "Cards")
+            {
+                return catalog;
+            }
+        }
+
+        for (int i = 0; i < catalogs.Length; i++)
+        {
+            CardCatalog catalog = catalogs[i];
+            if (catalog == null ||
+                catalog.GetComponentInParent<CardSelectionMenu>(true) != null ||
+                IsTransientSelectionDock(catalog))
+            {
+                continue;
+            }
+
+            return catalog;
+        }
+
+        return null;
+    }
+
+    private static bool IsTransientSelectionDock(CardCatalog catalog)
+    {
+        return catalog != null &&
+            catalog.gameObject.name.StartsWith("Selected Cards Dock", System.StringComparison.Ordinal);
     }
 }

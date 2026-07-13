@@ -9,6 +9,10 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public sealed class PauseMenuController : MonoBehaviour
 {
+    private static readonly Vector2 PauseButtonAnchor = new(1f, 1f);
+    private static readonly Vector2 PauseButtonPosition = new(-110f, -94f);
+    private static readonly Vector2 PauseButtonSize = new(120f, 120f);
+
     [SerializeField] private string levelSelectSceneName = "LevelSelect";
     [Header("Title-page visual style")]
     [SerializeField] private Sprite panelSprite;
@@ -20,12 +24,18 @@ public sealed class PauseMenuController : MonoBehaviour
     [SerializeField] private GameObject overlay;
     [SerializeField] private GameObject window;
     [SerializeField] private Button pauseButton;
+    [SerializeField] private Button resumeButton;
+    [SerializeField] private Button settingsButton;
+    [SerializeField] private Button exitButton;
     private float resumeTimeScale = 1f;
     private bool isPaused;
 
     private void Awake()
     {
+        ResolveSceneReferences();
         BuildIfNeeded();
+        NormalizeSceneLayout();
+        BindButtons();
         SetPaused(false);
     }
 
@@ -60,6 +70,7 @@ public sealed class PauseMenuController : MonoBehaviour
         // The shared settings canvas is below this pause canvas. Disable the
         // whole overlay instead of only its window so it remains clickable.
         if (overlay != null) overlay.SetActive(false);
+        if (window != null) window.SetActive(false);
         settings.OpenSettings();
     }
 
@@ -93,35 +104,156 @@ public sealed class PauseMenuController : MonoBehaviour
     private void BuildIfNeeded()
     {
         if (canvas != null) return;
-        GameObject canvasObject = new("Pause UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-        canvasObject.transform.SetParent(transform, false);
-        canvas = canvasObject.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 3400;
-        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920f, 1080f);
+        Debug.LogWarning("PauseMenuController requires a scene-built Pause UI. No runtime pause UI was generated.", this);
+    }
 
-        pauseButton = CreatePauseIconButton(canvas.transform);
-        // This sits directly beside the shortened gameplay card dock.
-        SetRect(pauseButton.GetComponent<RectTransform>(), new Vector2(1f, 1f), new Vector2(-116f, -86f), new Vector2(72f, 70f));
-        pauseButton.onClick.AddListener(Pause);
+    private void ResolveSceneReferences()
+    {
+        if (canvas == null)
+        {
+            canvas = GetComponentInChildren<Canvas>(true);
+        }
 
-        overlay = new GameObject("Pause Overlay", typeof(RectTransform), typeof(Image));
-        overlay.transform.SetParent(canvas.transform, false);
-        RectTransform overlayRect = overlay.GetComponent<RectTransform>();
-        overlayRect.anchorMin = Vector2.zero; overlayRect.anchorMax = Vector2.one; overlayRect.offsetMin = Vector2.zero; overlayRect.offsetMax = Vector2.zero;
-        overlay.GetComponent<Image>().color = new Color(0f, 0f, 0f, .48f);
+        if (canvas == null)
+        {
+            GameObject pauseCanvas = GameObject.Find("Pause UI");
+            canvas = pauseCanvas != null ? pauseCanvas.GetComponent<Canvas>() : null;
+        }
 
-        window = new GameObject("Pause Window", typeof(RectTransform), typeof(Image));
-        window.transform.SetParent(overlay.transform, false);
-        Image background = window.GetComponent<Image>();
-        ApplySprite(background, panelSprite, new Color(.98f, .98f, .96f, 1f));
-        SetRect(window.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-270f, -260f), new Vector2(540f, 520f));
-        CreateLabel(window.transform, "PAUSED", new Vector2(0f, 155f), 72);
-        Button resume = CreateButton(window.transform, "Resume", "RESUME", 42); SetRect(resume.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-185f, 30f), new Vector2(370f, 78f)); resume.onClick.AddListener(Resume);
-        Button settings = CreateButton(window.transform, "Settings", "SETTINGS", 42); SetRect(settings.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-185f, -72f), new Vector2(370f, 78f)); settings.onClick.AddListener(OpenSettings);
-        Button exit = CreateButton(window.transform, "Exit", "EXIT", 42); SetRect(exit.GetComponent<RectTransform>(), new Vector2(.5f, .5f), new Vector2(-185f, -174f), new Vector2(370f, 78f)); exit.onClick.AddListener(ExitToLevelSelect);
+        Transform root = canvas != null ? canvas.transform : transform;
+        if (overlay == null)
+        {
+            Transform found = FindChild(root, "Pause Overlay");
+            overlay = found != null ? found.gameObject : null;
+        }
+
+        if (window == null)
+        {
+            Transform found = FindChild(root, "Pause Window");
+            window = found != null ? found.gameObject : null;
+        }
+
+        if (pauseButton == null)
+        {
+            pauseButton = FindComponent<Button>(root, "Pause Button");
+        }
+
+        if (resumeButton == null)
+        {
+            resumeButton = FindComponent<Button>(root, "Resume");
+        }
+
+        if (settingsButton == null)
+        {
+            settingsButton = FindComponent<Button>(root, "Settings");
+        }
+
+        if (exitButton == null)
+        {
+            exitButton = FindComponent<Button>(root, "Exit");
+        }
+    }
+
+    private void NormalizeSceneLayout()
+    {
+        if (canvas != null)
+        {
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 3400;
+            RectTransform canvasRect = canvas.GetComponent<RectTransform>();
+            if (canvasRect != null)
+            {
+                canvasRect.localScale = Vector3.one;
+                canvasRect.anchorMin = Vector2.zero;
+                canvasRect.anchorMax = Vector2.one;
+                canvasRect.offsetMin = Vector2.zero;
+                canvasRect.offsetMax = Vector2.zero;
+            }
+        }
+
+        if (overlay != null)
+        {
+            RectTransform overlayRect = overlay.GetComponent<RectTransform>();
+            if (overlayRect != null)
+            {
+                overlayRect.anchorMin = Vector2.zero;
+                overlayRect.anchorMax = Vector2.one;
+                overlayRect.pivot = new Vector2(0.5f, 0.5f);
+                overlayRect.anchoredPosition = Vector2.zero;
+                overlayRect.offsetMin = Vector2.zero;
+                overlayRect.offsetMax = Vector2.zero;
+                overlayRect.localScale = Vector3.one;
+            }
+        }
+
+        if (window != null)
+        {
+            RectTransform windowRect = window.GetComponent<RectTransform>();
+            if (windowRect != null)
+            {
+                SetRect(windowRect, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(540f, 520f));
+                windowRect.localScale = Vector3.one;
+            }
+        }
+
+        if (pauseButton != null)
+        {
+            RectTransform pauseRect = pauseButton.GetComponent<RectTransform>();
+            if (pauseRect != null)
+            {
+                SetRect(pauseRect, PauseButtonAnchor, PauseButtonPosition, PauseButtonSize);
+                pauseRect.localScale = Vector3.one;
+            }
+        }
+    }
+
+    private void BindButtons()
+    {
+        BindButton(pauseButton, Pause);
+        BindButton(resumeButton, Resume);
+        BindButton(settingsButton, OpenSettings);
+        BindButton(exitButton, ExitToLevelSelect);
+    }
+
+    private static void BindButton(Button button, UnityEngine.Events.UnityAction action)
+    {
+        if (button == null)
+        {
+            return;
+        }
+
+        button.onClick.RemoveListener(action);
+        button.onClick.AddListener(action);
+    }
+
+    private static T FindComponent<T>(Transform root, string objectName) where T : Component
+    {
+        Transform found = FindChild(root, objectName);
+        return found != null ? found.GetComponent<T>() : null;
+    }
+
+    private static Transform FindChild(Transform root, string objectName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        if (root.name == objectName)
+        {
+            return root;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform found = FindChild(root.GetChild(i), objectName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private Button CreateButton(Transform parent, string name, string label, int fontSize)

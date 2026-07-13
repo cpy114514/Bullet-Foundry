@@ -193,6 +193,11 @@ public sealed class LevelDefinition : MonoBehaviour
 
     public bool ShouldDelayCardRuntimeLoad()
     {
+        if (LevelSceneModeRequest.IsSandbox)
+        {
+            return false;
+        }
+
         string sceneName = SceneManager.GetActiveScene().name;
         return showCardSelectionOnStart &&
             waitForCardSelectionBeforeLoadingCards &&
@@ -202,7 +207,8 @@ public sealed class LevelDefinition : MonoBehaviour
     private void TryShowCardSelection()
     {
         string sceneName = SceneManager.GetActiveScene().name;
-        if (!showCardSelectionOnStart ||
+        if (LevelSceneModeRequest.IsSandbox ||
+            !showCardSelectionOnStart ||
             CardSelectionState.IsSelectionConfirmedForScene(sceneName))
         {
             return;

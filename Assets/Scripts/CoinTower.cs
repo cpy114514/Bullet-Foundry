@@ -8,7 +8,7 @@ public sealed class CoinTower : MonoBehaviour
     private int coinsPerBullet = 1;
 
     [SerializeField, Min(1)]
-    private int coinValue = 1;
+    private int coinValue = 2;
 
     [SerializeField]
     private CoinPickup coinPickupPrefab;

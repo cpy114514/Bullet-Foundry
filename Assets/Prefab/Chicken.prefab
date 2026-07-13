@@ -311,7 +311,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.22627737, y: 0.22627737, z: 1}
+  m_LocalScale: {x: 0.15, y: 0.15, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1651215115785556734}
@@ -355,7 +355,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -366,7 +366,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!61 &2902238248006770659
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -425,26 +425,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37b2f734909a2bc4caf1d83c71cdfd99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GoblinEnemy
-  maxHealth: 12
-  moveSpeed: 1.15
+  maxHealth: 1
+  moveSpeed: 2.35
   contactDamage: 1
-  attackCooldown: 1.2
+  attackCooldown: 0.75
   towerAttackRange: 0.02
   towerLaneTolerance: 0.6
-  walkStateName: chicken_walk
-  attackStateName: chicken_attack
-  dieStateName: chicken_die
+  towerLaneCenterOffset: 0
+  attackAllTowersInRange: 0
+  destroyTowersInOneHit: 0
+  walkStateName: Chicken_walk
+  attackStateName: Chicken_attack
+  dieStateName: Chicken_die
   animationFadeTime: 0.08
-  destroyDelayAfterDeath: 0.8
+  destroyDelayAfterDeath: 0.55
   hitFlashColor: {r: 0.25, g: 0.25, b: 0.25, a: 1}
   hitFlashDuration: 0.1
   slowTintMultiplier: 0.75
   stunTintMultiplier: 0.45
   dropCoinsOnDeath: 1
   coinDropCount: 1
-  coinDropValue: 1
-  coinPickupPrefab: {fileID: 0}
-  coinPickupSprite: {fileID: 0}
+  coinDropValue: 5
+  coinPickupPrefab: {fileID: 7878761324815087485, guid: b355821dc752235408f60bbdbac7db8f, type: 3}
+  coinPickupSprite: {fileID: 7843416716369364892, guid: ca4bd6f34e291a74d8e5d39b2a665606, type: 3}
   coinDropScatterRadius: 0.45
 --- !u!1 &4259045198083043180
 GameObject:

@@ -25,8 +25,17 @@ public sealed class SandboxEnemyEntry
 [DisallowMultipleComponent]
 public sealed class SandboxEnemyList : MonoBehaviour
 {
+    private const string EnemySlotPrefix = "Enemy Button Slot";
+    private const string LaneSlotPrefix = "Lane Button Slot";
+
     [SerializeField]
     private Transform buttonRoot;
+
+    [SerializeField]
+    private Transform enemyButtonSlotsRoot;
+
+    [SerializeField]
+    private Transform laneButtonSlotsRoot;
 
     [SerializeField]
     private Transform lanePointParent;
@@ -209,6 +218,18 @@ public sealed class SandboxEnemyList : MonoBehaviour
             buttonRoot = transform;
         }
 
+        if (enemyButtonSlotsRoot == null)
+        {
+            Transform found = FindChild(buttonRoot, "Enemy Button Slots");
+            enemyButtonSlotsRoot = found != null ? found : buttonRoot;
+        }
+
+        if (laneButtonSlotsRoot == null)
+        {
+            Transform found = FindChild(buttonRoot, "Lane Button Slots");
+            laneButtonSlotsRoot = found != null ? found : buttonRoot;
+        }
+
         if (lanePointParent == null && !string.IsNullOrWhiteSpace(lanePointParentName))
         {
             GameObject laneParentObject = GameObject.Find(lanePointParentName);
@@ -244,6 +265,33 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
     private void BuildEnemyCards()
     {
+        Transform[] slots = GetSlots(enemyButtonSlotsRoot, EnemySlotPrefix);
+        if (slots.Length > 0)
+        {
+            int slotIndex = 0;
+            for (int i = 0; i < enemies.Count && slotIndex < slots.Length; i++)
+            {
+                SandboxEnemyEntry entry = enemies[i];
+                if (entry == null || entry.EnemyPrefab == null)
+                {
+                    continue;
+                }
+
+                ConfigureEnemySlot(slots[slotIndex], entry);
+                slotIndex++;
+            }
+
+            for (int i = slotIndex; i < slots.Length; i++)
+            {
+                if (slots[i] != null)
+                {
+                    slots[i].gameObject.SetActive(false);
+                }
+            }
+
+            return;
+        }
+
         for (int i = 0; i < enemies.Count; i++)
         {
             SandboxEnemyEntry entry = enemies[i];
@@ -252,7 +300,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
                 continue;
             }
 
-            GameObject button = new($"Enemy Button - {entry.DisplayName}");
+            GameObject button = new($"Generated Enemy Button - {entry.DisplayName}");
             button.transform.SetParent(buttonRoot, false);
             int buttonIndex = enemyButtons.Count;
             int row = buttonIndex / Mathf.Max(1, cardsPerRow);
@@ -318,11 +366,30 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
         int laneCount = Mathf.Max(1, lanePoints.Length > 0 ? lanePoints.Length : fallbackLaneCount);
         laneIndex = Mathf.Clamp(laneIndex, 1, laneCount);
+        Transform[] slots = GetSlots(laneButtonSlotsRoot, LaneSlotPrefix);
+        if (slots.Length > 0)
+        {
+            int count = Mathf.Min(laneCount, slots.Length);
+            for (int i = 0; i < count; i++)
+            {
+                ConfigureLaneSlot(slots[i], i + 1);
+            }
+
+            for (int i = count; i < slots.Length; i++)
+            {
+                if (slots[i] != null)
+                {
+                    slots[i].gameObject.SetActive(false);
+                }
+            }
+
+            return;
+        }
 
         for (int i = 0; i < laneCount; i++)
         {
             int selectableLaneIndex = i + 1;
-            GameObject button = new($"Lane Button - {selectableLaneIndex}");
+            GameObject button = new($"Generated Lane Button - {selectableLaneIndex}");
             button.transform.SetParent(buttonRoot, false);
             button.transform.localPosition = firstLaneButtonLocalPosition + Vector3.right * laneButtonSpacing * i;
             button.transform.localRotation = Quaternion.identity;
@@ -368,21 +435,94 @@ public sealed class SandboxEnemyList : MonoBehaviour
         for (int i = buttonRoot != null ? buttonRoot.childCount - 1 : -1; i >= 0; i--)
         {
             Transform child = buttonRoot.GetChild(i);
-            if (child != null && child.name.StartsWith("Enemy Button -", StringComparison.Ordinal))
+            if (child != null && child.name.StartsWith("Generated Enemy Button -", StringComparison.Ordinal))
             {
                 child.gameObject.SetActive(false);
                 Destroy(child.gameObject);
             }
 
-            if (child != null && child.name.StartsWith("Lane Button -", StringComparison.Ordinal))
+            if (child != null && child.name.StartsWith("Generated Lane Button -", StringComparison.Ordinal))
             {
                 child.gameObject.SetActive(false);
                 Destroy(child.gameObject);
             }
         }
 
+        DeactivateSlots(enemyButtonSlotsRoot, EnemySlotPrefix);
+        DeactivateSlots(laneButtonSlotsRoot, LaneSlotPrefix);
+
         enemyButtons.Clear();
         laneButtons.Clear();
+    }
+
+    private void ConfigureEnemySlot(Transform slot, SandboxEnemyEntry entry)
+    {
+        if (slot == null || entry == null)
+        {
+            return;
+        }
+
+        slot.gameObject.SetActive(true);
+        SpriteRenderer background = EnsureSpriteRenderer(slot);
+        background.sprite = cardBackgroundSprite;
+        background.color = cardTint;
+        background.sortingOrder = backgroundSortingOrder;
+        FitSpriteRenderer(background, cardSize);
+
+        Transform iconTransform = EnsureChild(slot, "Enemy Icon");
+        iconTransform.localPosition = iconLocalPosition;
+        SpriteRenderer icon = EnsureSpriteRenderer(iconTransform);
+        icon.sprite = GetEnemyPreviewSprite(entry.EnemyPrefab);
+        icon.color = Color.white;
+        icon.sortingOrder = iconSortingOrder;
+        FitSpriteRenderer(icon, enemyIconSize);
+
+        Transform labelTransform = EnsureChild(slot, "Enemy Label");
+        labelTransform.localPosition = labelLocalPosition;
+        TextMesh text = EnsureTextMesh(labelTransform);
+        text.text = FormatCardLabel(entry.DisplayName);
+        text.fontSize = 96;
+        text.characterSize = labelCharacterSize;
+        text.anchor = TextAnchor.MiddleCenter;
+        text.alignment = TextAlignment.Center;
+        text.color = labelColor;
+        SetTextSortingOrder(labelTransform, labelSortingOrder);
+
+        BoxCollider2D collider = EnsureCollider(slot);
+        collider.size = buttonColliderSize.sqrMagnitude > 0.001f ? buttonColliderSize : cardSize;
+        collider.offset = Vector2.zero;
+        enemyButtons.Add(ButtonBinding.ForEnemy(entry, collider, background));
+    }
+
+    private void ConfigureLaneSlot(Transform slot, int selectableLaneIndex)
+    {
+        if (slot == null)
+        {
+            return;
+        }
+
+        slot.gameObject.SetActive(true);
+        SpriteRenderer background = EnsureSpriteRenderer(slot);
+        background.sprite = cardBackgroundSprite;
+        background.color = selectableLaneIndex == laneIndex ? selectedLaneButtonTint : laneButtonTint;
+        background.sortingOrder = backgroundSortingOrder;
+        FitSpriteRenderer(background, laneButtonSize);
+
+        Transform labelTransform = EnsureChild(slot, "Lane Label");
+        labelTransform.localPosition = new Vector3(0f, 0f, -0.05f);
+        TextMesh text = EnsureTextMesh(labelTransform);
+        text.text = selectableLaneIndex.ToString();
+        text.fontSize = 96;
+        text.characterSize = Mathf.Max(0.045f, labelCharacterSize * 0.9f);
+        text.anchor = TextAnchor.MiddleCenter;
+        text.alignment = TextAlignment.Center;
+        text.color = labelColor;
+        SetTextSortingOrder(labelTransform, labelSortingOrder);
+
+        BoxCollider2D collider = EnsureCollider(slot);
+        collider.size = laneButtonSize;
+        collider.offset = Vector2.zero;
+        laneButtons.Add(ButtonBinding.ForLane(selectableLaneIndex, collider, background));
     }
 
     private void RefreshLaneButtonVisuals()
@@ -467,6 +607,120 @@ public sealed class SandboxEnemyList : MonoBehaviour
             targetSize.x / spriteSize.x,
             targetSize.y / spriteSize.y,
             1f);
+    }
+
+    private static Transform[] GetSlots(Transform root, string prefix)
+    {
+        if (root == null)
+        {
+            return Array.Empty<Transform>();
+        }
+
+        List<Transform> slots = new();
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform child = root.GetChild(i);
+            if (child != null && child.name.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                slots.Add(child);
+            }
+        }
+
+        return slots.ToArray();
+    }
+
+    private static void DeactivateSlots(Transform root, string prefix)
+    {
+        Transform[] slots = GetSlots(root, prefix);
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (slots[i] != null)
+            {
+                slots[i].gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private static Transform EnsureChild(Transform parent, string childName)
+    {
+        Transform child = parent.Find(childName);
+        if (child != null)
+        {
+            return child;
+        }
+
+        GameObject childObject = new(childName);
+        childObject.transform.SetParent(parent, false);
+        childObject.transform.localRotation = Quaternion.identity;
+        childObject.transform.localScale = Vector3.one;
+        return childObject.transform;
+    }
+
+    private static SpriteRenderer EnsureSpriteRenderer(Transform target)
+    {
+        SpriteRenderer renderer = target.GetComponent<SpriteRenderer>();
+        if (renderer == null)
+        {
+            renderer = target.gameObject.AddComponent<SpriteRenderer>();
+        }
+
+        return renderer;
+    }
+
+    private static TextMesh EnsureTextMesh(Transform target)
+    {
+        TextMesh text = target.GetComponent<TextMesh>();
+        if (text == null)
+        {
+            text = target.gameObject.AddComponent<TextMesh>();
+        }
+
+        return text;
+    }
+
+    private static BoxCollider2D EnsureCollider(Transform target)
+    {
+        BoxCollider2D collider = target.GetComponent<BoxCollider2D>();
+        if (collider == null)
+        {
+            collider = target.gameObject.AddComponent<BoxCollider2D>();
+        }
+
+        collider.isTrigger = true;
+        return collider;
+    }
+
+    private static void SetTextSortingOrder(Transform target, int sortingOrder)
+    {
+        MeshRenderer renderer = target.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.sortingOrder = sortingOrder;
+        }
+    }
+
+    private static Transform FindChild(Transform root, string objectName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        if (root.name == objectName)
+        {
+            return root;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform found = FindChild(root.GetChild(i), objectName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private float GetLaneY()

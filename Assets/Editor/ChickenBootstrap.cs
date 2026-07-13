@@ -12,6 +12,7 @@ public static class ChickenBootstrap
     private const string ChickenPrefabPath = "Assets/Prefab/Chicken.prefab";
     private const string ChickenControllerPath = "Assets/Animation/Chicken.controller";
     private const string ChickenRigSchema = "BulletFoundrySkinnedChickenClean:v7";
+    private const string CoinPickupPrefabPath = "Assets/Prefab/CoinPickup.prefab";
 
     private static readonly ChickenPart[] Parts =
     {
@@ -40,9 +41,9 @@ public static class ChickenBootstrap
 
         AnimatorController controller = EnsureController(
             ChickenControllerPath,
-            "chicken_walk",
-            "chicken_attack",
-            "chicken_die");
+            "Chicken_walk",
+            "Chicken_attack",
+            "Chicken_die");
 
         GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(ChickenPrefabPath);
         if (existing != null && HasExpectedPrefab(existing))
@@ -210,14 +211,31 @@ public static class ChickenBootstrap
     private static void ConfigureGoblinEnemy(GoblinEnemy enemy)
     {
         SerializedObject serialized = new(enemy);
-        serialized.FindProperty("maxHealth").intValue = 12;
-        serialized.FindProperty("moveSpeed").floatValue = 1.15f;
+        serialized.FindProperty("maxHealth").intValue = 1;
+        serialized.FindProperty("moveSpeed").floatValue = 2.35f;
         serialized.FindProperty("contactDamage").intValue = 1;
-        serialized.FindProperty("attackCooldown").floatValue = 1.2f;
-        serialized.FindProperty("walkStateName").stringValue = "chicken_walk";
-        serialized.FindProperty("attackStateName").stringValue = "chicken_attack";
-        serialized.FindProperty("dieStateName").stringValue = "chicken_die";
-        serialized.FindProperty("destroyDelayAfterDeath").floatValue = 0.8f;
+        serialized.FindProperty("attackCooldown").floatValue = 0.75f;
+        serialized.FindProperty("walkStateName").stringValue = "Chicken_walk";
+        serialized.FindProperty("attackStateName").stringValue = "Chicken_attack";
+        serialized.FindProperty("dieStateName").stringValue = "Chicken_die";
+        serialized.FindProperty("destroyDelayAfterDeath").floatValue = 0.55f;
+        serialized.FindProperty("coinDropValue").intValue = 5;
+
+        GameObject coinPickupObject = AssetDatabase.LoadAssetAtPath<GameObject>(CoinPickupPrefabPath);
+        CoinPickup coinPickup = coinPickupObject != null
+            ? coinPickupObject.GetComponent<CoinPickup>()
+            : null;
+        if (coinPickup != null)
+        {
+            serialized.FindProperty("coinPickupPrefab").objectReferenceValue = coinPickup;
+
+            SpriteRenderer coinRenderer = coinPickup.GetComponent<SpriteRenderer>();
+            if (coinRenderer != null)
+            {
+                serialized.FindProperty("coinPickupSprite").objectReferenceValue = coinRenderer.sprite;
+            }
+        }
+
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
@@ -230,6 +248,8 @@ public static class ChickenBootstrap
         }
 
         AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
+        RemoveLegacyLowercaseStates(stateMachine);
+
         AnimatorState defaultState = null;
         for (int i = 0; i < stateNames.Length; i++)
         {
@@ -243,12 +263,38 @@ public static class ChickenBootstrap
                     new Vector3(220f + (i % 2 * 230f), i / 2 * 100f, 0f));
             }
 
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                $"Assets/Animation/{stateNames[i]}.anim");
+            if (clip != null)
+            {
+                state.motion = clip;
+            }
+
             defaultState ??= state;
         }
 
         stateMachine.defaultState = defaultState;
         EditorUtility.SetDirty(controller);
         return controller;
+    }
+
+    private static void RemoveLegacyLowercaseStates(AnimatorStateMachine stateMachine)
+    {
+        for (int i = stateMachine.states.Length - 1; i >= 0; i--)
+        {
+            AnimatorState state = stateMachine.states[i].state;
+            if (state == null)
+            {
+                continue;
+            }
+
+            if (state.name == "chicken_walk" ||
+                state.name == "chicken_attack" ||
+                state.name == "chicken_die")
+            {
+                stateMachine.RemoveState(state);
+            }
+        }
     }
 
     private static bool HasExpectedPrefab(GameObject prefab)

@@ -481,6 +481,8 @@ MonoBehaviour:
     displayName: ShieldTower
     price: 30
   cardSpacing: 3.6
+  cardSlotsRoot: {fileID: 0}
+  useGlobalCardSlots: 0
 --- !u!61 &2468379232294503861
 BoxCollider2D:
   m_ObjectHideFlags: 0

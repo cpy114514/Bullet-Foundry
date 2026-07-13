@@ -35,6 +35,7 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
     private float targetOffset;
     private float velocity;
     private float minOffset;
+    private bool rowStartCaptured;
 
     private void OnEnable()
     {
@@ -54,6 +55,7 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
             return;
         }
 
+        CaptureRowStartPosition();
         if (catalog.ActiveCards.Count != arrangedCardCount)
         {
             ArrangeCards();
@@ -89,6 +91,7 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
         }
 
         EnsureCatalog();
+        CaptureRowStartPosition();
         ArrangeCards();
         ApplyOffset();
     }
@@ -112,8 +115,28 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
 
         if (catalog != null)
         {
-            cardsRoot = catalog.transform;
+            if (cardsRoot == null)
+            {
+                cardsRoot = catalog.transform;
+            }
         }
+    }
+
+    private void CaptureRowStartPosition()
+    {
+        if (rowStartCaptured)
+        {
+            return;
+        }
+
+        Transform root = cardsRoot != null ? cardsRoot : catalog != null ? catalog.transform : null;
+        if (root == null)
+        {
+            return;
+        }
+
+        rowStartPosition = root.position;
+        rowStartCaptured = true;
     }
 
     private void ArrangeCards()
@@ -135,8 +158,23 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
         }
 
         Transform root = catalog.transform;
-        cardsRoot = root;
-        root.position = rowStartPosition + new Vector3(currentOffset, 0f, 0f);
+        Transform scrollRoot = cardsRoot != null ? cardsRoot : root;
+        if (scrollRoot != root && root.parent != scrollRoot)
+        {
+            root.SetParent(scrollRoot, false);
+        }
+
+        if (scrollRoot == root)
+        {
+            cardsRoot = root;
+            root.position = rowStartPosition + new Vector3(currentOffset, 0f, 0f);
+        }
+        else
+        {
+            scrollRoot.position = rowStartPosition + new Vector3(currentOffset, 0f, 0f);
+            root.localPosition = Vector3.zero;
+            root.localRotation = Quaternion.identity;
+        }
 
         for (int i = 0; i < cards.Count; i++)
         {

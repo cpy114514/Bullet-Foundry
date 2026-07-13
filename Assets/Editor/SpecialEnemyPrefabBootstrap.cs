@@ -12,6 +12,7 @@ public static class SpecialEnemyPrefabBootstrap
     private const string PigSpritePath = "Assets/Image/PigLeader.png";
     private const string FrogSpritePath = "Assets/Image/FrogPrincess.png";
     private const string TongueLineSpritePath = "Assets/Image/UI2.png";
+    private const string CoinPickupPrefabPath = "Assets/Prefab/CoinPickup.prefab";
     private const string GoblinPrefabPath = "Assets/Prefab/Goblin.prefab";
     private const string PigPrefabPath = "Assets/Prefab/PigLeader.prefab";
     private const string FrogPrefabPath = "Assets/Prefab/FrogPrincess.prefab";
@@ -689,6 +690,23 @@ public static class SpecialEnemyPrefabBootstrap
         serialized.FindProperty("attackStateName").stringValue = attack;
         serialized.FindProperty("dieStateName").stringValue = die;
         serialized.FindProperty("destroyDelayAfterDeath").floatValue = deathDelay;
+        serialized.FindProperty("coinDropValue").intValue = 5;
+
+        GameObject coinPickupObject = AssetDatabase.LoadAssetAtPath<GameObject>(CoinPickupPrefabPath);
+        CoinPickup coinPickup = coinPickupObject != null
+            ? coinPickupObject.GetComponent<CoinPickup>()
+            : null;
+        if (coinPickup != null)
+        {
+            serialized.FindProperty("coinPickupPrefab").objectReferenceValue = coinPickup;
+
+            SpriteRenderer coinRenderer = coinPickup.GetComponent<SpriteRenderer>();
+            if (coinRenderer != null)
+            {
+                serialized.FindProperty("coinPickupSprite").objectReferenceValue = coinRenderer.sprite;
+            }
+        }
+
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 

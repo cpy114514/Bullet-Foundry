@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 [DisallowMultipleComponent]
@@ -24,6 +25,15 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     [SerializeField, Min(0.01f)]
     private float towerLaneTolerance = 0.6f;
+
+    [SerializeField]
+    private float towerLaneCenterOffset;
+
+    [SerializeField]
+    private bool attackAllTowersInRange;
+
+    [SerializeField]
+    private bool destroyTowersInOneHit;
 
     [Header("Animation")]
     [SerializeField]
@@ -62,7 +72,7 @@ public sealed class GoblinEnemy : MonoBehaviour
     private int coinDropCount = 1;
 
     [SerializeField, Min(1)]
-    private int coinDropValue = 1;
+    private int coinDropValue = 5;
 
     [SerializeField]
     private CoinPickup coinPickupPrefab;
@@ -416,7 +426,31 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         nextAttackTime = Time.time + attackCooldown;
-        tower.TakeDamage(contactDamage);
+        if (attackAllTowersInRange)
+        {
+            List<TowerHealth> towers = FindTowersInAttackRange();
+            for (int i = 0; i < towers.Count; i++)
+            {
+                DamageTower(towers[i]);
+            }
+
+            return;
+        }
+
+        DamageTower(tower);
+    }
+
+    private void DamageTower(TowerHealth tower)
+    {
+        if (tower == null || tower.IsDestroyed)
+        {
+            return;
+        }
+
+        int damage = destroyTowersInOneHit
+            ? Mathf.Max(contactDamage, tower.MaxHealth)
+            : contactDamage;
+        tower.TakeDamage(damage);
     }
 
     private void Die()
@@ -574,6 +608,7 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         Bounds goblinBounds = CalculateCombatBounds();
+        Vector3 laneCenter = goblinBounds.center + (Vector3.up * towerLaneCenterOffset);
         TowerHealth closestTower = null;
         float closestTowerX = float.NegativeInfinity;
 
@@ -586,7 +621,7 @@ public sealed class GoblinEnemy : MonoBehaviour
             }
 
             Bounds towerBounds = tower.GetWorldBounds();
-            if (Mathf.Abs(towerBounds.center.y - goblinBounds.center.y) > towerLaneTolerance)
+            if (Mathf.Abs(towerBounds.center.y - laneCenter.y) > towerLaneTolerance)
             {
                 continue;
             }
@@ -615,6 +650,53 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         return closestTower;
+    }
+
+    private List<TowerHealth> FindTowersInAttackRange()
+    {
+        TowerHealth[] towers = FindObjectsByType<TowerHealth>(FindObjectsSortMode.None);
+        List<TowerHealth> targets = new();
+        if (towers.Length == 0)
+        {
+            return targets;
+        }
+
+        Bounds goblinBounds = CalculateCombatBounds();
+        Vector3 laneCenter = goblinBounds.center + (Vector3.up * towerLaneCenterOffset);
+        for (int i = 0; i < towers.Length; i++)
+        {
+            TowerHealth tower = towers[i];
+            if (tower == null || tower.IsDestroyed || !tower.isActiveAndEnabled)
+            {
+                continue;
+            }
+
+            Bounds towerBounds = tower.GetWorldBounds();
+            if (Mathf.Abs(towerBounds.center.y - laneCenter.y) > towerLaneTolerance)
+            {
+                continue;
+            }
+
+            if (towerBounds.center.x > goblinBounds.center.x + 0.1f)
+            {
+                continue;
+            }
+
+            if (goblinBounds.max.x < towerBounds.min.x)
+            {
+                continue;
+            }
+
+            float horizontalGap = goblinBounds.min.x - towerBounds.max.x;
+            if (horizontalGap > towerAttackRange)
+            {
+                continue;
+            }
+
+            targets.Add(tower);
+        }
+
+        return targets;
     }
 
     private void PlayState(string stateName)

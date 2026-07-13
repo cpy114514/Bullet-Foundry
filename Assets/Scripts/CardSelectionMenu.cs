@@ -541,23 +541,12 @@ public sealed class CardSelectionMenu : MonoBehaviour
         CompleteCardMotionAnimations();
         CardSelectionState.ConfirmSelection(selectedCards);
 
-        CardCatalog dockCatalog = selectedDockCatalog;
-        selectedDockCatalog = null;
-        selectedDockObject = null;
-
         Close(true);
 
         CardRuntimeLoader loader = FindFirstObjectByType<CardRuntimeLoader>();
         if (loader != null)
         {
-            if (dockCatalog != null)
-            {
-                loader.AdoptLoadedCatalog(dockCatalog);
-            }
-            else
-            {
-                loader.LoadCards();
-            }
+            loader.LoadCards();
         }
     }
 

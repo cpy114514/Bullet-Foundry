@@ -59,6 +59,12 @@ public sealed class CardCatalog : MonoBehaviour
 
     private void Awake()
     {
+        if (ShouldStartEmptyForPendingCardSelection())
+        {
+            BuildCards(new List<CardEntry>());
+            return;
+        }
+
         BuildCards();
     }
 
@@ -125,6 +131,17 @@ public sealed class CardCatalog : MonoBehaviour
         }
 
         BuildCards(orderedCards);
+    }
+
+    private bool ShouldStartEmptyForPendingCardSelection()
+    {
+        if (GetComponentInParent<CardSelectionMenu>(true) != null)
+        {
+            return false;
+        }
+
+        LevelDefinition levelDefinition = FindFirstObjectByType<LevelDefinition>();
+        return levelDefinition != null && levelDefinition.ShouldDelayCardRuntimeLoad();
     }
 
     private void BuildCards(IReadOnlyList<CardEntry> cardsToBuild)
