@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "level-01",
   "displayName": "Level 1",
-  "startingCoins": 75,
+  "startingCoins": 85,
   "showCardSelectionOnStart": true,
   "waitForCardSelectionBeforeLoadingCards": true,
   "cardRules": {
@@ -11,8 +11,8 @@
     "bannedCards": []
   },
   "enemySpawns": [
-    { "time": 2, "enemy": "Goblin", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 7, "enemy": "Goblin", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 12, "enemy": "Goblin", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+    { "time": 3, "enemy": "Goblin", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 9, "enemy": "Goblin", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 15, "enemy": "Goblin", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
   ]
 }

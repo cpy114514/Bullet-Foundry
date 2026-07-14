@@ -125,25 +125,24 @@ public sealed class LevelEnemySpawner : MonoBehaviour
             return;
         }
 
-        Vector3 position = GetLaneSpawnPosition(spawn);
-        GameObject enemy = Instantiate(
+        float laneY = GetLaneY(spawn.LaneIndex);
+        float landBottomY = EnemySpawnAlignment.GetLandBottomYForLane(
+            spawn.LaneIndex,
+            lanes,
+            laneY);
+        Vector3 position = GetLaneSpawnPosition(spawn, laneY);
+        GameObject enemy = EnemySpawnAlignment.InstantiateFootAligned(
             spawn.EnemyPrefab,
             position,
             spawn.EnemyPrefab.transform.rotation,
-            enemyParent);
+            enemyParent,
+            landBottomY + spawn.Offset.y);
 
         enemy.name = spawn.EnemyPrefab.name;
     }
 
-    private Vector3 GetLaneSpawnPosition(LevelEnemySpawn spawn)
+    private Vector3 GetLaneSpawnPosition(LevelEnemySpawn spawn, float laneY)
     {
-        float laneY = 0f;
-        if (lanes.Length > 0)
-        {
-            int laneIndex = Mathf.Clamp(spawn.LaneIndex - 1, 0, lanes.Length - 1);
-            laneY = lanes[laneIndex].position.y;
-        }
-
         float spawnX = Mathf.Approximately(spawn.SpawnX, 0f)
             ? fallbackSpawnX
             : spawn.SpawnX;
@@ -151,5 +150,16 @@ public sealed class LevelEnemySpawner : MonoBehaviour
         Vector3 position = new(spawnX, laneY, spawnZ);
         position += spawn.Offset;
         return position;
+    }
+
+    private float GetLaneY(int targetLaneIndex)
+    {
+        if (lanes.Length == 0)
+        {
+            return 0f;
+        }
+
+        int laneIndex = Mathf.Clamp(targetLaneIndex - 1, 0, lanes.Length - 1);
+        return lanes[laneIndex].position.y;
     }
 }

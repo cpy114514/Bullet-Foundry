@@ -2,14 +2,20 @@
   "schemaVersion": 1,
   "id": "level-08",
   "displayName": "Level 8",
-  "startingCoins": 110,
+  "startingCoins": 120,
   "showCardSelectionOnStart": true,
   "waitForCardSelectionBeforeLoadingCards": true,
-  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": [] },
+  "cardRules": {
+    "restrictAvailableCards": false,
+    "allowedCards": [],
+    "bannedCards": []
+  },
   "enemySpawns": [
-    { "time": 1, "enemy": "Goblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 3, "enemy": "Goblin", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 5, "enemy": "SpeedGoblin", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 9, "enemy": "Barbarian", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+    { "time": 2, "enemy": "Goblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 4, "enemy": "SpeedGoblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 7, "enemy": "PigLeader", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 12, "enemy": "Chicken", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 16, "enemy": "Barbarian", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 21, "enemy": "PigLeader", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
   ]
 }

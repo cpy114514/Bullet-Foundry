@@ -942,9 +942,11 @@ MonoBehaviour:
   moveSpeed: 0.42
   contactDamage: 999
   attackCooldown: 1.35
-  towerAttackRange: 0.22
+  towerAttackRange: 0.55
   towerLaneTolerance: 0.82
   towerLaneCenterOffset: 1.51
+  useBoundsVerticalAttackRange: 1
+  boundsVerticalAttackPadding: 0.18
   attackAllTowersInRange: 1
   destroyTowersInOneHit: 1
   walkStateName: Giant_walk
@@ -957,8 +959,8 @@ MonoBehaviour:
   slowTintMultiplier: 0.75
   stunTintMultiplier: 0.45
   dropCoinsOnDeath: 1
-  coinDropCount: 1
-  coinDropValue: 5
+  coinDropCount: 10
+  coinDropValue: 25
   coinPickupPrefab: {fileID: 7878761324815087485, guid: b355821dc752235408f60bbdbac7db8f, type: 3}
   coinPickupSprite: {fileID: 7843416716369364892, guid: ca4bd6f34e291a74d8e5d39b2a665606, type: 3}
   coinDropScatterRadius: 0.45

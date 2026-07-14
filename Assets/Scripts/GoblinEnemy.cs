@@ -30,6 +30,12 @@ public sealed class GoblinEnemy : MonoBehaviour
     private float towerLaneCenterOffset;
 
     [SerializeField]
+    private bool useBoundsVerticalAttackRange;
+
+    [SerializeField, Min(0f)]
+    private float boundsVerticalAttackPadding = 0.15f;
+
+    [SerializeField]
     private bool attackAllTowersInRange;
 
     [SerializeField]
@@ -105,6 +111,8 @@ public sealed class GoblinEnemy : MonoBehaviour
     private bool stunVisualActive;
     private bool temporaryActionActive;
     private float temporaryActionUntilTime;
+    private float movementHoldUntilTime;
+    private string movementHoldStateName;
     private static Sprite fallbackCoinSprite;
 
     public bool IsDead => isDead;
@@ -150,6 +158,8 @@ public sealed class GoblinEnemy : MonoBehaviour
         stunUntilTime = 0f;
         temporaryActionActive = false;
         temporaryActionUntilTime = 0f;
+        movementHoldUntilTime = 0f;
+        movementHoldStateName = null;
         slowVisualActive = false;
         stunVisualActive = false;
         RestoreSpriteColors();
@@ -191,6 +201,14 @@ public sealed class GoblinEnemy : MonoBehaviour
 
         if (temporaryActionActive)
         {
+            return;
+        }
+
+        if (IsMovementHeld())
+        {
+            PlayState(!string.IsNullOrWhiteSpace(movementHoldStateName)
+                ? movementHoldStateName
+                : walkStateName);
             return;
         }
 
@@ -267,6 +285,30 @@ public sealed class GoblinEnemy : MonoBehaviour
     public void SetCoinDropsEnabled(bool enabled)
     {
         dropCoinsOnDeath = enabled;
+    }
+
+    public void HoldPosition(float duration, string stateName = null)
+    {
+        if (isDead || duration <= 0f)
+        {
+            return;
+        }
+
+        movementHoldUntilTime = Mathf.Max(
+            movementHoldUntilTime,
+            Time.time + duration);
+        movementHoldStateName = stateName;
+
+        if (body != null)
+        {
+            body.linearVelocity = Vector2.zero;
+        }
+    }
+
+    public void SyncMovementPositionToTransform()
+    {
+        ResetMovementPosition();
+        ApplyMovementPosition();
     }
 
     public void PlayTemporaryAction(string stateName, float duration)
@@ -386,6 +428,17 @@ public sealed class GoblinEnemy : MonoBehaviour
         temporaryActionActive = false;
         temporaryActionUntilTime = 0f;
         currentAnimationState = null;
+    }
+
+    private bool IsMovementHeld()
+    {
+        if (Time.time < movementHoldUntilTime)
+        {
+            return true;
+        }
+
+        movementHoldStateName = null;
+        return false;
     }
 
     private void SetSlowVisualActive(bool active)
@@ -621,7 +674,7 @@ public sealed class GoblinEnemy : MonoBehaviour
             }
 
             Bounds towerBounds = tower.GetWorldBounds();
-            if (Mathf.Abs(towerBounds.center.y - laneCenter.y) > towerLaneTolerance)
+            if (!IsTowerInAttackLane(towerBounds, goblinBounds, laneCenter))
             {
                 continue;
             }
@@ -672,7 +725,7 @@ public sealed class GoblinEnemy : MonoBehaviour
             }
 
             Bounds towerBounds = tower.GetWorldBounds();
-            if (Mathf.Abs(towerBounds.center.y - laneCenter.y) > towerLaneTolerance)
+            if (!IsTowerInAttackLane(towerBounds, goblinBounds, laneCenter))
             {
                 continue;
             }
@@ -697,6 +750,18 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         return targets;
+    }
+
+    private bool IsTowerInAttackLane(Bounds towerBounds, Bounds enemyBounds, Vector3 laneCenter)
+    {
+        if (!useBoundsVerticalAttackRange)
+        {
+            return Mathf.Abs(towerBounds.center.y - laneCenter.y) <= towerLaneTolerance;
+        }
+
+        float padding = Mathf.Max(0f, boundsVerticalAttackPadding);
+        return towerBounds.max.y >= enemyBounds.min.y - padding &&
+            towerBounds.min.y <= enemyBounds.max.y + padding;
     }
 
     private void PlayState(string stateName)

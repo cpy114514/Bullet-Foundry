@@ -2,15 +2,24 @@
   "schemaVersion": 1,
   "id": "level-12",
   "displayName": "Level 12",
-  "startingCoins": 130,
+  "startingCoins": 145,
   "showCardSelectionOnStart": true,
   "waitForCardSelectionBeforeLoadingCards": true,
-  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": [] },
+  "cardRules": {
+    "restrictAvailableCards": false,
+    "allowedCards": [],
+    "bannedCards": []
+  },
   "enemySpawns": [
     { "time": 1, "enemy": "SpeedGoblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 2, "enemy": "SpeedGoblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 4, "enemy": "Barbarian", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 6, "enemy": "Barbarian", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 10, "enemy": "Barbarian", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+    { "time": 2.5, "enemy": "Chicken", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 5, "enemy": "FrogPrincess", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 7.5, "enemy": "PigLeader", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 11, "enemy": "Barbarian", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 15, "enemy": "SpeedGoblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 18, "enemy": "FrogPrincess", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 22, "enemy": "PigLeader", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 26, "enemy": "Barbarian", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 30, "enemy": "Barbarian", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
   ]
 }

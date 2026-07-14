@@ -2,14 +2,21 @@
   "schemaVersion": 1,
   "id": "level-06",
   "displayName": "Level 6",
-  "startingCoins": 100,
+  "startingCoins": 110,
   "showCardSelectionOnStart": true,
   "waitForCardSelectionBeforeLoadingCards": true,
-  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": [] },
+  "cardRules": {
+    "restrictAvailableCards": false,
+    "allowedCards": [],
+    "bannedCards": []
+  },
   "enemySpawns": [
-    { "time": 1.5, "enemy": "Goblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 2, "enemy": "Chicken", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
     { "time": 4, "enemy": "Goblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
     { "time": 7, "enemy": "SpeedGoblin", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 11, "enemy": "Barbarian", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+    { "time": 10, "enemy": "Goblin", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 14, "enemy": "Barbarian", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 18, "enemy": "Chicken", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 22, "enemy": "Barbarian", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
   ]
 }

@@ -76,6 +76,7 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
         }
 
         replacementSpawned = true;
+        float targetFootY = EnemySpawnAlignment.GetFootY(gameObject);
         HideBodyAndKeepHat();
 
         if (normalGoblinPrefab == null)
@@ -84,11 +85,12 @@ public sealed class SpeedGoblinEnemy : MonoBehaviour
             return;
         }
 
-        Instantiate(
+        EnemySpawnAlignment.InstantiateFootAligned(
             normalGoblinPrefab,
             transform.position,
             transform.rotation,
-            transform.parent);
+            transform.parent,
+            targetFootY);
     }
 
     private void HideBodyAndKeepHat()

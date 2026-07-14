@@ -53,7 +53,8 @@ public sealed class LevelEditorController : MonoBehaviour
         "Barbarian",
         "PigLeader",
         "FrogPrincess",
-        "Chicken"
+        "Chicken",
+        "Giant"
     };
 
     [SerializeField]
@@ -230,6 +231,7 @@ public sealed class LevelEditorController : MonoBehaviour
     private void Update()
     {
         HandleKeyboardShortcuts();
+        HandleRightClickFallback();
     }
 
     private void HandleKeyboardShortcuts()
@@ -256,6 +258,54 @@ public sealed class LevelEditorController : MonoBehaviour
         {
             RedoLastChange();
         }
+    }
+
+    private void HandleRightClickFallback()
+    {
+        if (IsInputFieldFocused() ||
+            !WasRightMousePressedThisFrame(out Vector2 screenPosition))
+        {
+            return;
+        }
+
+        Camera eventCamera = GetCanvasEventCamera();
+        if (IsPointerInsideContextMenu(screenPosition, eventCamera))
+        {
+            return;
+        }
+
+        if (TryGetSpawnMarkerAtScreenPoint(screenPosition, eventCamera, out int spawnId))
+        {
+            OpenMarkerContextMenu(spawnId, screenPosition, eventCamera);
+            return;
+        }
+
+        if (timelineViewport != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(timelineViewport, screenPosition, eventCamera))
+        {
+            OpenTimelineContextMenu(screenPosition, eventCamera);
+        }
+    }
+
+    private static bool WasRightMousePressedThisFrame(out Vector2 screenPosition)
+    {
+#if ENABLE_INPUT_SYSTEM
+        Mouse mouse = Mouse.current;
+        if (mouse != null && mouse.rightButton.wasPressedThisFrame)
+        {
+            screenPosition = mouse.position.ReadValue();
+            return true;
+        }
+#endif
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            screenPosition = Input.mousePosition;
+            return true;
+        }
+
+        screenPosition = Vector2.zero;
+        return false;
     }
 
     public void DeleteSelectedSpawn()
@@ -312,9 +362,19 @@ public sealed class LevelEditorController : MonoBehaviour
 
     public void OpenMarkerContextMenu(int spawnId, PointerEventData eventData)
     {
+        if (eventData == null)
+        {
+            return;
+        }
+
+        OpenMarkerContextMenu(spawnId, eventData.position, eventData.pressEventCamera);
+    }
+
+    private void OpenMarkerContextMenu(int spawnId, Vector2 screenPosition, Camera eventCamera)
+    {
         LevelEditorSpawn spawn = FindSpawn(spawnId);
         RectTransform canvasRect = GetRootCanvasRect();
-        if (spawn == null || canvasRect == null || eventData == null)
+        if (spawn == null || canvasRect == null)
         {
             return;
         }
@@ -331,14 +391,15 @@ public sealed class LevelEditorController : MonoBehaviour
         const float menuHeight = 104f;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
-            eventData.position,
-            eventData.pressEventCamera,
+            screenPosition,
+            eventCamera,
             out Vector2 localPoint);
 
         GameObject menu = new("Marker Context Menu", typeof(RectTransform), typeof(Image));
         menu.transform.SetParent(canvasRect, false);
         markerContextMenu = menu;
         RectTransform menuRect = menu.GetComponent<RectTransform>();
+        menuRect.SetAsLastSibling();
         menuRect.anchorMin = new Vector2(0.5f, 0.5f);
         menuRect.anchorMax = new Vector2(0.5f, 0.5f);
         menuRect.pivot = new Vector2(0f, 1f);
@@ -405,8 +466,18 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void OpenTimelineContextMenu(PointerEventData eventData)
     {
+        if (eventData == null)
+        {
+            return;
+        }
+
+        OpenTimelineContextMenu(eventData.position, eventData.pressEventCamera);
+    }
+
+    private void OpenTimelineContextMenu(Vector2 screenPosition, Camera eventCamera)
+    {
         RectTransform canvasRect = GetRootCanvasRect();
-        if (canvasRect == null || eventData == null)
+        if (canvasRect == null)
         {
             return;
         }
@@ -416,14 +487,15 @@ public sealed class LevelEditorController : MonoBehaviour
         const float menuHeight = 104f;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
-            eventData.position,
-            eventData.pressEventCamera,
+            screenPosition,
+            eventCamera,
             out Vector2 localPoint);
 
         GameObject menu = new("Timeline Context Menu", typeof(RectTransform), typeof(Image));
         menu.transform.SetParent(canvasRect, false);
         markerContextMenu = menu;
         RectTransform menuRect = menu.GetComponent<RectTransform>();
+        menuRect.SetAsLastSibling();
         menuRect.anchorMin = new Vector2(0.5f, 0.5f);
         menuRect.anchorMax = new Vector2(0.5f, 0.5f);
         menuRect.pivot = new Vector2(0f, 1f);
@@ -1774,16 +1846,109 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private RectTransform GetRootCanvasRect()
     {
-        if (rootCanvas == null)
+        if (rootCanvas == null || rootCanvas.gameObject.scene != gameObject.scene)
         {
-            rootCanvas = GetComponentInParent<Canvas>();
-            if (rootCanvas == null)
-            {
-                rootCanvas = FindFirstObjectByType<Canvas>();
-            }
+            rootCanvas = ResolveEditorCanvas();
         }
 
         return rootCanvas != null ? rootCanvas.transform as RectTransform : null;
+    }
+
+    private Canvas ResolveEditorCanvas()
+    {
+        Canvas parentCanvas = GetComponentInParent<Canvas>();
+        if (IsSceneCanvas(parentCanvas))
+        {
+            return parentCanvas;
+        }
+
+        if (timelineArea != null)
+        {
+            Canvas timelineCanvas = timelineArea.GetComponentInParent<Canvas>();
+            if (IsSceneCanvas(timelineCanvas))
+            {
+                return timelineCanvas;
+            }
+        }
+
+        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Canvas firstSceneCanvas = null;
+        for (int i = 0; i < canvases.Length; i++)
+        {
+            Canvas canvas = canvases[i];
+            if (!IsSceneCanvas(canvas))
+            {
+                continue;
+            }
+
+            if (string.Equals(canvas.name, "Level Editor Canvas", StringComparison.OrdinalIgnoreCase))
+            {
+                return canvas;
+            }
+
+            firstSceneCanvas ??= canvas;
+        }
+
+        return firstSceneCanvas;
+    }
+
+    private bool IsSceneCanvas(Canvas canvas)
+    {
+        return canvas != null && canvas.gameObject.scene == gameObject.scene;
+    }
+
+    private Camera GetCanvasEventCamera()
+    {
+        if (rootCanvas == null)
+        {
+            GetRootCanvasRect();
+        }
+
+        if (rootCanvas == null || rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
+        {
+            return null;
+        }
+
+        return rootCanvas.worldCamera != null ? rootCanvas.worldCamera : Camera.main;
+    }
+
+    private bool IsPointerInsideContextMenu(Vector2 screenPosition, Camera eventCamera)
+    {
+        RectTransform menuRect = markerContextMenu != null
+            ? markerContextMenu.transform as RectTransform
+            : null;
+        return menuRect != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(menuRect, screenPosition, eventCamera);
+    }
+
+    private bool TryGetSpawnMarkerAtScreenPoint(Vector2 screenPosition, Camera eventCamera, out int spawnId)
+    {
+        spawnId = -1;
+        RectTransform bestRect = null;
+        int bestSiblingIndex = int.MinValue;
+
+        foreach (KeyValuePair<int, RectTransform> pair in generatedMarkerRects)
+        {
+            RectTransform markerRect = pair.Value;
+            if (markerRect == null ||
+                !markerRect.gameObject.activeInHierarchy ||
+                !RectTransformUtility.RectangleContainsScreenPoint(markerRect, screenPosition, eventCamera))
+            {
+                continue;
+            }
+
+            int siblingIndex = markerRect.GetSiblingIndex();
+            if (bestRect != null && siblingIndex < bestSiblingIndex)
+            {
+                continue;
+            }
+
+            bestRect = markerRect;
+            bestSiblingIndex = siblingIndex;
+            spawnId = pair.Key;
+        }
+
+        return bestRect != null;
     }
 
     private static void SetTopLeft(RectTransform rect, float left, float top, float width, float height)
@@ -2124,7 +2289,21 @@ public sealed class LevelEditorController : MonoBehaviour
     private void NormalizeCatalogs()
     {
         enemyIds = enemyIds.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        EnsureCatalogEntry(enemyIds, "Giant");
         towerNames = towerNames.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static void EnsureCatalogEntry(List<string> catalog, string value)
+    {
+        if (catalog == null || string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        if (!catalog.Contains(value, StringComparer.OrdinalIgnoreCase))
+        {
+            catalog.Add(value);
+        }
     }
 
     private void ResetTowerRules()

@@ -443,7 +443,7 @@ MonoBehaviour:
   cards:
   - towerPrefab: {fileID: 4813214607448151296, guid: 0f0bb328ae404dd9adf5364421a4e4f9, type: 3}
     displayName: SplitTower
-    price: 100
+    price: 75
   - towerPrefab: {fileID: 7931142071442373578, guid: 3df4716b0a5c4285e9da4b5c6d7e8f90, type: 3}
     displayName: CoinTower
     price: 30

@@ -2,13 +2,19 @@
   "schemaVersion": 1,
   "id": "level-02",
   "displayName": "Level 2",
-  "startingCoins": 80,
+  "startingCoins": 90,
   "showCardSelectionOnStart": true,
   "waitForCardSelectionBeforeLoadingCards": true,
-  "cardRules": { "restrictAvailableCards": true, "allowedCards": ["CoinTower", "SplitTower", "FireTower"], "bannedCards": [] },
+  "cardRules": {
+    "restrictAvailableCards": true,
+    "allowedCards": ["CoinTower", "SplitTower", "FireTower"],
+    "bannedCards": []
+  },
   "enemySpawns": [
     { "time": 2, "enemy": "Goblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 5, "enemy": "Goblin", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 9, "enemy": "Goblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
+    { "time": 6, "enemy": "Goblin", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 10, "enemy": "Goblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 15, "enemy": "Goblin", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
+    { "time": 19, "enemy": "Goblin", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
   ]
 }

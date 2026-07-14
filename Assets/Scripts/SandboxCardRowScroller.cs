@@ -23,6 +23,12 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
     [SerializeField, Min(1f)]
     private float visibleWidth = 13.6f;
 
+    [SerializeField, Min(0.1f)]
+    private float visibleHeight = 2.2f;
+
+    [SerializeField, Min(0f)]
+    private float edgeHidePadding = 0.08f;
+
     [SerializeField, Min(0.05f)]
     private float scrollUnitsPerStep = 0.9f;
 
@@ -61,7 +67,9 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
             ArrangeCards();
         }
 
-        float rawScrollDelta = GetScrollDelta();
+        float rawScrollDelta = IsPointerOverViewport()
+            ? GetScrollDelta()
+            : 0f;
         if (!Mathf.Approximately(rawScrollDelta, 0f))
         {
             float scrollSteps = Mathf.Abs(rawScrollDelta) > 10f
@@ -207,6 +215,100 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
         {
             cardsRoot.position = rowStartPosition + new Vector3(currentOffset, 0f, 0f);
         }
+
+        ApplyCardVisibility();
+    }
+
+    private void ApplyCardVisibility()
+    {
+        if (catalog == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<CardView> cards = catalog.ActiveCards;
+        for (int i = 0; i < cards.Count; i++)
+        {
+            CardView card = cards[i];
+            if (card == null)
+            {
+                continue;
+            }
+
+            SetCardVisible(card, IsCardInsideViewport(card));
+        }
+    }
+
+    private bool IsCardInsideViewport(CardView card)
+    {
+        if (card == null || card.BackgroundRenderer == null)
+        {
+            return false;
+        }
+
+        Bounds bounds = CalculateSpriteWorldBounds(card.BackgroundRenderer);
+        float left = GetViewportLeft() + edgeHidePadding;
+        float right = GetViewportRight() - edgeHidePadding;
+        float bottom = rowStartPosition.y - (visibleHeight * 0.5f);
+        float top = rowStartPosition.y + (visibleHeight * 0.5f);
+        return bounds.min.x >= left &&
+            bounds.max.x <= right &&
+            bounds.center.y >= bottom &&
+            bounds.center.y <= top;
+    }
+
+    private bool IsPointerOverViewport()
+    {
+        if (!TryGetPointerWorldPosition(out Vector2 worldPosition))
+        {
+            return false;
+        }
+
+        float left = GetViewportLeft();
+        float right = GetViewportRight();
+        float bottom = rowStartPosition.y - (visibleHeight * 0.5f);
+        float top = rowStartPosition.y + (visibleHeight * 0.5f);
+        return worldPosition.x >= left &&
+            worldPosition.x <= right &&
+            worldPosition.y >= bottom &&
+            worldPosition.y <= top;
+    }
+
+    private float GetViewportLeft()
+    {
+        return rowStartPosition.x - (cardSpacing * 0.5f);
+    }
+
+    private float GetViewportRight()
+    {
+        return GetViewportLeft() + visibleWidth;
+    }
+
+    private static Bounds CalculateSpriteWorldBounds(SpriteRenderer renderer)
+    {
+        if (renderer == null || renderer.sprite == null)
+        {
+            return new Bounds(Vector3.zero, Vector3.zero);
+        }
+
+        Bounds localBounds = renderer.sprite.bounds;
+        Vector3 min = localBounds.min;
+        Vector3 max = localBounds.max;
+        Vector3[] corners =
+        {
+            renderer.transform.TransformPoint(new Vector3(min.x, min.y, 0f)),
+            renderer.transform.TransformPoint(new Vector3(min.x, max.y, 0f)),
+            renderer.transform.TransformPoint(new Vector3(max.x, min.y, 0f)),
+            renderer.transform.TransformPoint(new Vector3(max.x, max.y, 0f))
+        };
+
+        Bounds worldBounds = new(corners[0], Vector3.zero);
+        for (int i = 1; i < corners.Length; i++)
+        {
+            worldBounds.Encapsulate(corners[i]);
+        }
+
+        return worldBounds;
     }
 
     private static void SetCardVisible(CardView card, bool isVisible)
@@ -247,5 +349,36 @@ public sealed class SandboxCardRowScroller : MonoBehaviour
 #else
         return Input.mouseScrollDelta.y;
 #endif
+    }
+
+    private static bool TryGetPointerWorldPosition(out Vector2 worldPosition)
+    {
+        Camera camera = Camera.main;
+        if (camera == null)
+        {
+            worldPosition = default;
+            return false;
+        }
+
+        Vector2 pointerScreenPosition;
+#if ENABLE_INPUT_SYSTEM
+        Mouse mouse = Mouse.current;
+        if (mouse == null)
+        {
+            worldPosition = default;
+            return false;
+        }
+
+        pointerScreenPosition = mouse.position.ReadValue();
+#else
+        pointerScreenPosition = Input.mousePosition;
+#endif
+        Vector3 screenPoint = new(
+            pointerScreenPosition.x,
+            pointerScreenPosition.y,
+            Mathf.Abs(camera.transform.position.z));
+        Vector3 world = camera.ScreenToWorldPoint(screenPoint);
+        worldPosition = new Vector2(world.x, world.y);
+        return true;
     }
 }
