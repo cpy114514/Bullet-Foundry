@@ -60,18 +60,14 @@ public sealed class CardRuntimeLoader : MonoBehaviour
 
         if (loadedCatalog == null)
         {
-            if (cardsPrefab == null)
-            {
-                cardsPrefab = Resources.Load<GameObject>(CardsResourcePath);
-            }
-
-            if (cardsPrefab == null)
+            GameObject prefab = ResolveCardsPrefab();
+            if (prefab == null)
             {
                 return;
             }
 
-            GameObject cardsObject = Instantiate(cardsPrefab);
-            cardsObject.name = cardsPrefab.name;
+            GameObject cardsObject = Instantiate(prefab);
+            cardsObject.name = prefab.name;
             loadedCatalog = cardsObject.GetComponent<CardCatalog>();
         }
 
@@ -80,6 +76,7 @@ public sealed class CardRuntimeLoader : MonoBehaviour
             return;
         }
 
+        SyncCatalogDataFromPrefab();
         loadedCatalog.SetCardSlotsRoot(cardSlotsRoot, cardSlotsRoot == null);
 
         IReadOnlyCollection<string> selectedTowerNames = CardSelectionState.SelectionConfirmed
@@ -120,6 +117,26 @@ public sealed class CardRuntimeLoader : MonoBehaviour
         if (placementSystem != null)
         {
             placementSystem.SetCardCatalog(loadedCatalog);
+        }
+    }
+
+    private GameObject ResolveCardsPrefab()
+    {
+        if (cardsPrefab == null)
+        {
+            cardsPrefab = Resources.Load<GameObject>(CardsResourcePath);
+        }
+
+        return cardsPrefab;
+    }
+
+    private void SyncCatalogDataFromPrefab()
+    {
+        GameObject prefab = ResolveCardsPrefab();
+        CardCatalog prefabCatalog = prefab != null ? prefab.GetComponent<CardCatalog>() : null;
+        if (prefabCatalog != null)
+        {
+            loadedCatalog.ReplaceCardsFrom(prefabCatalog);
         }
     }
 

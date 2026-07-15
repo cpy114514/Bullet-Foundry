@@ -10,6 +10,9 @@ public sealed class CoinTower : MonoBehaviour
     [SerializeField, Min(1)]
     private int coinValue = 2;
 
+    [SerializeField, Min(1)]
+    private int maxCoinsPerSecond = 5;
+
     [SerializeField]
     private CoinPickup coinPickupPrefab;
 
@@ -24,11 +27,14 @@ public sealed class CoinTower : MonoBehaviour
 
     private readonly HashSet<Bullet> rewardedBullets = new();
     private SpriteRenderer spriteRenderer;
+    private float coinWindowStartTime;
+    private int coinsSpawnedThisWindow;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         EnsureTriggerCollider();
+        coinWindowStartTime = Time.time;
     }
 
     private void OnTriggerEnter2D(Collider2D other)
@@ -57,10 +63,23 @@ public sealed class CoinTower : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < coinsPerBullet; i++)
+        int coinCount = Mathf.Min(coinsPerBullet, GetRemainingCoinsThisSecond());
+        for (int i = 0; i < coinCount; i++)
         {
-            SpawnCoinPickup(i, coinsPerBullet);
+            SpawnCoinPickup(i, coinCount);
+            coinsSpawnedThisWindow++;
         }
+    }
+
+    private int GetRemainingCoinsThisSecond()
+    {
+        if (Time.time - coinWindowStartTime >= 1f)
+        {
+            coinWindowStartTime = Time.time;
+            coinsSpawnedThisWindow = 0;
+        }
+
+        return Mathf.Max(0, maxCoinsPerSecond - coinsSpawnedThisWindow);
     }
 
     private void SpawnCoinPickup(int coinIndex, int coinCount)

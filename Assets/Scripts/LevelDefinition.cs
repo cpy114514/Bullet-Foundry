@@ -121,6 +121,22 @@ public sealed class LevelDefinition : MonoBehaviour
 
     public string LoadedJsonSource { get; private set; }
 
+    public IReadOnlyList<GameObject> GetEnemyPrefabCatalog()
+    {
+        List<GameObject> prefabs = new();
+        HashSet<GameObject> unique = new();
+        for (int i = 0; i < enemyPrefabCatalog.Count; i++)
+        {
+            GameObject prefab = enemyPrefabCatalog[i]?.Prefab;
+            if (prefab != null && unique.Add(prefab))
+            {
+                prefabs.Add(prefab);
+            }
+        }
+
+        return prefabs;
+    }
+
     private void Awake()
     {
         string json = LevelLoadRequest.HasJson

@@ -177,6 +177,8 @@ public sealed class CoinPickup : MonoBehaviour
             wallet.AddCoins(value);
         }
 
+        SfxManager.Play(SfxManager.CoinPickupKey);
+
         Destroy(gameObject);
     }
 

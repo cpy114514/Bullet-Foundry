@@ -941,6 +941,7 @@ MonoBehaviour:
   maxHealth: 80
   moveSpeed: 0.42
   contactDamage: 999
+  spawnFootLaneOffset: -1
   attackCooldown: 1.35
   towerAttackRange: 0.55
   towerLaneTolerance: 0.82

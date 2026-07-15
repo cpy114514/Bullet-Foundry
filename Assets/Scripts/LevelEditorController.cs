@@ -8,6 +8,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 [DisallowMultipleComponent]
 public sealed class LevelEditorController : MonoBehaviour
 {
@@ -15,6 +19,7 @@ public sealed class LevelEditorController : MonoBehaviour
     private static readonly Color CardSelectedColor = new(0.82f, 0.82f, 0.8f, 1f);
     private static readonly Color CardDisabledColor = new(0.62f, 0.62f, 0.6f, 1f);
     private const float TimelineMarkerBaseWidth = 124f;
+    private const string DefaultLevelName = "Custom Level";
 
     [Header("Data")]
     [SerializeField]
@@ -36,7 +41,7 @@ public sealed class LevelEditorController : MonoBehaviour
     private float spawnX = 8.5f;
 
     [SerializeField]
-    private string outputFileName = "CustomLevel.json";
+    private string outputFileName = "Custom Level.json";
 
     [SerializeField]
     private string playSceneName = "Levels";
@@ -134,6 +139,9 @@ public sealed class LevelEditorController : MonoBehaviour
     private Button loadButton;
 
     [SerializeField]
+    private Button exportButton;
+
+    [SerializeField]
     private Button testButton;
 
     [SerializeField]
@@ -195,6 +203,10 @@ public sealed class LevelEditorController : MonoBehaviour
     private GameObject markerContextMenu;
     private InputField markerContextCountInput;
     private int markerContextSpawnId = -1;
+    private GameObject levelFilePanel;
+    private ScrollRect localLevelScrollRect;
+    private RectTransform localLevelListRoot;
+    private Text localLevelEmptyText;
 
     public float TimelineDuration => Mathf.Max(5f, timelineDuration);
 
@@ -298,11 +310,13 @@ public sealed class LevelEditorController : MonoBehaviour
         }
 #endif
 
+#if ENABLE_LEGACY_INPUT_MANAGER
         if (Input.GetMouseButtonDown(1))
         {
             screenPosition = Input.mousePosition;
             return true;
         }
+#endif
 
         screenPosition = Vector2.zero;
         return false;
@@ -628,9 +642,18 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void WireStaticUi()
     {
-        AddInputListener(levelIdInput, value => levelId = Clean(value, "custom-level"));
-        AddInputListener(displayNameInput, value => displayName = Clean(value, "Custom Level"));
-        AddInputListener(outputFileInput, value => outputFileName = Clean(value, "CustomLevel.json"));
+        MergeLevelNameUi();
+        AddInputListener(levelIdInput, value =>
+        {
+            SetMergedLevelName(value);
+            PushDataToInputs();
+        });
+        AddInputListener(displayNameInput, value =>
+        {
+            SetMergedLevelName(value);
+            PushDataToInputs();
+        });
+        AddInputListener(outputFileInput, _ => PushDataToInputs());
         AddInputListener(startingCoinsInput, value =>
         {
             if (int.TryParse(value, out int parsed))
@@ -652,8 +675,10 @@ public sealed class LevelEditorController : MonoBehaviour
             pendingTimelineLayoutRefresh = true;
         });
 
+        EnsureExportButton();
         AddButtonListener(saveButton, SaveJson);
-        AddButtonListener(loadButton, LoadJson);
+        AddButtonListener(loadButton, OpenLevelFilePanel);
+        AddButtonListener(exportButton, ExportJson);
         AddButtonListener(testButton, TestPlay);
         AddButtonListener(backButton, () => SceneTransitionController.LoadScene(levelSelectSceneName));
         AddButtonListener(clearButton, ClearSpawns);
@@ -672,10 +697,86 @@ public sealed class LevelEditorController : MonoBehaviour
         }
     }
 
+    private void MergeLevelNameUi()
+    {
+        SetMergedLevelName(!string.IsNullOrWhiteSpace(displayName) ? displayName : levelId);
+        RenameInputLabel(levelIdInput, "LEVEL NAME");
+        SetInputAndLabelActive(displayNameInput, false);
+    }
+
+    private void SetMergedLevelName(string value)
+    {
+        string levelName = Clean(value, DefaultLevelName);
+        levelId = levelName;
+        displayName = levelName;
+        string fileName = levelName;
+        char[] invalidCharacters = Path.GetInvalidFileNameChars();
+        for (int i = 0; i < invalidCharacters.Length; i++)
+        {
+            fileName = fileName.Replace(invalidCharacters[i], '-');
+        }
+
+        fileName = fileName.Trim();
+        outputFileName = EnsureJsonExtension(string.IsNullOrWhiteSpace(fileName) ? DefaultLevelName : fileName);
+    }
+
+    private static void RenameInputLabel(InputField input, string label)
+    {
+        if (input == null || input.transform.parent == null)
+        {
+            return;
+        }
+
+        string expectedName = input.gameObject.name.Replace("Input", "Input Label");
+        Transform parent = input.transform.parent;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (!string.Equals(child.name, expectedName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            Text text = child.GetComponent<Text>();
+            if (text != null)
+            {
+                text.text = label;
+            }
+
+            return;
+        }
+    }
+
+    private static void SetInputAndLabelActive(InputField input, bool active)
+    {
+        if (input == null)
+        {
+            return;
+        }
+
+        input.gameObject.SetActive(active);
+        if (input.transform.parent == null)
+        {
+            return;
+        }
+
+        string expectedName = input.gameObject.name.Replace("Input", "Input Label");
+        Transform parent = input.transform.parent;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (string.Equals(child.name, expectedName, StringComparison.OrdinalIgnoreCase))
+            {
+                child.gameObject.SetActive(active);
+                return;
+            }
+        }
+    }
+
     private void PushDataToInputs()
     {
         SetInputValue(levelIdInput, levelId);
-        SetInputValue(displayNameInput, displayName);
+        SetInputValue(displayNameInput, levelId);
         SetInputValue(startingCoinsInput, startingCoins.ToString());
         SetInputValue(timelineDurationInput, Mathf.RoundToInt(TimelineDuration).ToString());
         SetInputValue(outputFileInput, outputFileName);
@@ -927,7 +1028,6 @@ public sealed class LevelEditorController : MonoBehaviour
             float top = timelineHeaderHeight + (lane - 1) * timelineLaneHeight;
             Color laneColor = lane % 2 == 0 ? new Color(0.9f, 0.9f, 0.86f, 1f) : new Color(0.84f, 0.84f, 0.8f, 1f);
             CreateGuideImage($"Lane {lane} Background", timelineGuideRoot, laneColor, 0f, top, width, timelineLaneHeight);
-            CreateGuideText($"Lane {lane} Label", timelineGuideRoot, $"Lane {lane}", 22, TextAnchor.MiddleLeft, Color.black, 8f, top + 6f, 78f, 24f);
             CreateGuideImage($"Lane {lane} Bottom Line", timelineGuideRoot, new Color(0f, 0f, 0f, 0.28f), 0f, top + timelineLaneHeight - 1f, width, 1.5f);
         }
 
@@ -948,10 +1048,6 @@ public sealed class LevelEditorController : MonoBehaviour
             }
 
             CreateGuideImage($"Tick {second}s", timelineGuideRoot, major ? new Color(0f, 0f, 0f, 0.36f) : new Color(0f, 0f, 0f, 0.12f), x, 0f, major ? 2f : 1f, height);
-            if (major)
-            {
-                CreateGuideText($"Tick Label {second}s", timelineGuideRoot, $"{second}s", 22, TextAnchor.UpperLeft, Color.black, x + 4f, 6f, 58f, 28f);
-            }
         }
     }
 
@@ -1696,22 +1792,6 @@ public sealed class LevelEditorController : MonoBehaviour
         return image;
     }
 
-    private Text CreateGuideText(string objectName, RectTransform parent, string textValue, int fontSize, TextAnchor alignment, Color color, float left, float top, float width, float height)
-    {
-        GameObject textObject = new(objectName);
-        textObject.transform.SetParent(parent, false);
-        RectTransform rect = textObject.AddComponent<RectTransform>();
-        SetTopLeft(rect, left, top, width, height);
-        Text text = textObject.AddComponent<Text>();
-        text.font = GetUiFont();
-        text.text = textValue;
-        text.fontSize = fontSize;
-        text.alignment = alignment;
-        text.color = color;
-        text.raycastTarget = false;
-        return text;
-    }
-
     private void CreateDragGhost(string enemyId)
     {
         DestroyDragGhost();
@@ -2030,12 +2110,242 @@ public sealed class LevelEditorController : MonoBehaviour
         return fallback;
     }
 
+    private void EnsureExportButton()
+    {
+        if (exportButton != null || loadButton == null)
+        {
+            return;
+        }
+
+        GameObject exportObject = Instantiate(loadButton.gameObject, loadButton.transform.parent);
+        exportObject.name = "Export Button";
+        exportObject.SetActive(true);
+        exportButton = exportObject.GetComponent<Button>();
+        if (exportButton == null)
+        {
+            exportButton = exportObject.AddComponent<Button>();
+        }
+
+        exportButton.onClick.RemoveAllListeners();
+        Text label = exportObject.GetComponentInChildren<Text>(true);
+        if (label != null)
+        {
+            label.text = "Export";
+            label.font = GetUiFont();
+            ConfigureTextToFit(label, 10, 30, 24);
+        }
+    }
+
+    private void OpenLevelFilePanel()
+    {
+        PullDataFromInputs();
+        EnsureLevelFilePanel();
+        if (levelFilePanel == null)
+        {
+            SetStatus("Load panel could not be created.");
+            return;
+        }
+
+        PopulateLocalLevelList();
+        levelFilePanel.SetActive(true);
+        levelFilePanel.transform.SetAsLastSibling();
+    }
+
+    private void CloseLevelFilePanel()
+    {
+        if (levelFilePanel != null)
+        {
+            levelFilePanel.SetActive(false);
+        }
+    }
+
+    private void EnsureLevelFilePanel()
+    {
+        if (levelFilePanel != null)
+        {
+            return;
+        }
+
+        RectTransform canvasRect = GetRootCanvasRect();
+        if (canvasRect == null)
+        {
+            return;
+        }
+
+        levelFilePanel = new GameObject("Level File Panel", typeof(RectTransform), typeof(Image));
+        levelFilePanel.transform.SetParent(canvasRect, false);
+        RectTransform panelRect = levelFilePanel.GetComponent<RectTransform>();
+        panelRect.anchorMin = Vector2.zero;
+        panelRect.anchorMax = Vector2.one;
+        panelRect.offsetMin = Vector2.zero;
+        panelRect.offsetMax = Vector2.zero;
+        Image overlay = levelFilePanel.GetComponent<Image>();
+        overlay.color = new Color(0f, 0f, 0f, 0.45f);
+
+        GameObject windowObject = new("Window", typeof(RectTransform), typeof(Image));
+        windowObject.transform.SetParent(levelFilePanel.transform, false);
+        RectTransform windowRect = windowObject.GetComponent<RectTransform>();
+        windowRect.anchorMin = new Vector2(0.5f, 0.5f);
+        windowRect.anchorMax = new Vector2(0.5f, 0.5f);
+        windowRect.pivot = new Vector2(0.5f, 0.5f);
+        windowRect.anchoredPosition = Vector2.zero;
+        windowRect.sizeDelta = new Vector2(780f, 600f);
+        Image windowImage = windowObject.GetComponent<Image>();
+        windowImage.color = new Color(0.96f, 0.96f, 0.93f, 1f);
+        Outline outline = windowObject.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        CreateContextText(windowRect, "Load Level", 40, TextAnchor.MiddleLeft, 30f, 16f, 420f, 52f);
+        CreateContextButton(windowRect, "X", 26, 724f, 20f, 38f, 38f, CloseLevelFilePanel);
+
+        CreateContextText(windowRect, "Local Saves", 28, TextAnchor.MiddleLeft, 32f, 84f, 280f, 38f);
+        CreateContextText(windowRect, Application.persistentDataPath, 16, TextAnchor.UpperLeft, 32f, 122f, 710f, 40f);
+
+        GameObject scrollObject = new("Local Level Scroll View", typeof(RectTransform), typeof(Image), typeof(RectMask2D), typeof(ScrollRect));
+        scrollObject.transform.SetParent(windowRect, false);
+        RectTransform scrollRectTransform = scrollObject.GetComponent<RectTransform>();
+        SetTopLeft(scrollRectTransform, 32f, 170f, 716f, 340f);
+        Image scrollBackground = scrollObject.GetComponent<Image>();
+        scrollBackground.color = new Color(1f, 1f, 1f, 0.01f);
+        scrollBackground.raycastTarget = true;
+
+        GameObject listObject = new("Local Level List", typeof(RectTransform));
+        listObject.transform.SetParent(scrollObject.transform, false);
+        localLevelListRoot = listObject.GetComponent<RectTransform>();
+        localLevelListRoot.anchorMin = new Vector2(0f, 1f);
+        localLevelListRoot.anchorMax = new Vector2(1f, 1f);
+        localLevelListRoot.pivot = new Vector2(0f, 1f);
+        localLevelListRoot.anchoredPosition = Vector2.zero;
+        localLevelListRoot.sizeDelta = new Vector2(0f, 340f);
+        localLevelListRoot.localScale = Vector3.one;
+
+        localLevelScrollRect = scrollObject.GetComponent<ScrollRect>();
+        localLevelScrollRect.viewport = scrollRectTransform;
+        localLevelScrollRect.content = localLevelListRoot;
+        localLevelScrollRect.horizontal = false;
+        localLevelScrollRect.vertical = true;
+        localLevelScrollRect.movementType = ScrollRect.MovementType.Clamped;
+        localLevelScrollRect.scrollSensitivity = 28f;
+
+        CreateContextButton(windowRect, "Import", 24, 32f, 528f, 180f, 48f, ImportExternalJson);
+        CreateContextButton(windowRect, "Refresh", 24, 232f, 528f, 160f, 48f, PopulateLocalLevelList);
+
+        levelFilePanel.SetActive(false);
+    }
+
+    private void PopulateLocalLevelList()
+    {
+        if (localLevelListRoot == null)
+        {
+            return;
+        }
+
+        for (int i = localLevelListRoot.childCount - 1; i >= 0; i--)
+        {
+            DestroyGeneratedObject(localLevelListRoot.GetChild(i).gameObject);
+        }
+
+        string[] files = GetLocalLevelFiles();
+        float contentHeight = Mathf.Max(340f, files.Length > 0 ? files.Length * 54f : 48f);
+        localLevelListRoot.sizeDelta = new Vector2(localLevelListRoot.sizeDelta.x, contentHeight);
+        localLevelListRoot.anchoredPosition = Vector2.zero;
+        if (localLevelScrollRect != null)
+        {
+            localLevelScrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        if (files.Length == 0)
+        {
+            localLevelEmptyText = CreateContextText(
+                localLevelListRoot,
+                "No local .json saves yet.",
+                22,
+                TextAnchor.UpperLeft,
+                0f,
+                0f,
+                500f,
+                48f);
+            return;
+        }
+
+        localLevelEmptyText = null;
+        int visibleCount = files.Length;
+        for (int i = 0; i < visibleCount; i++)
+        {
+            string filePath = files[i];
+            string label = Path.GetFileName(filePath);
+            Button loadLevelButton = CreateContextButton(
+                localLevelListRoot,
+                label,
+                20,
+                0f,
+                i * 54f,
+                580f,
+                46f,
+                () => LoadJsonFromPath(filePath, true));
+            SetButtonTextColor(loadLevelButton, Color.black);
+
+            Button deleteLevelButton = CreateContextButton(
+                localLevelListRoot,
+                "Delete",
+                20,
+                596f,
+                i * 54f,
+                120f,
+                46f,
+                () => DeleteLocalLevelFile(filePath));
+            SetButtonTextColor(deleteLevelButton, Color.black);
+        }
+    }
+
+    private void DeleteLocalLevelFile(string path)
+    {
+        try
+        {
+            string root = Path.GetFullPath(Application.persistentDataPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+            string fullPath = Path.GetFullPath(path);
+            if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !File.Exists(fullPath))
+            {
+                SetStatus("Delete failed: local level file was not found.");
+                PopulateLocalLevelList();
+                return;
+            }
+
+            File.Delete(fullPath);
+            SetStatus($"Deleted level: {Path.GetFileName(fullPath)}");
+            PopulateLocalLevelList();
+        }
+        catch (Exception exception)
+        {
+            SetStatus($"Delete failed: {exception.Message}");
+        }
+    }
+
+    private static string[] GetLocalLevelFiles()
+    {
+        try
+        {
+            Directory.CreateDirectory(Application.persistentDataPath);
+            return Directory.GetFiles(Application.persistentDataPath, "*.json")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .ToArray();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
     private void SaveJson()
     {
         PullDataFromInputs();
         string path = GetOutputPath();
         try
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, BuildJson());
             SetStatus($"Saved JSON: {path}");
         }
@@ -2048,7 +2358,12 @@ public sealed class LevelEditorController : MonoBehaviour
     private void LoadJson()
     {
         PullDataFromInputs();
-        string path = GetOutputPath();
+        LoadJsonFromPath(GetOutputPath(), false);
+    }
+
+    private void LoadJsonFromPath(string path, bool closePanel)
+    {
+        path = NormalizeJsonPath(path);
         if (!File.Exists(path))
         {
             SetStatus($"No JSON found at {path}");
@@ -2066,12 +2381,61 @@ public sealed class LevelEditorController : MonoBehaviour
 
             ApplyData(data);
             PushDataToInputs();
+            undoHistory.Clear();
+            redoHistory.Clear();
             RebuildDynamicUi();
             SetStatus($"Loaded JSON: {path}");
+            if (closePanel)
+            {
+                CloseLevelFilePanel();
+            }
         }
         catch (Exception exception)
         {
             SetStatus($"Load failed: {exception.Message}");
+        }
+    }
+
+    private void ImportExternalJson()
+    {
+        if (TryPickImportPath(out string path))
+        {
+            LoadJsonFromPath(path, true);
+            return;
+        }
+
+        SetStatus("Import canceled.");
+    }
+
+    private void ExportJson()
+    {
+        PullDataFromInputs();
+        if (TryPickExportPath(Clean(outputFileName, "CustomLevel.json"), out string pickedPath))
+        {
+            ExportJsonToPath(pickedPath);
+            return;
+        }
+
+        ExportJsonToPath(GetDefaultExportPath());
+    }
+
+    private void ExportJsonToPath(string path)
+    {
+        path = NormalizeJsonPath(path);
+        try
+        {
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(path, BuildJson());
+            SetStatus($"Exported JSON: {path}");
+        }
+        catch (Exception exception)
+        {
+            SetStatus($"Export failed: {exception.Message}");
         }
     }
 
@@ -2086,7 +2450,7 @@ public sealed class LevelEditorController : MonoBehaviour
         }
 
         LevelSceneModeRequest.Set(LevelSceneMode.Normal);
-        LevelLoadRequest.Set(json, displayName, 0);
+        LevelLoadRequest.Set(json, levelId, 0);
         CardSelectionState.PrepareLevelLoad(playSceneName);
         SceneTransitionController.LoadScene(playSceneName);
     }
@@ -2210,9 +2574,10 @@ public sealed class LevelEditorController : MonoBehaviour
         LevelJsonData data = new()
         {
             schemaVersion = LevelJsonUtility.CurrentSchemaVersion,
-            id = Clean(levelId, "custom-level"),
-            displayName = Clean(displayName, "Custom Level"),
+            id = Clean(levelId, DefaultLevelName),
+            displayName = Clean(levelId, DefaultLevelName),
             startingCoins = Mathf.Max(0, startingCoins),
+            timelineDuration = TimelineDuration,
             showCardSelectionOnStart = true,
             waitForCardSelectionBeforeLoadingCards = true,
             cardRules = BuildCardRules(),
@@ -2247,9 +2612,9 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void ApplyData(LevelJsonData data)
     {
-        levelId = data.id;
-        displayName = data.displayName;
+        SetMergedLevelName(!string.IsNullOrWhiteSpace(data.displayName) ? data.displayName : data.id);
         startingCoins = data.startingCoins;
+        timelineDuration = Mathf.Max(5f, data.timelineDuration <= 0f ? 60f : data.timelineDuration);
         spawns.Clear();
         selectedSpawnIds.Clear();
         selectedSpawnId = -1;
@@ -2272,9 +2637,13 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void PullDataFromInputs()
     {
-        levelId = Clean(levelIdInput != null ? levelIdInput.text : levelId, "custom-level");
-        displayName = Clean(displayNameInput != null ? displayNameInput.text : displayName, "Custom Level");
-        outputFileName = Clean(outputFileInput != null ? outputFileInput.text : outputFileName, "CustomLevel.json");
+        string levelName = levelIdInput != null ? levelIdInput.text : levelId;
+        if (string.IsNullOrWhiteSpace(levelName) && displayNameInput != null)
+        {
+            levelName = displayNameInput.text;
+        }
+
+        SetMergedLevelName(levelName);
         if (startingCoinsInput != null && int.TryParse(startingCoinsInput.text, out int parsedCoins))
         {
             startingCoins = Mathf.Max(0, parsedCoins);
@@ -2342,8 +2711,70 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private string GetOutputPath()
     {
-        string fileName = Clean(outputFileName, "CustomLevel.json");
+        string fileName = EnsureJsonExtension(Clean(outputFileName, "CustomLevel.json"));
         return Path.Combine(Application.persistentDataPath, fileName);
+    }
+
+    private string GetDefaultExportPath()
+    {
+        string directory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            directory = Application.persistentDataPath;
+        }
+
+        return Path.Combine(directory, EnsureJsonExtension(Clean(outputFileName, "CustomLevel.json")));
+    }
+
+    private static string NormalizeJsonPath(string path)
+    {
+        path = Clean(path, "CustomLevel.json");
+        if (Directory.Exists(path))
+        {
+            return Path.Combine(path, "CustomLevel.json");
+        }
+
+        return EnsureJsonExtension(path);
+    }
+
+    private static string EnsureJsonExtension(string path)
+    {
+        return string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase)
+            ? path
+            : path + ".json";
+    }
+
+    private static bool TryPickImportPath(out string path)
+    {
+#if UNITY_EDITOR
+        path = EditorUtility.OpenFilePanel("Import Level JSON", Application.persistentDataPath, "json");
+        return !string.IsNullOrWhiteSpace(path);
+#else
+        path = string.Empty;
+        return false;
+#endif
+    }
+
+    private string GetExportDirectory()
+    {
+        string defaultPath = GetDefaultExportPath();
+        string directory = Path.GetDirectoryName(defaultPath);
+        return string.IsNullOrWhiteSpace(directory) ? Application.persistentDataPath : directory;
+    }
+
+    private bool TryPickExportPath(string defaultName, out string path)
+    {
+#if UNITY_EDITOR
+        path = EditorUtility.SaveFilePanel(
+            "Export Level JSON",
+            GetExportDirectory(),
+            EnsureJsonExtension(defaultName),
+            "json");
+        return !string.IsNullOrWhiteSpace(path);
+#else
+        path = string.Empty;
+        return false;
+#endif
     }
 
     private void SetStatus(string message)

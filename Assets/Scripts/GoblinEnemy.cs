@@ -16,9 +16,16 @@ public sealed class GoblinEnemy : MonoBehaviour
     [SerializeField, Min(0f)]
     private int contactDamage = 1;
 
+    [Header("Placement")]
+    [SerializeField]
+    private int spawnFootLaneOffset;
+
     [Header("Attack")]
     [SerializeField, Min(0.01f)]
     private float attackCooldown = 1f;
+
+    [SerializeField, Min(0.01f)]
+    private float attackAnimationDurationFallback = 0.45f;
 
     [SerializeField, Min(0f)]
     private float towerAttackRange = 0.02f;
@@ -95,6 +102,7 @@ public sealed class GoblinEnemy : MonoBehaviour
     private SpriteRenderer[] spriteRenderers;
     private Color[] originalSpriteColors;
     private Coroutine hitFlashRoutine;
+    private Coroutine attackRoutine;
     private int currentHealth;
     private float nextAttackTime;
     private float slowMultiplier = 1f;
@@ -109,6 +117,7 @@ public sealed class GoblinEnemy : MonoBehaviour
     private bool isDead;
     private bool slowVisualActive;
     private bool stunVisualActive;
+    private bool attackActionActive;
     private bool temporaryActionActive;
     private float temporaryActionUntilTime;
     private float movementHoldUntilTime;
@@ -121,7 +130,11 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     public int MaxHealth => maxHealth;
 
-    public bool IsActionBlocked => isDead || Time.time < stunUntilTime;
+    public int SpawnFootLaneOffset => spawnFootLaneOffset;
+
+    public float MoveSpeed => moveSpeed;
+
+    public bool IsActionBlocked => isDead || attackActionActive || Time.time < stunUntilTime;
 
     public Bounds GetWorldBounds()
     {
@@ -153,6 +166,8 @@ public sealed class GoblinEnemy : MonoBehaviour
         coinsDropped = false;
         isDead = false;
         nextAttackTime = 0f;
+        attackRoutine = null;
+        attackActionActive = false;
         slowMultiplier = 1f;
         slowUntilTime = 0f;
         stunUntilTime = 0f;
@@ -163,7 +178,7 @@ public sealed class GoblinEnemy : MonoBehaviour
         slowVisualActive = false;
         stunVisualActive = false;
         RestoreSpriteColors();
-        PlayState(walkStateName);
+        PlayState(walkStateName, false);
     }
 
     private void OnDisable()
@@ -174,6 +189,13 @@ public sealed class GoblinEnemy : MonoBehaviour
             hitFlashRoutine = null;
         }
 
+        if (attackRoutine != null)
+        {
+            StopCoroutine(attackRoutine);
+            attackRoutine = null;
+        }
+
+        attackActionActive = false;
         slowVisualActive = false;
         stunVisualActive = false;
         RestoreSpriteColors();
@@ -195,7 +217,7 @@ public sealed class GoblinEnemy : MonoBehaviour
 
         if (IsStunned())
         {
-            PlayState(walkStateName);
+            PlayState(walkStateName, false);
             return;
         }
 
@@ -204,11 +226,17 @@ public sealed class GoblinEnemy : MonoBehaviour
             return;
         }
 
+        if (attackActionActive)
+        {
+            return;
+        }
+
         if (IsMovementHeld())
         {
             PlayState(!string.IsNullOrWhiteSpace(movementHoldStateName)
                 ? movementHoldStateName
-                : walkStateName);
+                : walkStateName,
+                false);
             return;
         }
 
@@ -278,7 +306,7 @@ public sealed class GoblinEnemy : MonoBehaviour
         currentAnimationState = null;
         if (!isDead)
         {
-            PlayState(walkStateName);
+            PlayState(walkStateName, false);
         }
     }
 
@@ -322,13 +350,17 @@ public sealed class GoblinEnemy : MonoBehaviour
         temporaryActionUntilTime = Mathf.Max(
             temporaryActionUntilTime,
             Time.time + duration);
-        currentAnimationState = null;
-        PlayState(stateName);
+        PlayState(stateName, true);
 
         if (body != null)
         {
             body.linearVelocity = Vector2.zero;
         }
+    }
+
+    public float GetActionAnimationDuration(string stateName, float fallbackDuration)
+    {
+        return GetAnimationDuration(stateName, fallbackDuration);
     }
 
     public void ApplySlow(float speedMultiplier, float duration)
@@ -378,9 +410,20 @@ public sealed class GoblinEnemy : MonoBehaviour
         HealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
+    public void ApplyEndlessScaling(float healthMultiplier, float speedMultiplier)
+    {
+        if (isDead)
+        {
+            return;
+        }
+
+        RefillHealth(Mathf.CeilToInt(maxHealth * Mathf.Max(1f, healthMultiplier)));
+        moveSpeed *= Mathf.Max(0.1f, speedMultiplier);
+    }
+
     private void Walk()
     {
-        PlayState(walkStateName);
+        PlayState(walkStateName, false);
         pendingMoveSpeed = GetCurrentMoveSpeed();
         shouldMoveThisFrame = pendingMoveSpeed > 0f;
     }
@@ -471,14 +514,53 @@ public sealed class GoblinEnemy : MonoBehaviour
 
     private void AttackTower(TowerHealth tower)
     {
-        PlayState(attackStateName);
-
-        if (tower == null || tower.IsDestroyed || Time.time < nextAttackTime)
+        if (tower == null || tower.IsDestroyed)
         {
             return;
         }
 
+        if (attackActionActive)
+        {
+            return;
+        }
+
+        if (Time.time < nextAttackTime)
+        {
+            PlayState(walkStateName, false);
+            return;
+        }
+
+        attackRoutine = StartCoroutine(AttackTowerRoutine(tower));
+    }
+
+    private IEnumerator AttackTowerRoutine(TowerHealth tower)
+    {
+        attackActionActive = true;
+        PlayState(attackStateName, true);
+
+        if (body != null)
+        {
+            body.linearVelocity = Vector2.zero;
+        }
+
+        float attackDuration = GetAnimationDuration(attackStateName, attackAnimationDurationFallback);
+        if (attackDuration > 0f)
+        {
+            yield return new WaitForSeconds(attackDuration);
+        }
+
+        if (!isDead && Time.time >= stunUntilTime)
+        {
+            ResolveAttackDamage(tower);
+        }
+
         nextAttackTime = Time.time + attackCooldown;
+        attackActionActive = false;
+        attackRoutine = null;
+    }
+
+    private void ResolveAttackDamage(TowerHealth tower)
+    {
         if (attackAllTowersInRange)
         {
             List<TowerHealth> towers = FindTowersInAttackRange();
@@ -490,7 +572,10 @@ public sealed class GoblinEnemy : MonoBehaviour
             return;
         }
 
-        DamageTower(tower);
+        if (IsTowerInCurrentAttackRange(tower))
+        {
+            DamageTower(tower);
+        }
     }
 
     private void DamageTower(TowerHealth tower)
@@ -509,9 +594,16 @@ public sealed class GoblinEnemy : MonoBehaviour
     private void Die()
     {
         isDead = true;
+        if (attackRoutine != null)
+        {
+            StopCoroutine(attackRoutine);
+            attackRoutine = null;
+        }
+
+        attackActionActive = false;
         temporaryActionActive = false;
         temporaryActionUntilTime = 0f;
-        PlayState(dieStateName);
+        PlayState(dieStateName, true);
         DropCoins();
 
         if (hitbox != null)
@@ -764,18 +856,85 @@ public sealed class GoblinEnemy : MonoBehaviour
             towerBounds.min.y <= enemyBounds.max.y + padding;
     }
 
-    private void PlayState(string stateName)
+    private bool IsTowerInCurrentAttackRange(TowerHealth tower)
+    {
+        if (tower == null || tower.IsDestroyed || !tower.isActiveAndEnabled)
+        {
+            return false;
+        }
+
+        Bounds enemyBounds = CalculateCombatBounds();
+        Bounds towerBounds = tower.GetWorldBounds();
+        Vector3 laneCenter = enemyBounds.center + (Vector3.up * towerLaneCenterOffset);
+        if (!IsTowerInAttackLane(towerBounds, enemyBounds, laneCenter))
+        {
+            return false;
+        }
+
+        if (towerBounds.center.x > enemyBounds.center.x + 0.1f)
+        {
+            return false;
+        }
+
+        if (enemyBounds.max.x < towerBounds.min.x)
+        {
+            return false;
+        }
+
+        float horizontalGap = enemyBounds.min.x - towerBounds.max.x;
+        return horizontalGap <= towerAttackRange;
+    }
+
+    private void PlayState(string stateName, bool restart)
     {
         if (animator == null ||
             animator.runtimeAnimatorController == null ||
-            string.IsNullOrWhiteSpace(stateName) ||
-            currentAnimationState == stateName)
+            string.IsNullOrWhiteSpace(stateName))
+        {
+            return;
+        }
+
+        if (!restart && currentAnimationState == stateName)
         {
             return;
         }
 
         currentAnimationState = stateName;
+        if (restart)
+        {
+            animator.Play(stateName, 0, 0f);
+            return;
+        }
+
         animator.CrossFade(stateName, animationFadeTime);
+    }
+
+    private float GetAnimationDuration(string stateName, float fallbackDuration)
+    {
+        if (animator == null || animator.runtimeAnimatorController == null)
+        {
+            return Mathf.Max(0.01f, fallbackDuration);
+        }
+
+        AnimationClip[] clips = animator.runtimeAnimatorController.animationClips;
+        for (int i = 0; i < clips.Length; i++)
+        {
+            AnimationClip clip = clips[i];
+            if (clip != null && string.Equals(clip.name, stateName, StringComparison.OrdinalIgnoreCase))
+            {
+                float speed = Mathf.Abs(animator.speed);
+                return speed > 0.001f ? clip.length / speed : clip.length;
+            }
+        }
+
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        if (stateInfo.length > 0f)
+        {
+            float speed = Mathf.Abs(animator.speed);
+            return speed > 0.001f ? stateInfo.length / speed : stateInfo.length;
+        }
+
+        return Mathf.Max(0.01f, fallbackDuration);
     }
 
     private void EnsurePhysicsComponents()

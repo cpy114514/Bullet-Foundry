@@ -33,14 +33,14 @@ public sealed class SimpleClickEffect : MonoBehaviour
 
     private void Update()
     {
-        if (!GameSettings.ClickEffectEnabled)
-        {
-            return;
-        }
-
         if (TryGetClickPosition(out Vector2 screenPosition))
         {
-            Spawn(screenPosition);
+            SfxManager.Play(SfxManager.ButtonClickKey);
+
+            if (GameSettings.ClickEffectEnabled)
+            {
+                Spawn(screenPosition);
+            }
         }
     }
 

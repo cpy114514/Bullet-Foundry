@@ -27,6 +27,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
 {
     private const string EnemySlotPrefix = "Enemy Button Slot";
     private const string LaneSlotPrefix = "Lane Button Slot";
+    private const float DefaultLaneSpacing = 1.25f;
 
     [SerializeField]
     private Transform buttonRoot;
@@ -64,9 +65,6 @@ public sealed class SandboxEnemyList : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float labelCharacterSize = 0.11f;
 
-    [SerializeField]
-    private Vector2 buttonColliderSize = new(2.25f, 0.44f);
-
     [Header("Enemy Card Layout")]
     [SerializeField, Min(1)]
     private int cardsPerRow = 2;
@@ -100,7 +98,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
     private Color selectedLaneButtonTint = new(0.42f, 0.42f, 0.42f, 1f);
 
     [SerializeField]
-    private Color selectedEnemyTint = new(0.72f, 0.88f, 1f, 1f);
+    private Color selectedEnemyTint = new(0.42f, 0.42f, 0.42f, 1f);
 
     [SerializeField]
     private Color dragPreviewTint = new(1f, 1f, 1f, 0.55f);
@@ -155,6 +153,8 @@ public sealed class SandboxEnemyList : MonoBehaviour
     private SandboxEnemyEntry selectedEnemy;
     private ButtonBinding selectedEnemyButton;
     private SandboxEnemyEntry pressedEnemy;
+    private ButtonBinding pressedEnemyButton;
+    private bool pressedEnemyWasSelected;
     private bool enemyPointerDown;
     private bool enemyDragActive;
     private Vector2 enemyPointerStartScreenPosition;
@@ -208,8 +208,14 @@ public sealed class SandboxEnemyList : MonoBehaviour
         {
             if (TryGetEnemyButton(worldPosition, out ButtonBinding enemyButton))
             {
-                SelectEnemy(enemyButton);
+                pressedEnemyWasSelected = IsSelectedEnemyButton(enemyButton);
+                if (!pressedEnemyWasSelected)
+                {
+                    SelectEnemy(enemyButton);
+                }
+
                 pressedEnemy = enemyButton.Entry;
+                pressedEnemyButton = enemyButton;
                 enemyPointerDown = true;
                 enemyDragActive = false;
                 enemyPointerStartScreenPosition = pointerScreenPosition;
@@ -264,9 +270,20 @@ public sealed class SandboxEnemyList : MonoBehaviour
                 SpawnEnemy(pressedEnemy.EnemyPrefab, laneIndex);
             }
 
+            bool wasEnemyDragActive = enemyDragActive;
             enemyPointerDown = false;
             enemyDragActive = false;
+            if (!wasEnemyDragActive &&
+                TryGetEnemyButton(worldPosition, out ButtonBinding releasedEnemyButton) &&
+                AreSameEnemyButton(pressedEnemyButton, releasedEnemyButton) &&
+                pressedEnemyWasSelected)
+            {
+                DeselectEnemy();
+            }
+
             pressedEnemy = null;
+            pressedEnemyButton = default;
+            pressedEnemyWasSelected = false;
             SetDragPreviewVisible(false);
         }
     }
@@ -421,8 +438,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
             BoxCollider2D collider = button.AddComponent<BoxCollider2D>();
             collider.isTrigger = true;
-            collider.size = buttonColliderSize.sqrMagnitude > 0.001f ? buttonColliderSize : cardSize;
-            collider.offset = Vector2.zero;
+            FitColliderToCard(collider, background, cardSize);
 
             enemyButtons.Add(ButtonBinding.ForEnemy(entry, collider, background));
         }
@@ -526,6 +542,9 @@ public sealed class SandboxEnemyList : MonoBehaviour
         laneButtons.Clear();
         selectedEnemy = null;
         selectedEnemyButton = default;
+        pressedEnemy = null;
+        pressedEnemyButton = default;
+        pressedEnemyWasSelected = false;
         DestroyDragPreview();
     }
 
@@ -537,34 +556,63 @@ public sealed class SandboxEnemyList : MonoBehaviour
         }
 
         slot.gameObject.SetActive(true);
-        SpriteRenderer background = EnsureSpriteRenderer(slot);
-        background.sprite = cardBackgroundSprite;
-        background.color = cardTint;
-        background.sortingOrder = backgroundSortingOrder;
-        FitSpriteRenderer(background, cardSize);
+        SpriteRenderer background = EnsureSpriteRenderer(slot, out bool createdBackground);
+        if (createdBackground)
+        {
+            background.sprite = cardBackgroundSprite;
+            background.color = cardTint;
+            background.sortingOrder = backgroundSortingOrder;
+            FitSpriteRenderer(background, cardSize);
+        }
+        else if (background.sprite == null && cardBackgroundSprite != null)
+        {
+            background.sprite = cardBackgroundSprite;
+        }
 
-        Transform iconTransform = EnsureChild(slot, "Enemy Icon");
-        iconTransform.localPosition = iconLocalPosition;
-        SpriteRenderer icon = EnsureSpriteRenderer(iconTransform);
-        icon.sprite = GetEnemyPreviewSprite(entry.EnemyPrefab);
-        icon.color = Color.white;
-        icon.sortingOrder = iconSortingOrder;
-        FitSpriteRenderer(icon, enemyIconSize);
+        Transform iconTransform = EnsureChild(slot, "Enemy Icon", out bool createdIcon);
+        if (createdIcon)
+        {
+            iconTransform.localPosition = iconLocalPosition;
+        }
 
-        Transform labelTransform = EnsureChild(slot, "Enemy Label");
-        labelTransform.localPosition = labelLocalPosition;
+        SpriteRenderer icon = EnsureSpriteRenderer(iconTransform, out bool createdIconRenderer);
+        if (icon.sprite == null)
+        {
+            icon.sprite = GetEnemyPreviewSprite(entry.EnemyPrefab);
+        }
+
+        if (createdIconRenderer)
+        {
+            icon.color = Color.white;
+            icon.sortingOrder = iconSortingOrder;
+            FitSpriteRenderer(icon, enemyIconSize);
+        }
+
+        Transform labelTransform = EnsureChild(slot, "Enemy Label", out bool createdLabel);
+        if (createdLabel)
+        {
+            labelTransform.localPosition = labelLocalPosition;
+        }
+
         TextMesh text = EnsureTextMesh(labelTransform);
-        text.text = FormatCardLabel(entry.DisplayName);
-        text.fontSize = 96;
-        text.characterSize = labelCharacterSize;
-        text.anchor = TextAnchor.MiddleCenter;
-        text.alignment = TextAlignment.Center;
-        text.color = labelColor;
-        SetTextSortingOrder(labelTransform, labelSortingOrder);
+        if (string.IsNullOrWhiteSpace(text.text))
+        {
+            text.text = FormatCardLabel(entry.DisplayName);
+        }
+
+        if (createdLabel)
+        {
+            text.fontSize = 96;
+            text.characterSize = labelCharacterSize;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = labelColor;
+            SetTextSortingOrder(labelTransform, labelSortingOrder);
+        }
 
         BoxCollider2D collider = EnsureCollider(slot);
-        collider.size = buttonColliderSize.sqrMagnitude > 0.001f ? buttonColliderSize : cardSize;
-        collider.offset = Vector2.zero;
+        FitColliderToCard(collider, background, cardSize);
+
         enemyButtons.Add(ButtonBinding.ForEnemy(entry, collider, background));
     }
 
@@ -672,6 +720,25 @@ public sealed class SandboxEnemyList : MonoBehaviour
         RefreshEnemyButtonVisuals();
     }
 
+    private void DeselectEnemy()
+    {
+        selectedEnemy = null;
+        selectedEnemyButton = default;
+        RefreshEnemyButtonVisuals();
+    }
+
+    private bool IsSelectedEnemyButton(ButtonBinding button)
+    {
+        return selectedEnemy != null &&
+            selectedEnemy == button.Entry &&
+            AreSameEnemyButton(selectedEnemyButton, button);
+    }
+
+    private static bool AreSameEnemyButton(ButtonBinding left, ButtonBinding right)
+    {
+        return left.Entry == right.Entry && left.Collider == right.Collider;
+    }
+
     private void RefreshEnemyButtonVisuals()
     {
         for (int i = 0; i < enemyButtons.Count; i++)
@@ -685,7 +752,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
             button.Background.color =
                 button.Entry == selectedEnemy && button.Equals(selectedEnemyButton)
                     ? selectedEnemyTint
-                    : cardTint;
+                    : button.NormalColor;
         }
     }
 
@@ -710,8 +777,10 @@ public sealed class SandboxEnemyList : MonoBehaviour
             return;
         }
 
+        int footLaneIndex = GetFootLaneIndex(enemyPrefab, targetLaneIndex);
+        float footLaneY = GetFootLaneY(footLaneIndex);
+        float landBottomY = GetFootLandBottomY(footLaneIndex, footLaneY);
         float laneY = GetLaneY(targetLaneIndex);
-        float landBottomY = GetLandBottomY(targetLaneIndex, laneY);
         Vector3 position = new(spawnX, laneY, spawnZ);
         GameObject enemy = EnemySpawnAlignment.InstantiateFootAligned(
             enemyPrefab,
@@ -744,8 +813,9 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
         laneIndex = previewLaneIndex;
         RefreshLaneButtonVisuals();
-        float laneY = GetLaneY(previewLaneIndex);
-        PositionDragPreview(GetLandBottomY(previewLaneIndex, laneY));
+        int footLaneIndex = GetFootLaneIndex(pressedEnemy.EnemyPrefab, previewLaneIndex);
+        float footLaneY = GetFootLaneY(footLaneIndex);
+        PositionDragPreview(GetFootLandBottomY(footLaneIndex, footLaneY));
         SetDragPreviewVisible(true);
     }
 
@@ -862,6 +932,34 @@ public sealed class SandboxEnemyList : MonoBehaviour
             1f);
     }
 
+    private static void FitColliderToCard(
+        BoxCollider2D collider,
+        SpriteRenderer background,
+        Vector2 fallbackWorldSize)
+    {
+        if (collider == null)
+        {
+            return;
+        }
+
+        collider.isTrigger = true;
+        if (background != null && background.sprite != null)
+        {
+            Bounds spriteBounds = background.sprite.bounds;
+            collider.size = spriteBounds.size;
+            collider.offset = spriteBounds.center;
+            return;
+        }
+
+        Vector3 scale = collider.transform.lossyScale;
+        float scaleX = Mathf.Abs(scale.x) > 0.001f ? Mathf.Abs(scale.x) : 1f;
+        float scaleY = Mathf.Abs(scale.y) > 0.001f ? Mathf.Abs(scale.y) : 1f;
+        collider.size = new Vector2(
+            Mathf.Max(0.01f, fallbackWorldSize.x / scaleX),
+            Mathf.Max(0.01f, fallbackWorldSize.y / scaleY));
+        collider.offset = Vector2.zero;
+    }
+
     private static Transform[] GetSlots(Transform root, string prefix)
     {
         if (root == null)
@@ -879,7 +977,27 @@ public sealed class SandboxEnemyList : MonoBehaviour
             }
         }
 
+        if (slots.Count == 0 && string.Equals(prefix, EnemySlotPrefix, StringComparison.Ordinal) &&
+            root.name.IndexOf("Enemy", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child != null && !IsGeneratedRuntimeButton(child))
+                {
+                    slots.Add(child);
+                }
+            }
+        }
+
         return slots.ToArray();
+    }
+
+    private static bool IsGeneratedRuntimeButton(Transform target)
+    {
+        return target != null &&
+            (target.name.StartsWith("Generated Enemy Button -", StringComparison.Ordinal) ||
+             target.name.StartsWith("Generated Lane Button -", StringComparison.Ordinal));
     }
 
     private static void DeactivateSlots(Transform root, string prefix)
@@ -896,9 +1014,15 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
     private static Transform EnsureChild(Transform parent, string childName)
     {
+        return EnsureChild(parent, childName, out _);
+    }
+
+    private static Transform EnsureChild(Transform parent, string childName, out bool created)
+    {
         Transform child = parent.Find(childName);
         if (child != null)
         {
+            created = false;
             return child;
         }
 
@@ -906,15 +1030,26 @@ public sealed class SandboxEnemyList : MonoBehaviour
         childObject.transform.SetParent(parent, false);
         childObject.transform.localRotation = Quaternion.identity;
         childObject.transform.localScale = Vector3.one;
+        created = true;
         return childObject.transform;
     }
 
     private static SpriteRenderer EnsureSpriteRenderer(Transform target)
     {
+        return EnsureSpriteRenderer(target, out _);
+    }
+
+    private static SpriteRenderer EnsureSpriteRenderer(Transform target, out bool created)
+    {
         SpriteRenderer renderer = target.GetComponent<SpriteRenderer>();
         if (renderer == null)
         {
             renderer = target.gameObject.AddComponent<SpriteRenderer>();
+            created = true;
+        }
+        else
+        {
+            created = false;
         }
 
         return renderer;
@@ -992,12 +1127,93 @@ public sealed class SandboxEnemyList : MonoBehaviour
         return lanePoints[clampedLaneIndex].position.y;
     }
 
+    private int GetFootLaneIndex(GameObject enemyPrefab, int targetLaneIndex)
+    {
+        int offset = 0;
+        if (enemyPrefab != null && enemyPrefab.TryGetComponent(out GoblinEnemy enemy))
+        {
+            offset = enemy.SpawnFootLaneOffset;
+        }
+
+        return targetLaneIndex + offset;
+    }
+
+    private float GetFootLaneY(int footLaneIndex)
+    {
+        if (lanePoints.Length == 0)
+        {
+            ResolveReferences();
+        }
+
+        if (lanePoints.Length == 0)
+        {
+            return 0f;
+        }
+
+        if (footLaneIndex >= 1 && footLaneIndex <= lanePoints.Length)
+        {
+            return lanePoints[footLaneIndex - 1].position.y;
+        }
+
+        float spacing = GetLaneSpacing();
+        if (footLaneIndex < 1)
+        {
+            return lanePoints[0].position.y - ((1 - footLaneIndex) * spacing);
+        }
+
+        return lanePoints[lanePoints.Length - 1].position.y + ((footLaneIndex - lanePoints.Length) * spacing);
+    }
+
     private float GetLandBottomY(int targetLaneIndex, float fallbackY)
     {
         return EnemySpawnAlignment.GetLandBottomYForLane(
             targetLaneIndex,
             lanePoints,
             fallbackY);
+    }
+
+    private float GetFootLandBottomY(int footLaneIndex, float footLaneY)
+    {
+        if (lanePoints.Length == 0)
+        {
+            ResolveReferences();
+        }
+
+        if (lanePoints.Length == 0)
+        {
+            return footLaneY;
+        }
+
+        if (footLaneIndex >= 1 && footLaneIndex <= lanePoints.Length)
+        {
+            return GetLandBottomY(footLaneIndex, footLaneY);
+        }
+
+        int nearestLaneIndex = Mathf.Clamp(footLaneIndex, 1, lanePoints.Length);
+        float nearestLaneY = GetLaneY(nearestLaneIndex);
+        float nearestLandBottomY = GetLandBottomY(nearestLaneIndex, nearestLaneY);
+        return nearestLandBottomY + (footLaneY - nearestLaneY);
+    }
+
+    private float GetLaneSpacing()
+    {
+        if (lanePoints.Length >= 2)
+        {
+            float totalSpacing = 0f;
+            int spacingCount = 0;
+            for (int i = 1; i < lanePoints.Length; i++)
+            {
+                totalSpacing += Mathf.Abs(lanePoints[i].position.y - lanePoints[i - 1].position.y);
+                spacingCount++;
+            }
+
+            if (spacingCount > 0)
+            {
+                return totalSpacing / spacingCount;
+            }
+        }
+
+        return DefaultLaneSpacing;
     }
 
     private bool TryGetLaneIndexFromWorldY(float worldY, out int targetLaneIndex)
@@ -1067,6 +1283,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
             LaneIndex = laneIndex;
             Collider = collider;
             Background = background;
+            NormalColor = background != null ? background.color : Color.white;
         }
 
         public static ButtonBinding ForEnemy(SandboxEnemyEntry entry, Collider2D collider, SpriteRenderer background)
@@ -1086,5 +1303,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
         public Collider2D Collider { get; }
 
         public SpriteRenderer Background { get; }
+
+        public Color NormalColor { get; }
     }
 }

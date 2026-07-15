@@ -107,8 +107,10 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
     private IEnumerator AttackRoutine(TowerHealth target)
     {
         isAttacking = true;
-        nextAttackTime = Time.time + attackCooldown;
-        float totalDuration = extendDuration + holdDuration + retractDuration;
+        float tongueDuration = extendDuration + holdDuration + retractDuration;
+        float totalDuration = enemy != null
+            ? Mathf.Max(tongueDuration, enemy.GetActionAnimationDuration(attackStateName, tongueDuration))
+            : tongueDuration;
         enemy.PlayTemporaryAction(attackStateName, totalDuration);
 
         Vector3 start = GetTongueOriginPosition();
@@ -117,19 +119,26 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
 
         yield return AnimateTongue(start, end, extendDuration, true);
 
-        if (!enemy.IsActionBlocked && target != null && !target.IsDestroyed)
-        {
-            target.TakeDamage(attackDamage);
-        }
-
         if (holdDuration > 0f)
         {
             yield return new WaitForSeconds(holdDuration);
         }
 
         yield return AnimateTongue(start, end, retractDuration, false);
+        float remainingAnimationTime = Mathf.Max(0f, totalDuration - tongueDuration);
+        if (remainingAnimationTime > 0f)
+        {
+            yield return new WaitForSeconds(remainingAnimationTime);
+        }
+
+        if (!enemy.IsActionBlocked && target != null && !target.IsDestroyed)
+        {
+            target.TakeDamage(attackDamage);
+        }
+
         RestoreTonguePose();
         SetTongueRestVisible();
+        nextAttackTime = Time.time + attackCooldown;
         isAttacking = false;
     }
 

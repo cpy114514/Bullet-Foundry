@@ -22,6 +22,8 @@ public sealed class LandPlot : MonoBehaviour
 
     public bool IsOccupied => isOccupied || HasTowerChild();
 
+    public Transform CurrentTower => GetTowerChild();
+
     private void Awake()
     {
         CacheSpriteRenderer();
@@ -63,6 +65,12 @@ public sealed class LandPlot : MonoBehaviour
         ApplyVisualState();
     }
 
+    public void ClearTowerOccupancy()
+    {
+        isOccupied = false;
+        ApplyVisualState();
+    }
+
     private void CacheSpriteRenderer()
     {
         if (spriteRenderer == null)
@@ -87,6 +95,25 @@ public sealed class LandPlot : MonoBehaviour
 
     private bool HasTowerChild()
     {
-        return treatChildrenAsTowers && transform.childCount > 0;
+        return GetTowerChild() != null;
+    }
+
+    private Transform GetTowerChild()
+    {
+        if (!treatChildrenAsTowers)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Transform child = transform.GetChild(i);
+            if (child != null && child.gameObject.activeInHierarchy)
+            {
+                return child;
+            }
+        }
+
+        return null;
     }
 }

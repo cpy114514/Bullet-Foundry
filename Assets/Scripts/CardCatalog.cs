@@ -34,6 +34,21 @@ public sealed class CardEntry
     public GameObject TowerPrefab => towerPrefab;
 
     public int Price => Mathf.Max(0, price);
+
+    public static CardEntry Clone(CardEntry source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        return new CardEntry
+        {
+            towerPrefab = source.towerPrefab,
+            displayName = source.displayName,
+            price = source.price
+        };
+    }
 }
 
 [DisallowMultipleComponent]
@@ -56,6 +71,20 @@ public sealed class CardCatalog : MonoBehaviour
     public IReadOnlyList<CardEntry> Cards => cards;
 
     public IReadOnlyList<CardView> ActiveCards => activeCards;
+
+    public void ReplaceCardsFrom(CardCatalog sourceCatalog)
+    {
+        if (sourceCatalog == null || sourceCatalog == this)
+        {
+            return;
+        }
+
+        cards = sourceCatalog.Cards
+            .Where(card => card != null)
+            .Select(CardEntry.Clone)
+            .Where(card => card != null)
+            .ToList();
+    }
 
     private void Awake()
     {

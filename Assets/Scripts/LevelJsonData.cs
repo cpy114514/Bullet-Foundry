@@ -10,6 +10,7 @@ public sealed class LevelJsonData
     public string id = "level-01";
     public string displayName = "Level 1";
     public int startingCoins = 75;
+    public float timelineDuration = 60f;
     public bool showCardSelectionOnStart = true;
     public bool waitForCardSelectionBeforeLoadingCards = true;
     public LevelCardRulesJson cardRules = new();
@@ -132,6 +133,7 @@ public static class LevelJsonUtility
         data.id = string.IsNullOrWhiteSpace(data.id) ? "custom-level" : data.id.Trim();
         data.displayName = string.IsNullOrWhiteSpace(data.displayName) ? data.id : data.displayName.Trim();
         data.startingCoins = Mathf.Max(0, data.startingCoins);
+        data.timelineDuration = Mathf.Max(5f, data.timelineDuration <= 0f ? 60f : data.timelineDuration);
         data.cardRules ??= new LevelCardRulesJson();
         data.cardRules.allowedCards ??= new List<string>();
         data.cardRules.bannedCards ??= new List<string>();

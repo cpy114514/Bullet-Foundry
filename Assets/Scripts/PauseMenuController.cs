@@ -9,16 +9,7 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public sealed class PauseMenuController : MonoBehaviour
 {
-    private static readonly Vector2 PauseButtonAnchor = new(1f, 1f);
-    private static readonly Vector2 PauseButtonPosition = new(-110f, -94f);
-    private static readonly Vector2 PauseButtonSize = new(120f, 120f);
-
     [SerializeField] private string levelSelectSceneName = "LevelSelect";
-    [Header("Title-page visual style")]
-    [SerializeField] private Sprite panelSprite;
-    [SerializeField] private Sprite buttonSprite;
-    [SerializeField] private Sprite pauseIconSprite;
-    [SerializeField] private Font uiFont;
 
     [SerializeField] private Canvas canvas;
     [SerializeField] private GameObject overlay;
@@ -33,7 +24,7 @@ public sealed class PauseMenuController : MonoBehaviour
     private void Awake()
     {
         ResolveSceneReferences();
-        BuildIfNeeded();
+        ValidateSceneBuiltPauseUi();
         NormalizeSceneLayout();
         BindButtons();
         SetPaused(false);
@@ -101,10 +92,16 @@ public sealed class PauseMenuController : MonoBehaviour
         if (!value && window != null) window.SetActive(true);
     }
 
-    private void BuildIfNeeded()
+    private void ValidateSceneBuiltPauseUi()
     {
-        if (canvas != null) return;
-        Debug.LogWarning("PauseMenuController requires a scene-built Pause UI. No runtime pause UI was generated.", this);
+        if (canvas != null && pauseButton != null)
+        {
+            return;
+        }
+
+        Debug.LogWarning(
+            "PauseMenuController requires scene-built Pause UI and Pause Button. No runtime pause UI was generated.",
+            this);
     }
 
     private void ResolveSceneReferences()
@@ -195,16 +192,6 @@ public sealed class PauseMenuController : MonoBehaviour
                 windowRect.localScale = Vector3.one;
             }
         }
-
-        if (pauseButton != null)
-        {
-            RectTransform pauseRect = pauseButton.GetComponent<RectTransform>();
-            if (pauseRect != null)
-            {
-                SetRect(pauseRect, PauseButtonAnchor, PauseButtonPosition, PauseButtonSize);
-                pauseRect.localScale = Vector3.one;
-            }
-        }
     }
 
     private void BindButtons()
@@ -256,54 +243,6 @@ public sealed class PauseMenuController : MonoBehaviour
         return null;
     }
 
-    private Button CreateButton(Transform parent, string name, string label, int fontSize)
-    {
-        GameObject go = new(name, typeof(RectTransform), typeof(Image), typeof(Button)); go.transform.SetParent(parent, false);
-        ApplySprite(go.GetComponent<Image>(), buttonSprite, Color.white);
-        CreateLabel(go.transform, label, Vector2.zero, fontSize);
-        return go.GetComponent<Button>();
-    }
-
-    private Button CreatePauseIconButton(Transform parent)
-    {
-        GameObject go = new("Pause Button", typeof(RectTransform), typeof(Image), typeof(Button));
-        go.transform.SetParent(parent, false);
-        ApplySprite(go.GetComponent<Image>(), pauseIconSprite != null ? pauseIconSprite : buttonSprite, Color.white);
-        CreatePauseBar(go.transform, "Left Bar", -10f);
-        CreatePauseBar(go.transform, "Right Bar", 10f);
-        return go.GetComponent<Button>();
-    }
-
-    private static void CreatePauseBar(Transform parent, string name, float x)
-    {
-        GameObject bar = new(name, typeof(RectTransform), typeof(Image));
-        bar.transform.SetParent(parent, false);
-        RectTransform rect = bar.GetComponent<RectTransform>();
-        rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
-        rect.anchoredPosition = new Vector2(x, 0f);
-        rect.sizeDelta = new Vector2(7f, 28f);
-        Image image = bar.GetComponent<Image>();
-        image.color = Color.black;
-        image.raycastTarget = false;
-    }
-
-    private void CreateLabel(Transform parent, string value, Vector2 position, int size)
-    {
-        GameObject go = new("Text", typeof(RectTransform), typeof(Text)); go.transform.SetParent(parent, false);
-        RectTransform rect = go.GetComponent<RectTransform>(); rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f); rect.anchoredPosition = position; rect.sizeDelta = new Vector2(460f, 70f);
-        Text text = go.GetComponent<Text>(); text.text = value; text.font = uiFont != null ? uiFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); text.fontSize = size; text.alignment = TextAnchor.MiddleCenter; text.color = Color.black; text.raycastTarget = false;
-        text.resizeTextForBestFit = true; text.resizeTextMinSize = 14; text.resizeTextMaxSize = size;
-        text.horizontalOverflow = HorizontalWrapMode.Wrap; text.verticalOverflow = VerticalWrapMode.Truncate;
-    }
-
-    private static void ApplySprite(Image image, Sprite sprite, Color fallbackColor)
-    {
-        image.sprite = sprite;
-        image.type = Image.Type.Simple;
-        image.preserveAspect = false;
-        image.color = fallbackColor;
-        if (sprite == null) image.gameObject.AddComponent<Outline>().effectColor = Color.black;
-    }
     private static void SetRect(RectTransform rect, Vector2 anchor, Vector2 position, Vector2 size)
     { rect.anchorMin = rect.anchorMax = anchor; rect.anchoredPosition = position; rect.sizeDelta = size; }
     private static bool WasEscapePressed()

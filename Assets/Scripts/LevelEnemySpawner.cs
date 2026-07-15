@@ -30,6 +30,10 @@ public sealed class LevelEnemySpawner : MonoBehaviour
     private float elapsedTime;
     private int nextSpawnIndex;
 
+    public bool HasSpawnQueue => spawnQueue.Count > 0;
+
+    public bool IsSpawnQueueComplete => nextSpawnIndex >= spawnQueue.Count;
+
     private void Awake()
     {
         ResolveReferences();
@@ -125,11 +129,13 @@ public sealed class LevelEnemySpawner : MonoBehaviour
             return;
         }
 
+        int footLaneIndex = GetFootLaneIndex(spawn.EnemyPrefab, spawn.LaneIndex);
         float laneY = GetLaneY(spawn.LaneIndex);
+        float footLaneY = GetLaneY(footLaneIndex);
         float landBottomY = EnemySpawnAlignment.GetLandBottomYForLane(
-            spawn.LaneIndex,
+            footLaneIndex,
             lanes,
-            laneY);
+            footLaneY);
         Vector3 position = GetLaneSpawnPosition(spawn, laneY);
         GameObject enemy = EnemySpawnAlignment.InstantiateFootAligned(
             spawn.EnemyPrefab,
@@ -161,5 +167,17 @@ public sealed class LevelEnemySpawner : MonoBehaviour
 
         int laneIndex = Mathf.Clamp(targetLaneIndex - 1, 0, lanes.Length - 1);
         return lanes[laneIndex].position.y;
+    }
+
+    private int GetFootLaneIndex(GameObject enemyPrefab, int targetLaneIndex)
+    {
+        int laneCount = Mathf.Max(1, lanes.Length);
+        int offset = 0;
+        if (enemyPrefab != null && enemyPrefab.TryGetComponent(out GoblinEnemy enemy))
+        {
+            offset = enemy.SpawnFootLaneOffset;
+        }
+
+        return Mathf.Clamp(targetLaneIndex + offset, 1, laneCount);
     }
 }
