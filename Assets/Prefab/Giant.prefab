@@ -938,7 +938,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37b2f734909a2bc4caf1d83c71cdfd99, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GoblinEnemy
-  maxHealth: 80
+  maxHealth: 200
   moveSpeed: 0.42
   contactDamage: 999
   spawnFootLaneOffset: -1

@@ -117,6 +117,8 @@ public sealed class GoblinEnemy : MonoBehaviour
     private bool isDead;
     private bool slowVisualActive;
     private bool stunVisualActive;
+    private bool animationPausedByStun;
+    private float animatorSpeedBeforeStun = 1f;
     private bool attackActionActive;
     private bool temporaryActionActive;
     private float temporaryActionUntilTime;
@@ -177,6 +179,7 @@ public sealed class GoblinEnemy : MonoBehaviour
         movementHoldStateName = null;
         slowVisualActive = false;
         stunVisualActive = false;
+        SetStunAnimationPaused(false);
         RestoreSpriteColors();
         PlayState(walkStateName, false);
     }
@@ -198,6 +201,7 @@ public sealed class GoblinEnemy : MonoBehaviour
         attackActionActive = false;
         slowVisualActive = false;
         stunVisualActive = false;
+        SetStunAnimationPaused(false);
         RestoreSpriteColors();
     }
 
@@ -391,6 +395,7 @@ public sealed class GoblinEnemy : MonoBehaviour
 
         stunUntilTime = Mathf.Max(stunUntilTime, Time.time + duration);
         SetStunVisualActive(true);
+        SetStunAnimationPaused(true);
 
         if (body != null)
         {
@@ -459,6 +464,7 @@ public sealed class GoblinEnemy : MonoBehaviour
         }
 
         SetStunVisualActive(false);
+        SetStunAnimationPaused(false);
     }
 
     private void RefreshTemporaryAction()
@@ -510,6 +516,25 @@ public sealed class GoblinEnemy : MonoBehaviour
         {
             RestoreSpriteColors();
         }
+    }
+
+    private void SetStunAnimationPaused(bool paused)
+    {
+        if (animator == null || animationPausedByStun == paused)
+        {
+            return;
+        }
+
+        if (paused)
+        {
+            animatorSpeedBeforeStun = animator.speed;
+            animator.speed = 0f;
+            animationPausedByStun = true;
+            return;
+        }
+
+        animator.speed = animatorSpeedBeforeStun;
+        animationPausedByStun = false;
     }
 
     private void AttackTower(TowerHealth tower)
@@ -594,6 +619,7 @@ public sealed class GoblinEnemy : MonoBehaviour
     private void Die()
     {
         isDead = true;
+        SetStunAnimationPaused(false);
         if (attackRoutine != null)
         {
             StopCoroutine(attackRoutine);
