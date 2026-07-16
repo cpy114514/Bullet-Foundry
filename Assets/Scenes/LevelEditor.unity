@@ -1745,7 +1745,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -16, y: -8}
+  m_SizeDelta: {x: -0.0000076294, y: -8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &803452379
 MonoBehaviour:
@@ -1772,7 +1772,7 @@ MonoBehaviour:
     m_FontSize: 26
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 2
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -4466,6 +4466,9 @@ MonoBehaviour:
   saveButton: {fileID: 1923470248}
   loadButton: {fileID: 2103691453}
   exportButton: {fileID: 0}
+  communityApiBaseUrl: 
+  communityAuthor: Anonymous
+  publishButton: {fileID: 0}
   testButton: {fileID: 1518547160}
   backButton: {fileID: 1817923408}
   undoButton: {fileID: 0}

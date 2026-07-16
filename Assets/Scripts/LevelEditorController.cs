@@ -141,6 +141,16 @@ public sealed class LevelEditorController : MonoBehaviour
     [SerializeField]
     private Button exportButton;
 
+    [Header("Community")]
+    [SerializeField, Tooltip("Example: http://hackclub.app:12345")]
+    private string communityApiBaseUrl;
+
+    [SerializeField]
+    private string communityAuthor = "Anonymous";
+
+    [SerializeField]
+    private Button publishButton;
+
     [SerializeField]
     private Button testButton;
 
@@ -207,6 +217,7 @@ public sealed class LevelEditorController : MonoBehaviour
     private ScrollRect localLevelScrollRect;
     private RectTransform localLevelListRoot;
     private Text localLevelEmptyText;
+    private bool isPublishingCommunityLevel;
 
     public float TimelineDuration => Mathf.Max(5f, timelineDuration);
 
@@ -676,9 +687,11 @@ public sealed class LevelEditorController : MonoBehaviour
         });
 
         EnsureExportButton();
+        EnsurePublishButton();
         AddButtonListener(saveButton, SaveJson);
         AddButtonListener(loadButton, OpenLevelFilePanel);
         AddButtonListener(exportButton, ExportJson);
+        AddButtonListener(publishButton, PublishCommunityLevel);
         AddButtonListener(testButton, TestPlay);
         AddButtonListener(backButton, () => SceneTransitionController.LoadScene(levelSelectSceneName));
         AddButtonListener(clearButton, ClearSpawns);
@@ -2136,6 +2149,38 @@ public sealed class LevelEditorController : MonoBehaviour
         }
     }
 
+    private void EnsurePublishButton()
+    {
+        if (publishButton != null)
+        {
+            return;
+        }
+
+        Button template = exportButton != null ? exportButton : loadButton;
+        if (template == null)
+        {
+            return;
+        }
+
+        GameObject publishObject = Instantiate(template.gameObject, template.transform.parent);
+        publishObject.name = "Publish Button";
+        publishObject.SetActive(true);
+        publishButton = publishObject.GetComponent<Button>();
+        if (publishButton == null)
+        {
+            publishButton = publishObject.AddComponent<Button>();
+        }
+
+        publishButton.onClick.RemoveAllListeners();
+        Text label = publishObject.GetComponentInChildren<Text>(true);
+        if (label != null)
+        {
+            label.text = "Publish";
+            label.font = GetUiFont();
+            ConfigureTextToFit(label, 10, 30, 24);
+        }
+    }
+
     private void OpenLevelFilePanel()
     {
         PullDataFromInputs();
@@ -2437,6 +2482,64 @@ public sealed class LevelEditorController : MonoBehaviour
         {
             SetStatus($"Export failed: {exception.Message}");
         }
+    }
+
+    private void PublishCommunityLevel()
+    {
+        if (isPublishingCommunityLevel)
+        {
+            return;
+        }
+
+        PullDataFromInputs();
+        string json = BuildJson();
+        if (!LevelJsonUtility.TryParse(json, out _, out string error))
+        {
+            SetStatus("Cannot publish: " + error);
+            return;
+        }
+
+        CommunityPostPublishRequest request = new()
+        {
+            type = "level",
+            title = Clean(levelId, DefaultLevelName),
+            author = Clean(communityAuthor, "Anonymous"),
+            body = "A playable community level.",
+            mediaUrl = string.Empty,
+            level = json
+        };
+
+        isPublishingCommunityLevel = true;
+        if (publishButton != null)
+        {
+            publishButton.interactable = false;
+        }
+
+        SetStatus("Publishing community post...");
+        StartCoroutine(CommunityLevelApi.PublishPost(
+            communityApiBaseUrl,
+            request,
+            response =>
+            {
+                isPublishingCommunityLevel = false;
+                if (publishButton != null)
+                {
+                    publishButton.interactable = true;
+                }
+
+                string publishedId = string.IsNullOrWhiteSpace(response.id) ? string.Empty : " (" + response.id + ")";
+                SetStatus("Published community level" + publishedId + ".");
+            },
+            publishError =>
+            {
+                isPublishingCommunityLevel = false;
+                if (publishButton != null)
+                {
+                    publishButton.interactable = true;
+                }
+
+                SetStatus("Publish failed: " + publishError);
+            }));
     }
 
     private void TestPlay()

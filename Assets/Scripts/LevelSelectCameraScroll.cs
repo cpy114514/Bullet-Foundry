@@ -157,7 +157,8 @@ public sealed class LevelSelectCameraScroll : MonoBehaviour
         return hit != null && (
             hit.GetComponent<LevelSelectNode>() != null ||
             hit.GetComponent<LevelSelectReturnButton>() != null ||
-            hit.GetComponent<LevelSelectSettingsButton>() != null);
+            hit.GetComponent<LevelSelectSettingsButton>() != null ||
+            hit.GetComponent<CommunityLevelButton>() != null);
     }
 
     private float GetWorldUnitsPerScreenPixel()
