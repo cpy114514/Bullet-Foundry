@@ -15787,20 +15787,20 @@ MonoBehaviour:
   levelDefinition: {fileID: 0}
   normalSpawner: {fileID: 0}
   resultPanel: {fileID: 0}
-  lanePointParent: {fileID: 0}
+  lanePointParent: {fileID: 1398840071}
   enemyParent: {fileID: 0}
   lanePointParentName: Shooter Lane Points
-  baseEnemiesPerLayer: 5
-  extraEnemiesPerLayer: 2
-  baseSpawnInterval: 1.05
-  minimumSpawnInterval: 0.38
-  spawnIntervalReductionPerLayer: 0.025
+  baseEnemiesPerLayer: 3
+  extraEnemiesPerLayer: 1
+  baseSpawnInterval: 1.5
+  minimumSpawnInterval: 0.5
+  spawnIntervalReductionPerLayer: 0.02
   initialPlacementDuration: 5
   fallbackSpawnX: 8.5
   spawnZ: 0
-  healthGrowthPerLayer: 0.25
-  speedGrowthPerLayer: 0.015
-  maxSpeedMultiplier: 1.25
+  healthGrowthPerLayer: 0.15
+  speedGrowthPerLayer: 0.01
+  maxSpeedMultiplier: 1.2
 --- !u!1 &3600003000
 GameObject:
   m_ObjectHideFlags: 0

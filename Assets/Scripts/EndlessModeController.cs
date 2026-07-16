@@ -27,19 +27,19 @@ public sealed class EndlessModeController : MonoBehaviour
     private string lanePointParentName = "Shooter Lane Points";
 
     [SerializeField, Min(1)]
-    private int baseEnemiesPerLayer = 5;
+    private int baseEnemiesPerLayer = 3;
 
     [SerializeField, Min(0)]
-    private int extraEnemiesPerLayer = 2;
+    private int extraEnemiesPerLayer = 1;
 
     [SerializeField, Min(0.1f)]
-    private float baseSpawnInterval = 1.05f;
+    private float baseSpawnInterval = 1.5f;
 
     [SerializeField, Min(0.1f)]
-    private float minimumSpawnInterval = 0.38f;
+    private float minimumSpawnInterval = 0.5f;
 
     [SerializeField, Min(0f)]
-    private float spawnIntervalReductionPerLayer = 0.025f;
+    private float spawnIntervalReductionPerLayer = 0.02f;
 
     [SerializeField, Min(0f)]
     private float initialPlacementDuration = 5f;
@@ -51,13 +51,13 @@ public sealed class EndlessModeController : MonoBehaviour
     private float spawnZ = 0f;
 
     [SerializeField, Min(0f)]
-    private float healthGrowthPerLayer = 0.25f;
+    private float healthGrowthPerLayer = 0.15f;
 
     [SerializeField, Min(0f)]
-    private float speedGrowthPerLayer = 0.015f;
+    private float speedGrowthPerLayer = 0.01f;
 
     [SerializeField, Min(1f)]
-    private float maxSpeedMultiplier = 1.25f;
+    private float maxSpeedMultiplier = 1.2f;
 
     private readonly List<GameObject> enemyPrefabs = new();
     private Transform[] lanes = new Transform[0];
@@ -188,7 +188,13 @@ public sealed class EndlessModeController : MonoBehaviour
             return;
         }
 
-        GameObject enemyPrefab = enemyPrefabs[Random.Range(0, enemyPrefabs.Count)];
+        IReadOnlyList<GameObject> availablePrefabs = GetEnemyPrefabsForLayer(currentLayer);
+        if (availablePrefabs.Count == 0)
+        {
+            return;
+        }
+
+        GameObject enemyPrefab = availablePrefabs[Random.Range(0, availablePrefabs.Count)];
         int laneIndex = Random.Range(1, lanes.Length + 1);
         SpawnEnemy(enemyPrefab, laneIndex);
     }
@@ -351,26 +357,55 @@ public sealed class EndlessModeController : MonoBehaviour
 
     private void CacheLanes()
     {
-        if (lanePointParent != null && lanePointParent.childCount > 0)
-        {
-            lanes = new Transform[lanePointParent.childCount];
-            for (int i = 0; i < lanePointParent.childCount; i++)
-            {
-                lanes[i] = lanePointParent.GetChild(i);
-            }
+        ShooterLanePointMarker[] laneMarkers = lanePointParent != null
+            ? lanePointParent.GetComponentsInChildren<ShooterLanePointMarker>(true)
+            : FindObjectsByType<ShooterLanePointMarker>(FindObjectsSortMode.None);
 
-            lanes = lanes
-                .Where(lane => lane != null)
-                .OrderBy(lane => lane.position.y)
-                .ToArray();
+        lanes = laneMarkers
+            .Where(marker => marker != null)
+            .Select(marker => marker.transform)
+            .OrderBy(lane => lane.position.y)
+            .ToArray();
+
+        if (lanes.Length > 0)
+        {
             return;
         }
 
-        lanes = FindObjectsByType<ShooterLanePointMarker>(FindObjectsSortMode.None)
-            .Select(marker => marker.transform)
-            .Where(transform => transform != null)
-            .OrderBy(transform => transform.position.y)
-            .ToArray();
+        Debug.LogWarning("Endless Mode could not find any Shooter Lane Point Markers.", this);
+    }
+
+    private IReadOnlyList<GameObject> GetEnemyPrefabsForLayer(int layer)
+    {
+        int safeLayer = Mathf.Max(1, layer);
+        List<GameObject> available = new();
+
+        for (int i = 0; i < enemyPrefabs.Count; i++)
+        {
+            GameObject prefab = enemyPrefabs[i];
+            if (prefab != null && IsEnemyUnlockedForLayer(prefab.name, safeLayer))
+            {
+                available.Add(prefab);
+            }
+        }
+
+        // A custom catalog should still be playable even if it contains an unknown enemy name.
+        return available.Count > 0 ? available : enemyPrefabs;
+    }
+
+    private static bool IsEnemyUnlockedForLayer(string enemyName, int layer)
+    {
+        return enemyName switch
+        {
+            "Goblin" => true,
+            "SpeedGoblin" => layer >= 3,
+            "Chicken" => layer >= 4,
+            "Barbarian" => layer >= 6,
+            "PigLeader" => layer >= 9,
+            "FrogPrincess" => layer >= 10,
+            "Giant" => layer >= 14,
+            _ => layer >= 8
+        };
     }
 
     private float GetLaneY(int targetLaneIndex)

@@ -465,7 +465,12 @@ public sealed class CardSelectionMenu : MonoBehaviour
         CardView clickedCard = FindCardAt(worldPosition);
         if (clickedCard != null)
         {
-            ToggleCard(clickedCard);
+            // Source cards only add to the selection. Removal is performed from the selected dock.
+            if (!selectedCards.Contains(clickedCard))
+            {
+                ToggleCard(clickedCard);
+            }
+
             return;
         }
 

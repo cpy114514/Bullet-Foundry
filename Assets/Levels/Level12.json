@@ -2,7 +2,7 @@
     "schemaVersion": 1,
     "id": "level012",
     "displayName": "level012",
-    "startingCoins": 9999,
+    "startingCoins": 999,
     "timelineDuration": 230.0,
     "showCardSelectionOnStart": true,
     "waitForCardSelectionBeforeLoadingCards": true,
