@@ -17,12 +17,14 @@ if errorlevel 1 (
     exit /b 1
 )
 
-for /f "delims=" %%b in ('git branch --show-current') do set "BRANCH=%%b"
-if "%BRANCH%"=="" (
-    echo Could not detect the current Git branch.
+git switch main
+if errorlevel 1 (
+    echo Could not switch to the main branch.
     pause
     exit /b 1
 )
+
+set "BRANCH=main"
 
 git remote get-url origin >nul 2>nul
 if errorlevel 1 (
