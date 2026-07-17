@@ -247,6 +247,18 @@ async function addComment(request, response, id) {
   record.comments = Array.isArray(record.comments) ? record.comments : []; record.comments.push(comment);
   await writeRecord(record); send(response, 201, { comment });
 }
+async function deleteComment(request, response, postId, commentId) {
+  const username = await requireUser(request, response); if (!username) return;
+  const record = await getRecord(postId);
+  if (!record) { send(response, 404, { error: "Post not found." }); return; }
+  record.comments = Array.isArray(record.comments) ? record.comments : [];
+  const commentIndex = record.comments.findIndex((comment) => comment && comment.id === commentId);
+  if (commentIndex < 0) { send(response, 404, { error: "Comment not found." }); return; }
+  const comment = record.comments[commentIndex];
+  if (comment.author !== username && record.author !== username) { send(response, 403, { error: "Only the comment author or post author can delete this comment." }); return; }
+  record.comments.splice(commentIndex, 1);
+  await writeRecord(record); send(response, 200, { message: "Comment deleted." });
+}
 async function uploadImage(request, response) {
   const username = await requireUser(request, response); if (!username) return;
   const contentType = String(request.headers["content-type"] || "").split(";", 1)[0].trim().toLowerCase();
@@ -279,6 +291,7 @@ const server = http.createServer(async (request, response) => {
     else if (request.method === "POST" && url.pathname === "/api/posts") await publishPost(request, response);
     else if (request.method === "GET" && url.pathname.match(/^\/api\/posts\/[^/]+\/comments$/)) await listComments(response, decodeURIComponent(url.pathname.split("/")[3]));
     else if (request.method === "POST" && url.pathname.match(/^\/api\/posts\/[^/]+\/comments$/)) await addComment(request, response, decodeURIComponent(url.pathname.split("/")[3]));
+    else if (request.method === "DELETE" && url.pathname.match(/^\/api\/posts\/[^/]+\/comments\/[^/]+$/)) await deleteComment(request, response, decodeURIComponent(url.pathname.split("/")[3]), decodeURIComponent(url.pathname.split("/")[5]));
     else if (request.method === "DELETE" && url.pathname.startsWith("/api/posts/")) await deletePost(request, response, decodeURIComponent(url.pathname.slice("/api/posts/".length)));
     else if (request.method === "POST" && url.pathname.match(/^\/api\/posts\/[^/]+\/like$/)) await toggleLike(request, response, decodeURIComponent(url.pathname.split("/")[3]));
     else if (request.method === "POST" && url.pathname.match(/^\/api\/posts\/[^/]+\/favorite$/)) await toggleFavorite(request, response, decodeURIComponent(url.pathname.split("/")[3]));

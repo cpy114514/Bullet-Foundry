@@ -93,6 +93,7 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
             enabled = false;
             return;
         }
+        EnsurePostGridLayouts();
         BindSceneButtons();
         ShowFeed();
         UpdateAccountUi();
@@ -140,6 +141,40 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
         if (detailLikeButton != null) detailLikeButton.onClick.AddListener(ToggleOpenedPostLike);
         if (detailFavoriteButton != null) detailFavoriteButton.onClick.AddListener(ToggleOpenedPostFavorite);
         if (detailShareButton != null) detailShareButton.onClick.AddListener(ShareOpenedPost);
+    }
+
+    private void EnsurePostGridLayouts()
+    {
+        EnsurePostGridLayout(feedContent);
+        EnsurePostGridLayout(myPostsContent);
+        EnsurePostGridLayout(favoritesContent);
+    }
+
+    private static void EnsurePostGridLayout(RectTransform content)
+    {
+        if (content == null)
+        {
+            return;
+        }
+
+        GridLayoutGroup grid = content.GetComponent<GridLayoutGroup>();
+        if (grid != null)
+        {
+            grid.enabled = false;
+            Destroy(grid);
+        }
+
+        ContentSizeFitter fitter = content.GetComponent<ContentSizeFitter>();
+        if (fitter != null)
+        {
+            fitter.enabled = false;
+            Destroy(fitter);
+        }
+
+        if (content.GetComponent<CommunityPostGridLayout>() == null)
+        {
+            content.gameObject.AddComponent<CommunityPostGridLayout>();
+        }
     }
 
     private void BindButton(string path, UnityAction callback)
@@ -293,6 +328,7 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
     {
         CommunityPostSummary[] posts = response.posts ?? Array.Empty<CommunityPostSummary>(); SetBusy(false, posts.Length == 0 ? "No posts yet." : posts.Length + " posts");
         foreach (CommunityPostSummary post in posts) if (post != null && !string.IsNullOrWhiteSpace(post.id)) CreateFeedCard(feedContent, post, false);
+        RebuildPostGrid(feedContent);
     }
 
     private void CreateFeedCard(RectTransform parent, CommunityPostSummary post, bool includeManagement)
@@ -300,6 +336,7 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
         Button card = CreateButton("Post - " + post.id, parent, string.Empty, 20, Vector2.zero, Vector2.zero); card.GetComponent<Image>().color = Color.white;
         RectTransform rect = card.GetComponent<RectTransform>();
         bool hasImage = !string.IsNullOrWhiteSpace(post.mediaUrl);
+        LayoutElement cardLayout = card.gameObject.AddComponent<LayoutElement>();
         if (hasImage)
         {
             Image frame = CreateImage("Media Frame", rect, Color.black, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(12f, -386.625f), new Vector2(678f, -12f)); frame.gameObject.AddComponent<RectMask2D>();
@@ -310,16 +347,34 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
         }
         string title = string.IsNullOrWhiteSpace(post.title) ? "Untitled Post" : post.title;
         string preview = string.IsNullOrWhiteSpace(post.bodyPreview) ? string.Empty : "\n" + post.bodyPreview;
-        Vector2 textMin = includeManagement && hasImage ? new Vector2(18f, -480f) : hasImage ? new Vector2(18f, -492f) : new Vector2(18f, -340f);
-        Vector2 textMax = hasImage ? new Vector2(674f, -400f) : new Vector2(674f, -20f);
-        Text body = CreateText("Post Text", rect, title + "\nBY " + post.author + "  /  " + post.likeCount + " LIKES  /  " + post.commentCount + " COMMENTS" + (post.hasLevel ? "  /  PLAYABLE LEVEL" : string.Empty) + preview, 19, TextAnchor.UpperLeft, textMin, textMax, Color.black); body.resizeTextForBestFit = true; body.resizeTextMinSize = 13; body.resizeTextMaxSize = 19; body.raycastTarget = false;
+        string textValue = title + "\nBY " + post.author + "  /  " + post.likeCount + " LIKES  /  " + post.commentCount + " COMMENTS" + (post.hasLevel ? "  /  PLAYABLE LEVEL" : string.Empty) + preview;
+        Vector2 textMin = includeManagement && hasImage ? new Vector2(18f, -480f) : hasImage ? new Vector2(18f, -492f) : new Vector2(18f, -1200f);
+        Vector2 textMax = hasImage ? new Vector2(674f, -400f) : new Vector2(674f, -18f);
+        Text body = CreateText("Post Text", rect, textValue, 19, TextAnchor.UpperLeft, textMin, textMax, Color.black); body.resizeTextForBestFit = true; body.resizeTextMinSize = 13; body.resizeTextMaxSize = 19; body.raycastTarget = false;
+
+        float cardHeight = 560f;
+        if (!hasImage)
+        {
+            cardHeight = Mathf.Clamp(body.preferredHeight + (includeManagement ? 82f : 40f), 110f, 300f);
+            SetTopLeftRect(body.rectTransform, new Vector2(18f, -cardHeight + (includeManagement ? 64f : 18f)), new Vector2(674f, -18f));
+        }
+
+        cardLayout.preferredHeight = cardHeight;
         card.onClick.AddListener(() => OpenPost(post.id));
         if (includeManagement)
         {
-            Button edit = CreateButton("Edit", rect, "EDIT", 16, new Vector2(400f, -538f), new Vector2(532f, -494f));
+            Button edit = CreateButton("Edit", rect, "EDIT", 16, new Vector2(400f, -cardHeight + 12f), new Vector2(532f, -cardHeight + 56f));
             edit.onClick.AddListener(() => EditPost(post.id));
-            Button delete = CreateButton("Delete", rect, "DELETE", 16, new Vector2(542f, -538f), new Vector2(674f, -494f));
+            Button delete = CreateButton("Delete", rect, "DELETE", 16, new Vector2(542f, -cardHeight + 12f), new Vector2(674f, -cardHeight + 56f));
             delete.onClick.AddListener(() => DeletePost(post.id, OpenMyPosts));
+        }
+    }
+
+    private static void RebuildPostGrid(RectTransform content)
+    {
+        if (content != null && content.TryGetComponent(out CommunityPostGridLayout layout))
+        {
+            layout.Rebuild();
         }
     }
 
@@ -353,13 +408,31 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
     {
         ClearChildren(commentContent);
         if (comments == null || comments.Length == 0) { CreateComment("No comments yet.", string.Empty); return; }
-        foreach (CommunityComment comment in comments) CreateComment(comment.author, comment.body);
+        foreach (CommunityComment comment in comments) CreateComment(comment);
     }
 
     private void CreateComment(string author, string body)
     {
+        CreateComment(new CommunityComment { author = author, body = body });
+    }
+
+    private void CreateComment(CommunityComment comment)
+    {
+        if (comment == null)
+        {
+            return;
+        }
+
         GameObject item = new("Comment", typeof(RectTransform), typeof(Image), typeof(LayoutElement)); item.transform.SetParent(commentContent, false); item.GetComponent<Image>().color = Color.white; AddOutline(item, Color.black, new Vector2(1f, -1f)); item.GetComponent<LayoutElement>().preferredHeight = 70f;
-        Text text = CreateStretchText("Text", item.GetComponent<RectTransform>(), string.IsNullOrEmpty(body) ? author : author + "\n" + body, 17, TextAnchor.UpperLeft, new Vector2(10f, 6f), new Vector2(-10f, -6f), Color.black); text.raycastTarget = false;
+        bool canDelete = CommunityAccount.IsSignedIn && openedPost != null &&
+            (string.Equals(comment.author, CommunityAccount.Username, StringComparison.Ordinal) || string.Equals(openedPost.author, CommunityAccount.Username, StringComparison.Ordinal));
+        Text text = CreateStretchText("Text", item.GetComponent<RectTransform>(), string.IsNullOrEmpty(comment.body) ? comment.author : comment.author + "\n" + comment.body, 17, TextAnchor.UpperLeft, new Vector2(10f, 6f), canDelete ? new Vector2(-132f, -6f) : new Vector2(-10f, -6f), Color.black); text.raycastTarget = false;
+        if (canDelete)
+        {
+            Button delete = CreateButton("Delete Comment", item.GetComponent<RectTransform>(), "DELETE", 14, Vector2.zero, Vector2.zero);
+            Stretch(delete.GetComponent<RectTransform>(), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(-122f, 12f), new Vector2(-10f, -12f));
+            delete.onClick.AddListener(() => DeleteComment(comment.id));
+        }
     }
 
     private void PublishComment()
@@ -368,6 +441,27 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
         if (!CommunityAccount.IsSignedIn) { commentStatusText.text = "SIGN IN TO COMMENT."; return; }
         SetBusy(true, "Publishing comment...");
         StartCoroutine(CommunityLevelApi.PublishComment(apiBaseUrl, openedPost.id, new CommunityCommentRequest { body = commentInput.text }, _ => { commentInput.SetTextWithoutNotify(string.Empty); commentStatusText.text = "COMMENT POSTED."; SetBusy(false, string.Empty); OpenPost(openedPost.id); }, error => { SetBusy(false, string.Empty); commentStatusText.text = "COMMENT FAILED: " + error; }));
+    }
+
+    private void DeleteComment(string commentId)
+    {
+        if (openedPost == null || isBusy || string.IsNullOrWhiteSpace(commentId))
+        {
+            return;
+        }
+
+        string postId = openedPost.id;
+        SetBusy(true, "Deleting comment...");
+        StartCoroutine(CommunityLevelApi.DeleteComment(apiBaseUrl, postId, commentId, _ =>
+        {
+            commentStatusText.text = "COMMENT DELETED.";
+            SetBusy(false, string.Empty);
+            OpenPost(postId);
+        }, error =>
+        {
+            SetBusy(false, string.Empty);
+            commentStatusText.text = "DELETE FAILED: " + error;
+        }));
     }
 
     private void DeletePost(string postId, UnityAction success)
@@ -509,14 +603,14 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
     {
         if (!CommunityAccount.IsSignedIn) { OpenLogin(); return; }
         ClearChildren(myPostsContent); ShowOnly(myPostsRoot); SetBusy(true, "Loading your posts...");
-        StartCoroutine(CommunityLevelApi.GetMyPosts(apiBaseUrl, response => { SetBusy(false, response.posts.Length == 0 ? "No posts yet." : string.Empty); foreach (CommunityPostSummary post in response.posts) CreateFeedCard(myPostsContent, post, true); }, error => SetBusy(false, "Could not load your posts: " + error)));
+        StartCoroutine(CommunityLevelApi.GetMyPosts(apiBaseUrl, response => { SetBusy(false, response.posts.Length == 0 ? "No posts yet." : string.Empty); foreach (CommunityPostSummary post in response.posts) CreateFeedCard(myPostsContent, post, true); RebuildPostGrid(myPostsContent); }, error => SetBusy(false, "Could not load your posts: " + error)));
     }
 
     private void OpenFavorites()
     {
         if (!CommunityAccount.IsSignedIn) { OpenLogin(); return; }
         ClearChildren(favoritesContent); ShowOnly(favoritesRoot); SetBusy(true, "Loading saved posts...");
-        StartCoroutine(CommunityLevelApi.GetFavorites(apiBaseUrl, response => { SetBusy(false, response.posts.Length == 0 ? "No saved posts yet." : string.Empty); foreach (CommunityPostSummary post in response.posts) CreateFeedCard(favoritesContent, post, false); }, error => SetBusy(false, "Could not load saved posts: " + error)));
+        StartCoroutine(CommunityLevelApi.GetFavorites(apiBaseUrl, response => { SetBusy(false, response.posts.Length == 0 ? "No saved posts yet." : string.Empty); foreach (CommunityPostSummary post in response.posts) CreateFeedCard(favoritesContent, post, false); RebuildPostGrid(favoritesContent); }, error => SetBusy(false, "Could not load saved posts: " + error)));
     }
 
     private void PlayOpenedLevel()
@@ -686,9 +780,8 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
     private RectTransform CreateGridScroll(string name, RectTransform parent, Vector2 min, Vector2 max)
     {
         GameObject viewportObject = new(name + " Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D)); viewportObject.transform.SetParent(parent, false); viewportObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, .01f); RectTransform viewport = viewportObject.GetComponent<RectTransform>(); Stretch(viewport, Vector2.zero, Vector2.one, min, max);
-        GameObject contentObject = new(name + " Content", typeof(RectTransform), typeof(GridLayoutGroup), typeof(ContentSizeFitter)); contentObject.transform.SetParent(viewport, false); RectTransform content = contentObject.GetComponent<RectTransform>(); content.anchorMin = new Vector2(0f, 1f); content.anchorMax = new Vector2(1f, 1f); content.pivot = new Vector2(.5f, 1f); content.sizeDelta = Vector2.zero;
-        GridLayoutGroup grid = contentObject.GetComponent<GridLayoutGroup>(); grid.padding = new RectOffset(14, 14, 14, 14); grid.cellSize = new Vector2(690f, 560f); grid.spacing = new Vector2(14f, 14f); grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount; grid.constraintCount = 2; grid.childAlignment = TextAnchor.UpperCenter;
-        contentObject.GetComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize; ScrollRect scroll = parent.gameObject.AddComponent<ScrollRect>(); scroll.viewport = viewport; scroll.content = content; scroll.horizontal = false; scroll.vertical = true; scroll.movementType = ScrollRect.MovementType.Clamped; scroll.scrollSensitivity = 36f; return content;
+        GameObject contentObject = new(name + " Content", typeof(RectTransform), typeof(CommunityPostGridLayout)); contentObject.transform.SetParent(viewport, false); RectTransform content = contentObject.GetComponent<RectTransform>(); content.anchorMin = new Vector2(0f, 1f); content.anchorMax = new Vector2(1f, 1f); content.pivot = new Vector2(.5f, 1f); content.sizeDelta = Vector2.zero;
+        ScrollRect scroll = parent.gameObject.AddComponent<ScrollRect>(); scroll.viewport = viewport; scroll.content = content; scroll.horizontal = false; scroll.vertical = true; scroll.movementType = ScrollRect.MovementType.Clamped; scroll.scrollSensitivity = 36f; return content;
     }
     private RectTransform CreateVerticalScroll(string name, RectTransform parent, Vector2 min, Vector2 max)
     {
