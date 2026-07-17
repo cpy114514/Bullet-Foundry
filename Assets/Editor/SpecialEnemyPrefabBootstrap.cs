@@ -12,13 +12,18 @@ public static class SpecialEnemyPrefabBootstrap
     private const string PigSpritePath = "Assets/Image/PigLeader.png";
     private const string FrogSpritePath = "Assets/Image/FrogPrincess.png";
     private const string TongueLineSpritePath = "Assets/Image/UI2.png";
+    private const string CoinPickupPrefabPath = "Assets/Prefab/CoinPickup.prefab";
     private const string GoblinPrefabPath = "Assets/Prefab/Goblin.prefab";
     private const string PigPrefabPath = "Assets/Prefab/PigLeader.prefab";
     private const string FrogPrefabPath = "Assets/Prefab/FrogPrincess.prefab";
     private const string PigControllerPath = "Assets/Animation/PigLeader.controller";
+    private const string PigWalkClipPath = "Assets/Animation/PigLeader_walk.anim";
+    private const string PigAttackClipPath = "Assets/Animation/Pigleader_attack.anim";
+    private const string PigSummonClipPath = "Assets/Animation/Pigleader_call.anim";
+    private const string PigDieClipPath = "Assets/Animation/Pigleader_die.anim";
     private const string FrogControllerPath = "Assets/Animation/FrogPrincess.controller";
     private const string RigSignaturePrefix = "BulletFoundryRig:";
-    private const string PigRigSchema = "BulletFoundryHybridPigBones:v1";
+    private const string PigRigSchema = "BulletFoundryWeightedPigBones:v2";
     private const string FrogRigSchema = "BulletFoundryUnityBonesNoHeart:v1";
 
     private static readonly PartDefinition[] PigParts =
@@ -76,16 +81,12 @@ public static class SpecialEnemyPrefabBootstrap
 
     private static void CreatePigLeaderPrefab()
     {
-        AnimatorController controller = EnsureController(
-            PigControllerPath,
-            "pigleader_walk",
-            "pigleader_attack",
-            "pigleader_summon",
-            "pigleader_die");
+        AnimatorController controller = EnsurePigLeaderController();
 
         GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(PigPrefabPath);
-        if (existing != null && HasExpectedPigHybridHierarchy(
+        if (existing != null && HasExpectedWeightedHierarchy(
                 existing,
+                PigSpritePath,
                 PigParts,
                 PigRigSchema))
         {
@@ -116,7 +117,7 @@ public static class SpecialEnemyPrefabBootstrap
                 "pigleader_walk",
                 "pigleader_attack",
                 "pigleader_die",
-                1.25f);
+                GetClipLength(PigDieClipPath, 1.25f));
 
             PigLeaderSummoner summoner = root.AddComponent<PigLeaderSummoner>();
             ConfigurePigSummoner(summoner, enemy);
@@ -124,7 +125,7 @@ public static class SpecialEnemyPrefabBootstrap
             PrefabUtility.SaveAsPrefabAsset(root, PigPrefabPath);
             StampPrefabUserData(PigPrefabPath, PigRigSchema);
             AssetDatabase.SaveAssets();
-            Debug.Log("PigLeader prefab rebuilt with Unity SpriteSkin bones plus stable visible cutout sprites.");
+            Debug.Log("PigLeader prefab rebuilt with visible Unity SpriteSkin weighted bones.");
         }
         finally
         {
@@ -447,7 +448,6 @@ public static class SpecialEnemyPrefabBootstrap
             return null;
         }
 
-        AddStableVisualsToRiggedParts(root.transform, definitions);
         return root;
     }
 
@@ -689,16 +689,45 @@ public static class SpecialEnemyPrefabBootstrap
         serialized.FindProperty("attackStateName").stringValue = attack;
         serialized.FindProperty("dieStateName").stringValue = die;
         serialized.FindProperty("destroyDelayAfterDeath").floatValue = deathDelay;
+        serialized.FindProperty("coinDropValue").intValue = 5;
+
+        GameObject coinPickupObject = AssetDatabase.LoadAssetAtPath<GameObject>(CoinPickupPrefabPath);
+        CoinPickup coinPickup = coinPickupObject != null
+            ? coinPickupObject.GetComponent<CoinPickup>()
+            : null;
+        if (coinPickup != null)
+        {
+            serialized.FindProperty("coinPickupPrefab").objectReferenceValue = coinPickup;
+
+            SpriteRenderer coinRenderer = coinPickup.GetComponent<SpriteRenderer>();
+            if (coinRenderer != null)
+            {
+                serialized.FindProperty("coinPickupSprite").objectReferenceValue = coinRenderer.sprite;
+            }
+        }
+
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
     private static void ConfigurePigSummoner(PigLeaderSummoner summoner, GoblinEnemy enemy)
     {
+        float summonDuration = GetClipLength(PigSummonClipPath, 1.1f);
         SerializedObject serialized = new(summoner);
         serialized.FindProperty("enemy").objectReferenceValue = enemy;
         serialized.FindProperty("goblinPrefab").objectReferenceValue =
             AssetDatabase.LoadAssetAtPath<GameObject>(GoblinPrefabPath);
+        serialized.FindProperty("summonActionDuration").floatValue = summonDuration;
+        serialized.FindProperty("spawnDelay").floatValue = Mathf.Min(
+            Mathf.Max(0.1f, summonDuration * 0.5f),
+            summonDuration);
+        serialized.FindProperty("summonStateName").stringValue = "pigleader_summon";
         serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
+    private static float GetClipLength(string path, float fallback)
+    {
+        AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
+        return clip != null && clip.length > 0f ? clip.length : fallback;
     }
 
     private static void ConfigureFrogEnemy(
@@ -713,6 +742,19 @@ public static class SpecialEnemyPrefabBootstrap
         serialized.FindProperty("tongueOrigin").objectReferenceValue = origin;
         serialized.FindProperty("tongueTip").objectReferenceValue = tip;
         serialized.FindProperty("tongueLine").objectReferenceValue = line;
+        SerializedProperty laneTolerance = serialized.FindProperty("laneTolerance");
+        if (laneTolerance != null)
+        {
+            laneTolerance.floatValue = 0.6f;
+        }
+
+        SerializedProperty targetHoldRefreshDuration =
+            serialized.FindProperty("targetHoldRefreshDuration");
+        if (targetHoldRefreshDuration != null)
+        {
+            targetHoldRefreshDuration.floatValue = 0.2f;
+        }
+
         serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
@@ -746,6 +788,113 @@ public static class SpecialEnemyPrefabBootstrap
         return controller;
     }
 
+    private static AnimatorController EnsurePigLeaderController()
+    {
+        AnimatorController controller = EnsureController(
+            PigControllerPath,
+            "pigleader_walk",
+            "pigleader_attack",
+            "pigleader_summon",
+            "pigleader_die");
+
+        AnimationClip walkClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(PigWalkClipPath);
+        AnimationClip attackClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(PigAttackClipPath);
+        AnimationClip summonClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(PigSummonClipPath);
+        AnimationClip dieClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(PigDieClipPath);
+
+        SetClipLooping(walkClip, true);
+        SetClipLooping(attackClip, true);
+        SetClipLooping(summonClip, false);
+        SetClipLooping(dieClip, false);
+
+        AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
+        AnimatorState walkState = SetStateMotion(stateMachine, "pigleader_walk", walkClip);
+        SetStateMotion(stateMachine, "pigleader_attack", attackClip);
+        SetStateMotion(stateMachine, "pigleader_summon", summonClip);
+        SetStateMotion(stateMachine, "pigleader_die", dieClip);
+        RemoveStates(
+            stateMachine,
+            "PigLeader_walk",
+            "Pigleader_attack",
+            "Pigleader_call",
+            "Pigleader_die");
+
+        if (walkState != null)
+        {
+            stateMachine.defaultState = walkState;
+        }
+
+        EditorUtility.SetDirty(controller);
+        return controller;
+    }
+
+    private static AnimatorState SetStateMotion(
+        AnimatorStateMachine stateMachine,
+        string stateName,
+        AnimationClip clip)
+    {
+        if (stateMachine == null)
+        {
+            return null;
+        }
+
+        AnimatorState state = stateMachine.states
+            .Select(child => child.state)
+            .FirstOrDefault(candidate => candidate.name == stateName);
+        if (state == null)
+        {
+            state = stateMachine.AddState(stateName);
+        }
+
+        if (clip != null)
+        {
+            state.motion = clip;
+            EditorUtility.SetDirty(state);
+        }
+
+        return state;
+    }
+
+    private static void RemoveStates(
+        AnimatorStateMachine stateMachine,
+        params string[] stateNames)
+    {
+        if (stateMachine == null || stateNames == null)
+        {
+            return;
+        }
+
+        for (int i = stateMachine.states.Length - 1; i >= 0; i--)
+        {
+            ChildAnimatorState childState = stateMachine.states[i];
+            if (childState.state == null ||
+                !stateNames.Contains(childState.state.name))
+            {
+                continue;
+            }
+
+            stateMachine.RemoveState(childState.state);
+        }
+    }
+
+    private static void SetClipLooping(AnimationClip clip, bool loop)
+    {
+        if (clip == null)
+        {
+            return;
+        }
+
+        AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
+        if (settings.loopTime == loop)
+        {
+            return;
+        }
+
+        settings.loopTime = loop;
+        AnimationUtility.SetAnimationClipSettings(clip, settings);
+        EditorUtility.SetDirty(clip);
+    }
+
     private static void ConfigureExistingPigPrefab(AnimatorController controller)
     {
         GameObject root = PrefabUtility.LoadPrefabContents(PigPrefabPath);
@@ -754,7 +903,16 @@ public static class SpecialEnemyPrefabBootstrap
             Animator animator = root.GetComponent<Animator>() ?? root.AddComponent<Animator>();
             animator.runtimeAnimatorController = controller;
             GoblinEnemy enemy = root.GetComponent<GoblinEnemy>() ?? root.AddComponent<GoblinEnemy>();
-            ConfigureGoblinEnemy(enemy, 45, 0.6f, 3, 1.05f, "pigleader_walk", "pigleader_attack", "pigleader_die", 1.25f);
+            ConfigureGoblinEnemy(
+                enemy,
+                45,
+                0.6f,
+                3,
+                1.05f,
+                "pigleader_walk",
+                "pigleader_attack",
+                "pigleader_die",
+                GetClipLength(PigDieClipPath, 1.25f));
             PigLeaderSummoner summoner = root.GetComponent<PigLeaderSummoner>() ?? root.AddComponent<PigLeaderSummoner>();
             ConfigurePigSummoner(summoner, enemy);
             PrefabUtility.SaveAsPrefabAsset(root, PigPrefabPath);

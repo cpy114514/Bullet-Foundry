@@ -124,6 +124,10 @@ public sealed class LevelSelectModeButton : MonoBehaviour
         {
             LevelLoadRequest.Set(BuildSandboxJson(), "Sandbox", 0);
         }
+        else if (mode == LevelSceneMode.Endless)
+        {
+            LevelLoadRequest.Set(BuildEndlessJson(), "Endless", 0);
+        }
         else if (mode == LevelSceneMode.LevelEditor)
         {
             LevelLoadRequest.Clear();
@@ -142,9 +146,23 @@ public sealed class LevelSelectModeButton : MonoBehaviour
             "\"schemaVersion\":1," +
             "\"id\":\"sandbox\"," +
             "\"displayName\":\"Sandbox\"," +
-            "\"startingCoins\":999," +
+            "\"startingCoins\":99999," +
             "\"showCardSelectionOnStart\":false," +
             "\"waitForCardSelectionBeforeLoadingCards\":false," +
+            "\"cardRules\":{\"restrictAvailableCards\":false,\"allowedCards\":[],\"bannedCards\":[]}," +
+            "\"enemySpawns\":[]" +
+            "}";
+    }
+
+    private static string BuildEndlessJson()
+    {
+        return "{" +
+            "\"schemaVersion\":1," +
+            "\"id\":\"endless\"," +
+            "\"displayName\":\"Endless Mode\"," +
+            "\"startingCoins\":1000," +
+            "\"showCardSelectionOnStart\":true," +
+            "\"waitForCardSelectionBeforeLoadingCards\":true," +
             "\"cardRules\":{\"restrictAvailableCards\":false,\"allowedCards\":[],\"bannedCards\":[]}," +
             "\"enemySpawns\":[]" +
             "}";

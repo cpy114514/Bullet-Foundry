@@ -7,6 +7,8 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class CoinTowerBootstrap
 {
+    private const string CoinPickupPrefabPath = "Assets/Prefab/CoinPickup.prefab";
+
     static CoinTowerBootstrap()
     {
         EditorApplication.delayCall += EnsureCoinTowerSetup;
@@ -51,10 +53,16 @@ public static class CoinTowerBootstrap
 
         for (int i = 0; i < coinTowers.Length; i++)
         {
-            if (coinTowers[i].GetComponent<CoinTower>() == null)
+            CoinTower coinTower = coinTowers[i].GetComponent<CoinTower>();
+            if (coinTower == null)
             {
-                Undo.AddComponent<CoinTower>(coinTowers[i].gameObject);
+                coinTower = Undo.AddComponent<CoinTower>(coinTowers[i].gameObject);
                 changed = true;
+            }
+
+            if (coinTower != null)
+            {
+                changed |= ConfigureCoinTower(coinTower);
             }
 
             if (coinTowers[i].GetComponent<TowerHealth>() == null)
@@ -68,5 +76,51 @@ public static class CoinTowerBootstrap
         {
             EditorSceneManager.MarkSceneDirty(mainCamera.gameObject.scene);
         }
+    }
+
+    private static bool ConfigureCoinTower(CoinTower coinTower)
+    {
+        SerializedObject serialized = new(coinTower);
+        bool changed = false;
+
+        SerializedProperty coinValue = serialized.FindProperty("coinValue");
+        if (coinValue.intValue != 2)
+        {
+            coinValue.intValue = 2;
+            changed = true;
+        }
+
+        GameObject coinPickupObject = AssetDatabase.LoadAssetAtPath<GameObject>(CoinPickupPrefabPath);
+        CoinPickup coinPickup = coinPickupObject != null
+            ? coinPickupObject.GetComponent<CoinPickup>()
+            : null;
+        if (coinPickup != null)
+        {
+            SerializedProperty pickupPrefab = serialized.FindProperty("coinPickupPrefab");
+            if (pickupPrefab.objectReferenceValue != coinPickup)
+            {
+                pickupPrefab.objectReferenceValue = coinPickup;
+                changed = true;
+            }
+
+            SpriteRenderer coinRenderer = coinPickup.GetComponent<SpriteRenderer>();
+            if (coinRenderer != null)
+            {
+                SerializedProperty pickupSprite = serialized.FindProperty("coinPickupSprite");
+                if (pickupSprite.objectReferenceValue != coinRenderer.sprite)
+                {
+                    pickupSprite.objectReferenceValue = coinRenderer.sprite;
+                    changed = true;
+                }
+            }
+        }
+
+        if (changed)
+        {
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(coinTower);
+        }
+
+        return changed;
     }
 }

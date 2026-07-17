@@ -76,11 +76,13 @@ public sealed class PigLeaderSummoner : MonoBehaviour
 
         if (enemy != null && !enemy.IsActionBlocked && goblinPrefab != null)
         {
-            GameObject summoned = Instantiate(
+            float targetFootY = EnemySpawnAlignment.GetFootY(gameObject) + spawnOffset.y;
+            GameObject summoned = EnemySpawnAlignment.InstantiateFootAligned(
                 goblinPrefab,
                 transform.position + spawnOffset,
                 transform.rotation,
-                transform.parent);
+                transform.parent,
+                targetFootY);
             activeSummons.Add(summoned);
         }
 

@@ -13,6 +13,9 @@ public sealed class CardRuntimeLoader : MonoBehaviour
     [SerializeField]
     private FireTowerPlacementSystem placementSystem;
 
+    [SerializeField]
+    private Transform cardSlotsRoot;
+
     private CardCatalog loadedCatalog;
 
     public CardCatalog LoadedCatalog => loadedCatalog;
@@ -48,20 +51,23 @@ public sealed class CardRuntimeLoader : MonoBehaviour
             return;
         }
 
+        ResolveCardSlotsRoot();
+
         if (loadedCatalog == null)
         {
-            if (cardsPrefab == null)
-            {
-                cardsPrefab = Resources.Load<GameObject>(CardsResourcePath);
-            }
+            loadedCatalog = FindSceneGameplayCatalog();
+        }
 
-            if (cardsPrefab == null)
+        if (loadedCatalog == null)
+        {
+            GameObject prefab = ResolveCardsPrefab();
+            if (prefab == null)
             {
                 return;
             }
 
-            GameObject cardsObject = Instantiate(cardsPrefab);
-            cardsObject.name = cardsPrefab.name;
+            GameObject cardsObject = Instantiate(prefab);
+            cardsObject.name = prefab.name;
             loadedCatalog = cardsObject.GetComponent<CardCatalog>();
         }
 
@@ -69,6 +75,9 @@ public sealed class CardRuntimeLoader : MonoBehaviour
         {
             return;
         }
+
+        SyncCatalogDataFromPrefab();
+        loadedCatalog.SetCardSlotsRoot(cardSlotsRoot, cardSlotsRoot == null);
 
         IReadOnlyCollection<string> selectedTowerNames = CardSelectionState.SelectionConfirmed
             ? CardSelectionState.SelectedTowerNames
@@ -109,5 +118,91 @@ public sealed class CardRuntimeLoader : MonoBehaviour
         {
             placementSystem.SetCardCatalog(loadedCatalog);
         }
+    }
+
+    private GameObject ResolveCardsPrefab()
+    {
+        if (cardsPrefab == null)
+        {
+            cardsPrefab = Resources.Load<GameObject>(CardsResourcePath);
+        }
+
+        return cardsPrefab;
+    }
+
+    private void SyncCatalogDataFromPrefab()
+    {
+        GameObject prefab = ResolveCardsPrefab();
+        CardCatalog prefabCatalog = prefab != null ? prefab.GetComponent<CardCatalog>() : null;
+        if (prefabCatalog != null)
+        {
+            loadedCatalog.ReplaceCardsFrom(prefabCatalog);
+        }
+    }
+
+    private void ResolveCardSlotsRoot()
+    {
+        if (cardSlotsRoot != null && cardSlotsRoot.gameObject.activeInHierarchy)
+        {
+            return;
+        }
+
+        CardSlotPoint[] slots = FindObjectsByType<CardSlotPoint>(
+            FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < slots.Length; i++)
+        {
+            CardSlotPoint slot = slots[i];
+            if (slot == null || slot.GetComponentInParent<CardSelectionMenu>(true) != null)
+            {
+                continue;
+            }
+
+            cardSlotsRoot = slot.transform.parent;
+            return;
+        }
+    }
+
+    private CardCatalog FindSceneGameplayCatalog()
+    {
+        CardCatalog[] catalogs = FindObjectsByType<CardCatalog>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < catalogs.Length; i++)
+        {
+            CardCatalog catalog = catalogs[i];
+            if (catalog == null ||
+                catalog.GetComponentInParent<CardSelectionMenu>(true) != null ||
+                IsTransientSelectionDock(catalog))
+            {
+                continue;
+            }
+
+            if (catalog.gameObject.name == "Cards")
+            {
+                return catalog;
+            }
+        }
+
+        for (int i = 0; i < catalogs.Length; i++)
+        {
+            CardCatalog catalog = catalogs[i];
+            if (catalog == null ||
+                catalog.GetComponentInParent<CardSelectionMenu>(true) != null ||
+                IsTransientSelectionDock(catalog))
+            {
+                continue;
+            }
+
+            return catalog;
+        }
+
+        return null;
+    }
+
+    private static bool IsTransientSelectionDock(CardCatalog catalog)
+    {
+        return catalog != null &&
+            catalog.gameObject.name.StartsWith("Selected Cards Dock", System.StringComparison.Ordinal);
     }
 }

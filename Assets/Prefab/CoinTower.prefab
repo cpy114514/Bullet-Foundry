@@ -106,8 +106,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinTower
   coinsPerBullet: 1
-  coinValue: 5
-  coinPickupPrefab: {fileID: 0}
+  coinValue: 2
+  maxCoinsPerSecond: 5
+  coinPickupPrefab: {fileID: 7878761324815087485, guid: b355821dc752235408f60bbdbac7db8f, type: 3}
   coinPickupSprite: {fileID: 7843416716369364892, guid: ca4bd6f34e291a74d8e5d39b2a665606, type: 3}
   coinSpawnSpread: 0.25
   coinScatterRadius: 0.45
@@ -121,7 +122,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4e05827c1b6d4396facb5c6d7e8f901a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TowerHealth
   maxHealth: 3
   currentHealth: 3

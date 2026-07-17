@@ -4,7 +4,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class OrbitTower : MonoBehaviour
 {
-    private const float DefaultOrbitDuration = 5.5f;
+    private const float DefaultOrbitDuration = 2.5f;
 
     [SerializeField, Min(0.05f)]
     private float orbitRadius = 0.55f;

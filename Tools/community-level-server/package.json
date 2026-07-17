@@ -1,0 +1,12 @@
+{
+  "name": "bullet-foundry-community-levels",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Community level API for Bullet Foundry",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

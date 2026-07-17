@@ -108,6 +108,8 @@ MonoBehaviour:
   splitVerticalOffset: 0.35
   destroyIncomingBullet: 1
   shotInterval: 0.12
+  maxSplitsPerSecond: 5
+  maxStoredBullets: 8
   launchForwardDistance: 0.35
   outputForwardStagger: 0.08
   requiredRearDirectionDot: 0.5

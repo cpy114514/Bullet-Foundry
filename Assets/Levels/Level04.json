@@ -1,14 +1,537 @@
 {
-  "schemaVersion": 1,
-  "id": "level-04",
-  "displayName": "Level 4",
-  "startingCoins": 90,
-  "showCardSelectionOnStart": true,
-  "waitForCardSelectionBeforeLoadingCards": true,
-  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": ["RocketTower", "ShieldTower"] },
-  "enemySpawns": [
-    { "time": 2, "enemy": "Goblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 5, "enemy": "Goblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 9, "enemy": "SpeedGoblin", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
-  ]
+    "schemaVersion": 1,
+    "id": "level004",
+    "displayName": "level004",
+    "startingCoins": 75,
+    "timelineDuration": 150.0,
+    "showCardSelectionOnStart": true,
+    "waitForCardSelectionBeforeLoadingCards": true,
+    "cardRules": {
+        "restrictAvailableCards": true,
+        "allowedCards": [
+            "FireTower",
+            "IceTower",
+            "CoinTower",
+            "DoubleHeadCoinTower",
+            "SplitTower",
+            "TriwayTower"
+        ],
+        "bannedCards": [
+            "TransitTower",
+            "OrbitTower",
+            "ElectricTower",
+            "RandomBulletTower",
+            "RocketTower",
+            "ShieldTower",
+            "HomingTower"
+        ]
+    },
+    "enemySpawns": [
+        {
+            "time": 10.0,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 10.0,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 17.0,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 23.5,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 31.5,
+            "enemy": "SpeedGoblin",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 39.5,
+            "enemy": "SpeedGoblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 49.5,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 49.5,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 49.5,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 59.0,
+            "enemy": "Barbarian",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 66.5,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 67.0,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 67.5,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 68.0,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 79.5,
+            "enemy": "Barbarian",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 81.0,
+            "enemy": "Barbarian",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 94.5,
+            "enemy": "SpeedGoblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 96.5,
+            "enemy": "SpeedGoblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 105.0,
+            "enemy": "SpeedGoblin",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 105.0,
+            "enemy": "SpeedGoblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 105.0,
+            "enemy": "SpeedGoblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 105.0,
+            "enemy": "SpeedGoblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 105.0,
+            "enemy": "SpeedGoblin",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 117.0,
+            "enemy": "SpeedGoblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 139.5,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 142.0,
+            "enemy": "SpeedGoblin",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 143.5,
+            "enemy": "SpeedGoblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 145.0,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 145.0,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 146.5,
+            "enemy": "Barbarian",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 146.5,
+            "enemy": "Barbarian",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 146.5,
+            "enemy": "Goblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 146.5,
+            "enemy": "Goblin",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 146.5,
+            "enemy": "SpeedGoblin",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 148.0,
+            "enemy": "Barbarian",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 148.0,
+            "enemy": "Barbarian",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    ]
 }

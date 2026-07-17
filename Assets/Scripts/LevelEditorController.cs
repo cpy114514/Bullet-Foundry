@@ -8,6 +8,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 [DisallowMultipleComponent]
 public sealed class LevelEditorController : MonoBehaviour
 {
@@ -15,6 +19,7 @@ public sealed class LevelEditorController : MonoBehaviour
     private static readonly Color CardSelectedColor = new(0.82f, 0.82f, 0.8f, 1f);
     private static readonly Color CardDisabledColor = new(0.62f, 0.62f, 0.6f, 1f);
     private const float TimelineMarkerBaseWidth = 124f;
+    private const string DefaultLevelName = "Custom Level";
 
     [Header("Data")]
     [SerializeField]
@@ -36,7 +41,7 @@ public sealed class LevelEditorController : MonoBehaviour
     private float spawnX = 8.5f;
 
     [SerializeField]
-    private string outputFileName = "CustomLevel.json";
+    private string outputFileName = "Custom Level.json";
 
     [SerializeField]
     private string playSceneName = "Levels";
@@ -54,7 +59,7 @@ public sealed class LevelEditorController : MonoBehaviour
         "PigLeader",
         "FrogPrincess",
         "Chicken",
-        "OldBaldGuy"
+        "Giant"
     };
 
     [SerializeField]
@@ -134,6 +139,19 @@ public sealed class LevelEditorController : MonoBehaviour
     private Button loadButton;
 
     [SerializeField]
+    private Button exportButton;
+
+    [Header("Community")]
+    [SerializeField, Tooltip("Example: http://hackclub.app:12345")]
+    private string communityApiBaseUrl;
+
+    [SerializeField]
+    private string communityAuthor = "Anonymous";
+
+    [SerializeField]
+    private Button publishButton;
+
+    [SerializeField]
     private Button testButton;
 
     [SerializeField]
@@ -195,6 +213,11 @@ public sealed class LevelEditorController : MonoBehaviour
     private GameObject markerContextMenu;
     private InputField markerContextCountInput;
     private int markerContextSpawnId = -1;
+    private GameObject levelFilePanel;
+    private ScrollRect localLevelScrollRect;
+    private RectTransform localLevelListRoot;
+    private Text localLevelEmptyText;
+    private bool isPublishingCommunityLevel;
 
     public float TimelineDuration => Mathf.Max(5f, timelineDuration);
 
@@ -231,6 +254,7 @@ public sealed class LevelEditorController : MonoBehaviour
     private void Update()
     {
         HandleKeyboardShortcuts();
+        HandleRightClickFallback();
     }
 
     private void HandleKeyboardShortcuts()
@@ -257,6 +281,56 @@ public sealed class LevelEditorController : MonoBehaviour
         {
             RedoLastChange();
         }
+    }
+
+    private void HandleRightClickFallback()
+    {
+        if (IsInputFieldFocused() ||
+            !WasRightMousePressedThisFrame(out Vector2 screenPosition))
+        {
+            return;
+        }
+
+        Camera eventCamera = GetCanvasEventCamera();
+        if (IsPointerInsideContextMenu(screenPosition, eventCamera))
+        {
+            return;
+        }
+
+        if (TryGetSpawnMarkerAtScreenPoint(screenPosition, eventCamera, out int spawnId))
+        {
+            OpenMarkerContextMenu(spawnId, screenPosition, eventCamera);
+            return;
+        }
+
+        if (timelineViewport != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(timelineViewport, screenPosition, eventCamera))
+        {
+            OpenTimelineContextMenu(screenPosition, eventCamera);
+        }
+    }
+
+    private static bool WasRightMousePressedThisFrame(out Vector2 screenPosition)
+    {
+#if ENABLE_INPUT_SYSTEM
+        Mouse mouse = Mouse.current;
+        if (mouse != null && mouse.rightButton.wasPressedThisFrame)
+        {
+            screenPosition = mouse.position.ReadValue();
+            return true;
+        }
+#endif
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+        if (Input.GetMouseButtonDown(1))
+        {
+            screenPosition = Input.mousePosition;
+            return true;
+        }
+#endif
+
+        screenPosition = Vector2.zero;
+        return false;
     }
 
     public void DeleteSelectedSpawn()
@@ -313,9 +387,19 @@ public sealed class LevelEditorController : MonoBehaviour
 
     public void OpenMarkerContextMenu(int spawnId, PointerEventData eventData)
     {
+        if (eventData == null)
+        {
+            return;
+        }
+
+        OpenMarkerContextMenu(spawnId, eventData.position, eventData.pressEventCamera);
+    }
+
+    private void OpenMarkerContextMenu(int spawnId, Vector2 screenPosition, Camera eventCamera)
+    {
         LevelEditorSpawn spawn = FindSpawn(spawnId);
         RectTransform canvasRect = GetRootCanvasRect();
-        if (spawn == null || canvasRect == null || eventData == null)
+        if (spawn == null || canvasRect == null)
         {
             return;
         }
@@ -329,17 +413,18 @@ public sealed class LevelEditorController : MonoBehaviour
         markerContextSpawnId = spawnId;
 
         const float menuWidth = 220f;
-        const float menuHeight = 84f;
+        const float menuHeight = 104f;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
-            eventData.position,
-            eventData.pressEventCamera,
+            screenPosition,
+            eventCamera,
             out Vector2 localPoint);
 
         GameObject menu = new("Marker Context Menu", typeof(RectTransform), typeof(Image));
         menu.transform.SetParent(canvasRect, false);
         markerContextMenu = menu;
         RectTransform menuRect = menu.GetComponent<RectTransform>();
+        menuRect.SetAsLastSibling();
         menuRect.anchorMin = new Vector2(0.5f, 0.5f);
         menuRect.anchorMax = new Vector2(0.5f, 0.5f);
         menuRect.pivot = new Vector2(0f, 1f);
@@ -354,10 +439,11 @@ public sealed class LevelEditorController : MonoBehaviour
         menuOutline.effectColor = Color.black;
         menuOutline.effectDistance = new Vector2(2f, -2f);
 
-        CreateContextText(menuRect, "COUNT", 26, TextAnchor.MiddleLeft, 12f, 8f, 64f, 30f);
-        markerContextCountInput = CreateContextCountInput(menuRect, spawn.Count, 80f, 8f, 128f, 30f);
+        CreateContextText(menuRect, "COUNT", 24, TextAnchor.MiddleLeft, 12f, 6f, 64f, 36f);
+        markerContextCountInput = CreateContextCountInput(menuRect, spawn.Count, 80f, 6f, 128f, 36f);
         markerContextCountInput.onEndEdit.AddListener(_ => ApplyMarkerContextCount());
-        CreateContextButton(menuRect, "DELETE SELECTED", 24, 12f, 46f, 196f, 28f, DeleteSelectedMarkersFromContextMenu);
+        CreateContextButton(menuRect, "DELETE SELECTED", 22, 12f, 54f, 196f, 40f, DeleteSelectedMarkersFromContextMenu);
+        RefreshContextMenuText(menu);
         SetStatus($"Set count for {selectedSpawnIds.Count} selected marker{(selectedSpawnIds.Count == 1 ? string.Empty : "s")}.");
     }
 
@@ -405,25 +491,36 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void OpenTimelineContextMenu(PointerEventData eventData)
     {
+        if (eventData == null)
+        {
+            return;
+        }
+
+        OpenTimelineContextMenu(eventData.position, eventData.pressEventCamera);
+    }
+
+    private void OpenTimelineContextMenu(Vector2 screenPosition, Camera eventCamera)
+    {
         RectTransform canvasRect = GetRootCanvasRect();
-        if (canvasRect == null || eventData == null)
+        if (canvasRect == null)
         {
             return;
         }
 
         CloseMarkerContextMenu();
         const float menuWidth = 190f;
-        const float menuHeight = 76f;
+        const float menuHeight = 104f;
         RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvasRect,
-            eventData.position,
-            eventData.pressEventCamera,
+            screenPosition,
+            eventCamera,
             out Vector2 localPoint);
 
         GameObject menu = new("Timeline Context Menu", typeof(RectTransform), typeof(Image));
         menu.transform.SetParent(canvasRect, false);
         markerContextMenu = menu;
         RectTransform menuRect = menu.GetComponent<RectTransform>();
+        menuRect.SetAsLastSibling();
         menuRect.anchorMin = new Vector2(0.5f, 0.5f);
         menuRect.anchorMax = new Vector2(0.5f, 0.5f);
         menuRect.pivot = new Vector2(0f, 1f);
@@ -437,8 +534,9 @@ public sealed class LevelEditorController : MonoBehaviour
         Outline menuOutline = menu.AddComponent<Outline>();
         menuOutline.effectColor = Color.black;
         menuOutline.effectDistance = new Vector2(2f, -2f);
-        CreateContextButton(menuRect, "UNDO", 24, 10f, 8f, 170f, 26f, UndoFromContextMenu);
-        CreateContextButton(menuRect, "REDO", 24, 10f, 42f, 170f, 26f, RedoFromContextMenu);
+        CreateContextButton(menuRect, "UNDO", 22, 10f, 8f, 170f, 40f, UndoFromContextMenu);
+        CreateContextButton(menuRect, "REDO", 22, 10f, 56f, 170f, 40f, RedoFromContextMenu);
+        RefreshContextMenuText(menu);
     }
 
     private void UndoFromContextMenu()
@@ -472,12 +570,42 @@ public sealed class LevelEditorController : MonoBehaviour
         SetTopLeft(textRect, left, top, width, height);
         Text text = textObject.GetComponent<Text>();
         text.font = GetUiFont();
+        // Runtime-created legacy Text defaults to the generic UI material in
+        // this project, which does not render the hand-drawn font glyphs.
+        // Use the font material explicitly so context-menu labels are visible.
+        if (text.font != null && text.font.material != null)
+        {
+            text.material = text.font.material;
+        }
         text.text = value;
         text.fontSize = fontSize;
         text.alignment = alignment;
         text.color = Color.black;
+        text.resizeTextForBestFit = true;
+        text.resizeTextMinSize = 10;
+        text.resizeTextMaxSize = Mathf.Max(10, fontSize);
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Truncate;
         text.raycastTarget = false;
         return text;
+    }
+
+    // Context menus are spawned during an input event. Mark their labels dirty
+    // so Unity rebuilds them on the next UI pass without re-entering PlayerLoop.
+    private static void RefreshContextMenuText(GameObject menu)
+    {
+        if (menu == null)
+        {
+            return;
+        }
+
+        Text[] labels = menu.GetComponentsInChildren<Text>(true);
+        for (int i = 0; i < labels.Length; i++)
+        {
+            Text label = labels[i];
+            label.SetAllDirty();
+        }
+
     }
 
     private InputField CreateContextCountInput(RectTransform parent, int value, float left, float top, float width, float height)
@@ -525,9 +653,18 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void WireStaticUi()
     {
-        AddInputListener(levelIdInput, value => levelId = Clean(value, "custom-level"));
-        AddInputListener(displayNameInput, value => displayName = Clean(value, "Custom Level"));
-        AddInputListener(outputFileInput, value => outputFileName = Clean(value, "CustomLevel.json"));
+        MergeLevelNameUi();
+        AddInputListener(levelIdInput, value =>
+        {
+            SetMergedLevelName(value);
+            PushDataToInputs();
+        });
+        AddInputListener(displayNameInput, value =>
+        {
+            SetMergedLevelName(value);
+            PushDataToInputs();
+        });
+        AddInputListener(outputFileInput, _ => PushDataToInputs());
         AddInputListener(startingCoinsInput, value =>
         {
             if (int.TryParse(value, out int parsed))
@@ -549,8 +686,12 @@ public sealed class LevelEditorController : MonoBehaviour
             pendingTimelineLayoutRefresh = true;
         });
 
+        EnsureExportButton();
+        EnsurePublishButton();
         AddButtonListener(saveButton, SaveJson);
-        AddButtonListener(loadButton, LoadJson);
+        AddButtonListener(loadButton, OpenLevelFilePanel);
+        AddButtonListener(exportButton, ExportJson);
+        AddButtonListener(publishButton, PublishCommunityLevel);
         AddButtonListener(testButton, TestPlay);
         AddButtonListener(backButton, () => SceneTransitionController.LoadScene(levelSelectSceneName));
         AddButtonListener(clearButton, ClearSpawns);
@@ -569,10 +710,86 @@ public sealed class LevelEditorController : MonoBehaviour
         }
     }
 
+    private void MergeLevelNameUi()
+    {
+        SetMergedLevelName(!string.IsNullOrWhiteSpace(displayName) ? displayName : levelId);
+        RenameInputLabel(levelIdInput, "LEVEL NAME");
+        SetInputAndLabelActive(displayNameInput, false);
+    }
+
+    private void SetMergedLevelName(string value)
+    {
+        string levelName = Clean(value, DefaultLevelName);
+        levelId = levelName;
+        displayName = levelName;
+        string fileName = levelName;
+        char[] invalidCharacters = Path.GetInvalidFileNameChars();
+        for (int i = 0; i < invalidCharacters.Length; i++)
+        {
+            fileName = fileName.Replace(invalidCharacters[i], '-');
+        }
+
+        fileName = fileName.Trim();
+        outputFileName = EnsureJsonExtension(string.IsNullOrWhiteSpace(fileName) ? DefaultLevelName : fileName);
+    }
+
+    private static void RenameInputLabel(InputField input, string label)
+    {
+        if (input == null || input.transform.parent == null)
+        {
+            return;
+        }
+
+        string expectedName = input.gameObject.name.Replace("Input", "Input Label");
+        Transform parent = input.transform.parent;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (!string.Equals(child.name, expectedName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            Text text = child.GetComponent<Text>();
+            if (text != null)
+            {
+                text.text = label;
+            }
+
+            return;
+        }
+    }
+
+    private static void SetInputAndLabelActive(InputField input, bool active)
+    {
+        if (input == null)
+        {
+            return;
+        }
+
+        input.gameObject.SetActive(active);
+        if (input.transform.parent == null)
+        {
+            return;
+        }
+
+        string expectedName = input.gameObject.name.Replace("Input", "Input Label");
+        Transform parent = input.transform.parent;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (string.Equals(child.name, expectedName, StringComparison.OrdinalIgnoreCase))
+            {
+                child.gameObject.SetActive(active);
+                return;
+            }
+        }
+    }
+
     private void PushDataToInputs()
     {
         SetInputValue(levelIdInput, levelId);
-        SetInputValue(displayNameInput, displayName);
+        SetInputValue(displayNameInput, levelId);
         SetInputValue(startingCoinsInput, startingCoins.ToString());
         SetInputValue(timelineDurationInput, Mathf.RoundToInt(TimelineDuration).ToString());
         SetInputValue(outputFileInput, outputFileName);
@@ -824,7 +1041,6 @@ public sealed class LevelEditorController : MonoBehaviour
             float top = timelineHeaderHeight + (lane - 1) * timelineLaneHeight;
             Color laneColor = lane % 2 == 0 ? new Color(0.9f, 0.9f, 0.86f, 1f) : new Color(0.84f, 0.84f, 0.8f, 1f);
             CreateGuideImage($"Lane {lane} Background", timelineGuideRoot, laneColor, 0f, top, width, timelineLaneHeight);
-            CreateGuideText($"Lane {lane} Label", timelineGuideRoot, $"Lane {lane}", 22, TextAnchor.MiddleLeft, Color.black, 8f, top + 6f, 78f, 24f);
             CreateGuideImage($"Lane {lane} Bottom Line", timelineGuideRoot, new Color(0f, 0f, 0f, 0.28f), 0f, top + timelineLaneHeight - 1f, width, 1.5f);
         }
 
@@ -845,10 +1061,6 @@ public sealed class LevelEditorController : MonoBehaviour
             }
 
             CreateGuideImage($"Tick {second}s", timelineGuideRoot, major ? new Color(0f, 0f, 0f, 0.36f) : new Color(0f, 0f, 0f, 0.12f), x, 0f, major ? 2f : 1f, height);
-            if (major)
-            {
-                CreateGuideText($"Tick Label {second}s", timelineGuideRoot, $"{second}s", 22, TextAnchor.UpperLeft, Color.black, x + 4f, 6f, 58f, 28f);
-            }
         }
     }
 
@@ -1084,10 +1296,36 @@ public sealed class LevelEditorController : MonoBehaviour
     private void ApplyMarkerLayout(RectTransform rect, LevelEditorSpawn spawn)
     {
         GetMarkerStackInfo(spawn, out int stackIndex, out int stackCount);
-        float x = Mathf.Clamp(spawn.Time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
-        float y = timelineHeaderHeight + (Mathf.Clamp(spawn.Lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
-        float width = TimelineMarkerBaseWidth;
-        float height = timelineLaneHeight - 16f;
+        GetMarkerLayout(spawn.Time, spawn.Lane, stackIndex, stackCount, out float x, out float y, out float width, out float height);
+        SetTopLeft(rect, x, y, width, height);
+    }
+
+    private void GetPreviewMarkerLayout(float time, int lane, out float x, out float y, out float width, out float height)
+    {
+        int normalizedLane = Mathf.Clamp(lane, 1, laneCount);
+        int timeCell = Mathf.FloorToInt(Mathf.Clamp(time, 0f, TimelineDuration));
+        int existingCount = 0;
+        for (int i = 0; i < spawns.Count; i++)
+        {
+            LevelEditorSpawn candidate = spawns[i];
+            if (Mathf.Clamp(candidate.Lane, 1, laneCount) == normalizedLane &&
+                Mathf.FloorToInt(Mathf.Clamp(candidate.Time, 0f, TimelineDuration)) == timeCell)
+            {
+                existingCount++;
+            }
+        }
+
+        // The preview is the next card in this stack, which is exactly where
+        // the card will end up after the player releases the pointer.
+        GetMarkerLayout(time, normalizedLane, existingCount, existingCount + 1, out x, out y, out width, out height);
+    }
+
+    private void GetMarkerLayout(float time, int lane, int stackIndex, int stackCount, out float x, out float y, out float width, out float height)
+    {
+        x = Mathf.Clamp(time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
+        y = timelineHeaderHeight + (Mathf.Clamp(lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
+        width = TimelineMarkerBaseWidth;
+        height = timelineLaneHeight - 16f;
         if (stackCount > 1)
         {
             int shrinkSteps = Mathf.Min(stackCount - 1, 4);
@@ -1097,7 +1335,7 @@ public sealed class LevelEditorController : MonoBehaviour
             y += stackIndex * 5f;
         }
 
-        SetTopLeft(rect, x, y, width, height);
+        height = Mathf.Max(38f, height);
     }
 
     private void GetMarkerStackInfo(LevelEditorSpawn target, out int stackIndex, out int stackCount)
@@ -1129,10 +1367,7 @@ public sealed class LevelEditorController : MonoBehaviour
         label.font = GetUiFont();
         string countSuffix = spawn.Count > 1 ? $"  x{spawn.Count}" : string.Empty;
         label.text = $"{PrettyName(spawn.Enemy)}{countSuffix}\n{spawn.Time:0.0}s  L{spawn.Lane}";
-        label.fontSize = 30;
-        label.resizeTextForBestFit = true;
-        label.resizeTextMinSize = 16;
-        label.resizeTextMaxSize = 32;
+        ConfigureTextToFit(label, 10, 28, 24);
         label.color = Color.black;
     }
 
@@ -1570,22 +1805,6 @@ public sealed class LevelEditorController : MonoBehaviour
         return image;
     }
 
-    private Text CreateGuideText(string objectName, RectTransform parent, string textValue, int fontSize, TextAnchor alignment, Color color, float left, float top, float width, float height)
-    {
-        GameObject textObject = new(objectName);
-        textObject.transform.SetParent(parent, false);
-        RectTransform rect = textObject.AddComponent<RectTransform>();
-        SetTopLeft(rect, left, top, width, height);
-        Text text = textObject.AddComponent<Text>();
-        text.font = GetUiFont();
-        text.text = textValue;
-        text.fontSize = fontSize;
-        text.alignment = alignment;
-        text.color = color;
-        text.raycastTarget = false;
-        return text;
-    }
-
     private void CreateDragGhost(string enemyId)
     {
         DestroyDragGhost();
@@ -1620,6 +1839,7 @@ public sealed class LevelEditorController : MonoBehaviour
         text.alignment = TextAnchor.MiddleCenter;
         text.color = Color.black;
         text.raycastTarget = false;
+        ConfigureTextToFit(text, 12, 30, 26);
 
         dragGhost.transform.SetAsLastSibling();
     }
@@ -1652,15 +1872,14 @@ public sealed class LevelEditorController : MonoBehaviour
         RectTransform rect = timelinePreview.transform as RectTransform;
         if (rect != null)
         {
-            float x = Mathf.Clamp(time, 0f, TimelineDuration) * timelinePixelsPerSecond + 6f;
-            float y = timelineHeaderHeight + (Mathf.Clamp(lane, 1, laneCount) - 1) * timelineLaneHeight + 8f;
-            SetTopLeft(rect, x, y, 154f, timelineLaneHeight - 16f);
+            GetPreviewMarkerLayout(time, lane, out float x, out float y, out float width, out float height);
+            SetTopLeft(rect, x, y, width, height);
         }
 
         Text text = timelinePreview.GetComponentInChildren<Text>(true);
         if (text != null)
         {
-            text.text = $"{PrettyName(enemyId)}\n{time:0.0}s  L{lane}";
+            ConfigureMarkerLabel(text, new LevelEditorSpawn(-1, time, enemyId, lane));
         }
 
         timelinePreview.transform.SetAsLastSibling();
@@ -1676,7 +1895,7 @@ public sealed class LevelEditorController : MonoBehaviour
         timelinePreview = new GameObject("Timeline Enemy Preview");
         timelinePreview.transform.SetParent(markerRoot, false);
         RectTransform rect = timelinePreview.AddComponent<RectTransform>();
-        SetTopLeft(rect, 0f, 0f, 154f, Mathf.Max(48f, timelineLaneHeight - 16f));
+        SetTopLeft(rect, 0f, 0f, TimelineMarkerBaseWidth, Mathf.Max(38f, timelineLaneHeight - 16f));
         Image image = timelinePreview.AddComponent<Image>();
         image.color = new Color(0.98f, 0.98f, 0.96f, 0.72f);
         image.raycastTarget = false;
@@ -1698,6 +1917,7 @@ public sealed class LevelEditorController : MonoBehaviour
         text.alignment = TextAnchor.MiddleCenter;
         text.color = Color.black;
         text.raycastTarget = false;
+        ConfigureTextToFit(text, 10, 28, 24);
     }
 
     private void HideTimelinePreview()
@@ -1719,16 +1939,109 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private RectTransform GetRootCanvasRect()
     {
-        if (rootCanvas == null)
+        if (rootCanvas == null || rootCanvas.gameObject.scene != gameObject.scene)
         {
-            rootCanvas = GetComponentInParent<Canvas>();
-            if (rootCanvas == null)
-            {
-                rootCanvas = FindFirstObjectByType<Canvas>();
-            }
+            rootCanvas = ResolveEditorCanvas();
         }
 
         return rootCanvas != null ? rootCanvas.transform as RectTransform : null;
+    }
+
+    private Canvas ResolveEditorCanvas()
+    {
+        Canvas parentCanvas = GetComponentInParent<Canvas>();
+        if (IsSceneCanvas(parentCanvas))
+        {
+            return parentCanvas;
+        }
+
+        if (timelineArea != null)
+        {
+            Canvas timelineCanvas = timelineArea.GetComponentInParent<Canvas>();
+            if (IsSceneCanvas(timelineCanvas))
+            {
+                return timelineCanvas;
+            }
+        }
+
+        Canvas[] canvases = FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        Canvas firstSceneCanvas = null;
+        for (int i = 0; i < canvases.Length; i++)
+        {
+            Canvas canvas = canvases[i];
+            if (!IsSceneCanvas(canvas))
+            {
+                continue;
+            }
+
+            if (string.Equals(canvas.name, "Level Editor Canvas", StringComparison.OrdinalIgnoreCase))
+            {
+                return canvas;
+            }
+
+            firstSceneCanvas ??= canvas;
+        }
+
+        return firstSceneCanvas;
+    }
+
+    private bool IsSceneCanvas(Canvas canvas)
+    {
+        return canvas != null && canvas.gameObject.scene == gameObject.scene;
+    }
+
+    private Camera GetCanvasEventCamera()
+    {
+        if (rootCanvas == null)
+        {
+            GetRootCanvasRect();
+        }
+
+        if (rootCanvas == null || rootCanvas.renderMode == RenderMode.ScreenSpaceOverlay)
+        {
+            return null;
+        }
+
+        return rootCanvas.worldCamera != null ? rootCanvas.worldCamera : Camera.main;
+    }
+
+    private bool IsPointerInsideContextMenu(Vector2 screenPosition, Camera eventCamera)
+    {
+        RectTransform menuRect = markerContextMenu != null
+            ? markerContextMenu.transform as RectTransform
+            : null;
+        return menuRect != null &&
+            RectTransformUtility.RectangleContainsScreenPoint(menuRect, screenPosition, eventCamera);
+    }
+
+    private bool TryGetSpawnMarkerAtScreenPoint(Vector2 screenPosition, Camera eventCamera, out int spawnId)
+    {
+        spawnId = -1;
+        RectTransform bestRect = null;
+        int bestSiblingIndex = int.MinValue;
+
+        foreach (KeyValuePair<int, RectTransform> pair in generatedMarkerRects)
+        {
+            RectTransform markerRect = pair.Value;
+            if (markerRect == null ||
+                !markerRect.gameObject.activeInHierarchy ||
+                !RectTransformUtility.RectangleContainsScreenPoint(markerRect, screenPosition, eventCamera))
+            {
+                continue;
+            }
+
+            int siblingIndex = markerRect.GetSiblingIndex();
+            if (bestRect != null && siblingIndex < bestSiblingIndex)
+            {
+                continue;
+            }
+
+            bestRect = markerRect;
+            bestSiblingIndex = siblingIndex;
+            spawnId = pair.Key;
+        }
+
+        return bestRect != null;
     }
 
     private static void SetTopLeft(RectTransform rect, float left, float top, float width, float height)
@@ -1754,9 +2067,7 @@ public sealed class LevelEditorController : MonoBehaviour
         {
             text.font = GetUiFont();
             text.text = label;
-            text.resizeTextForBestFit = true;
-            text.resizeTextMinSize = 14;
-            text.resizeTextMaxSize = 32;
+            ConfigureTextToFit(text, 10, 30, 24);
         }
 
         Button button = buttonObject.GetComponent<Button>();
@@ -1791,6 +2102,7 @@ public sealed class LevelEditorController : MonoBehaviour
         text.color = Color.black;
         text.font = GetUiFont();
         text.fontSize = 30;
+        ConfigureTextToFit(text, 10, 30, 24);
         buttonPrefab = buttonObject;
         return buttonObject;
     }
@@ -1811,12 +2123,274 @@ public sealed class LevelEditorController : MonoBehaviour
         return fallback;
     }
 
+    private void EnsureExportButton()
+    {
+        if (exportButton != null || loadButton == null)
+        {
+            return;
+        }
+
+        GameObject exportObject = Instantiate(loadButton.gameObject, loadButton.transform.parent);
+        exportObject.name = "Export Button";
+        exportObject.SetActive(true);
+        exportButton = exportObject.GetComponent<Button>();
+        if (exportButton == null)
+        {
+            exportButton = exportObject.AddComponent<Button>();
+        }
+
+        exportButton.onClick.RemoveAllListeners();
+        Text label = exportObject.GetComponentInChildren<Text>(true);
+        if (label != null)
+        {
+            label.text = "Export";
+            label.font = GetUiFont();
+            ConfigureTextToFit(label, 10, 30, 24);
+        }
+    }
+
+    private void EnsurePublishButton()
+    {
+        if (publishButton != null)
+        {
+            return;
+        }
+
+        Button template = exportButton != null ? exportButton : loadButton;
+        if (template == null)
+        {
+            return;
+        }
+
+        GameObject publishObject = Instantiate(template.gameObject, template.transform.parent);
+        publishObject.name = "Publish Button";
+        publishObject.SetActive(true);
+        publishButton = publishObject.GetComponent<Button>();
+        if (publishButton == null)
+        {
+            publishButton = publishObject.AddComponent<Button>();
+        }
+
+        publishButton.onClick.RemoveAllListeners();
+        Text label = publishObject.GetComponentInChildren<Text>(true);
+        if (label != null)
+        {
+            label.text = "Publish";
+            label.font = GetUiFont();
+            ConfigureTextToFit(label, 10, 30, 24);
+        }
+    }
+
+    private void OpenLevelFilePanel()
+    {
+        PullDataFromInputs();
+        EnsureLevelFilePanel();
+        if (levelFilePanel == null)
+        {
+            SetStatus("Load panel could not be created.");
+            return;
+        }
+
+        PopulateLocalLevelList();
+        levelFilePanel.SetActive(true);
+        levelFilePanel.transform.SetAsLastSibling();
+    }
+
+    private void CloseLevelFilePanel()
+    {
+        if (levelFilePanel != null)
+        {
+            levelFilePanel.SetActive(false);
+        }
+    }
+
+    private void EnsureLevelFilePanel()
+    {
+        if (levelFilePanel != null)
+        {
+            return;
+        }
+
+        RectTransform canvasRect = GetRootCanvasRect();
+        if (canvasRect == null)
+        {
+            return;
+        }
+
+        levelFilePanel = new GameObject("Level File Panel", typeof(RectTransform), typeof(Image));
+        levelFilePanel.transform.SetParent(canvasRect, false);
+        RectTransform panelRect = levelFilePanel.GetComponent<RectTransform>();
+        panelRect.anchorMin = Vector2.zero;
+        panelRect.anchorMax = Vector2.one;
+        panelRect.offsetMin = Vector2.zero;
+        panelRect.offsetMax = Vector2.zero;
+        Image overlay = levelFilePanel.GetComponent<Image>();
+        overlay.color = new Color(0f, 0f, 0f, 0.45f);
+
+        GameObject windowObject = new("Window", typeof(RectTransform), typeof(Image));
+        windowObject.transform.SetParent(levelFilePanel.transform, false);
+        RectTransform windowRect = windowObject.GetComponent<RectTransform>();
+        windowRect.anchorMin = new Vector2(0.5f, 0.5f);
+        windowRect.anchorMax = new Vector2(0.5f, 0.5f);
+        windowRect.pivot = new Vector2(0.5f, 0.5f);
+        windowRect.anchoredPosition = Vector2.zero;
+        windowRect.sizeDelta = new Vector2(780f, 600f);
+        Image windowImage = windowObject.GetComponent<Image>();
+        windowImage.color = new Color(0.96f, 0.96f, 0.93f, 1f);
+        Outline outline = windowObject.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(2f, -2f);
+
+        CreateContextText(windowRect, "Load Level", 40, TextAnchor.MiddleLeft, 30f, 16f, 420f, 52f);
+        CreateContextButton(windowRect, "X", 26, 724f, 20f, 38f, 38f, CloseLevelFilePanel);
+
+        CreateContextText(windowRect, "Local Saves", 28, TextAnchor.MiddleLeft, 32f, 84f, 280f, 38f);
+        CreateContextText(windowRect, Application.persistentDataPath, 16, TextAnchor.UpperLeft, 32f, 122f, 710f, 40f);
+
+        GameObject scrollObject = new("Local Level Scroll View", typeof(RectTransform), typeof(Image), typeof(RectMask2D), typeof(ScrollRect));
+        scrollObject.transform.SetParent(windowRect, false);
+        RectTransform scrollRectTransform = scrollObject.GetComponent<RectTransform>();
+        SetTopLeft(scrollRectTransform, 32f, 170f, 716f, 340f);
+        Image scrollBackground = scrollObject.GetComponent<Image>();
+        scrollBackground.color = new Color(1f, 1f, 1f, 0.01f);
+        scrollBackground.raycastTarget = true;
+
+        GameObject listObject = new("Local Level List", typeof(RectTransform));
+        listObject.transform.SetParent(scrollObject.transform, false);
+        localLevelListRoot = listObject.GetComponent<RectTransform>();
+        localLevelListRoot.anchorMin = new Vector2(0f, 1f);
+        localLevelListRoot.anchorMax = new Vector2(1f, 1f);
+        localLevelListRoot.pivot = new Vector2(0f, 1f);
+        localLevelListRoot.anchoredPosition = Vector2.zero;
+        localLevelListRoot.sizeDelta = new Vector2(0f, 340f);
+        localLevelListRoot.localScale = Vector3.one;
+
+        localLevelScrollRect = scrollObject.GetComponent<ScrollRect>();
+        localLevelScrollRect.viewport = scrollRectTransform;
+        localLevelScrollRect.content = localLevelListRoot;
+        localLevelScrollRect.horizontal = false;
+        localLevelScrollRect.vertical = true;
+        localLevelScrollRect.movementType = ScrollRect.MovementType.Clamped;
+        localLevelScrollRect.scrollSensitivity = 28f;
+
+        CreateContextButton(windowRect, "Import", 24, 32f, 528f, 180f, 48f, ImportExternalJson);
+        CreateContextButton(windowRect, "Refresh", 24, 232f, 528f, 160f, 48f, PopulateLocalLevelList);
+
+        levelFilePanel.SetActive(false);
+    }
+
+    private void PopulateLocalLevelList()
+    {
+        if (localLevelListRoot == null)
+        {
+            return;
+        }
+
+        for (int i = localLevelListRoot.childCount - 1; i >= 0; i--)
+        {
+            DestroyGeneratedObject(localLevelListRoot.GetChild(i).gameObject);
+        }
+
+        string[] files = GetLocalLevelFiles();
+        float contentHeight = Mathf.Max(340f, files.Length > 0 ? files.Length * 54f : 48f);
+        localLevelListRoot.sizeDelta = new Vector2(localLevelListRoot.sizeDelta.x, contentHeight);
+        localLevelListRoot.anchoredPosition = Vector2.zero;
+        if (localLevelScrollRect != null)
+        {
+            localLevelScrollRect.verticalNormalizedPosition = 1f;
+        }
+
+        if (files.Length == 0)
+        {
+            localLevelEmptyText = CreateContextText(
+                localLevelListRoot,
+                "No local .json saves yet.",
+                22,
+                TextAnchor.UpperLeft,
+                0f,
+                0f,
+                500f,
+                48f);
+            return;
+        }
+
+        localLevelEmptyText = null;
+        int visibleCount = files.Length;
+        for (int i = 0; i < visibleCount; i++)
+        {
+            string filePath = files[i];
+            string label = Path.GetFileName(filePath);
+            Button loadLevelButton = CreateContextButton(
+                localLevelListRoot,
+                label,
+                20,
+                0f,
+                i * 54f,
+                580f,
+                46f,
+                () => LoadJsonFromPath(filePath, true));
+            SetButtonTextColor(loadLevelButton, Color.black);
+
+            Button deleteLevelButton = CreateContextButton(
+                localLevelListRoot,
+                "Delete",
+                20,
+                596f,
+                i * 54f,
+                120f,
+                46f,
+                () => DeleteLocalLevelFile(filePath));
+            SetButtonTextColor(deleteLevelButton, Color.black);
+        }
+    }
+
+    private void DeleteLocalLevelFile(string path)
+    {
+        try
+        {
+            string root = Path.GetFullPath(Application.persistentDataPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                + Path.DirectorySeparatorChar;
+            string fullPath = Path.GetFullPath(path);
+            if (!fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !File.Exists(fullPath))
+            {
+                SetStatus("Delete failed: local level file was not found.");
+                PopulateLocalLevelList();
+                return;
+            }
+
+            File.Delete(fullPath);
+            SetStatus($"Deleted level: {Path.GetFileName(fullPath)}");
+            PopulateLocalLevelList();
+        }
+        catch (Exception exception)
+        {
+            SetStatus($"Delete failed: {exception.Message}");
+        }
+    }
+
+    private static string[] GetLocalLevelFiles()
+    {
+        try
+        {
+            Directory.CreateDirectory(Application.persistentDataPath);
+            return Directory.GetFiles(Application.persistentDataPath, "*.json")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .ToArray();
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
     private void SaveJson()
     {
         PullDataFromInputs();
         string path = GetOutputPath();
         try
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, BuildJson());
             SetStatus($"Saved JSON: {path}");
         }
@@ -1829,7 +2403,12 @@ public sealed class LevelEditorController : MonoBehaviour
     private void LoadJson()
     {
         PullDataFromInputs();
-        string path = GetOutputPath();
+        LoadJsonFromPath(GetOutputPath(), false);
+    }
+
+    private void LoadJsonFromPath(string path, bool closePanel)
+    {
+        path = NormalizeJsonPath(path);
         if (!File.Exists(path))
         {
             SetStatus($"No JSON found at {path}");
@@ -1847,13 +2426,86 @@ public sealed class LevelEditorController : MonoBehaviour
 
             ApplyData(data);
             PushDataToInputs();
+            undoHistory.Clear();
+            redoHistory.Clear();
             RebuildDynamicUi();
             SetStatus($"Loaded JSON: {path}");
+            if (closePanel)
+            {
+                CloseLevelFilePanel();
+            }
         }
         catch (Exception exception)
         {
             SetStatus($"Load failed: {exception.Message}");
         }
+    }
+
+    private void ImportExternalJson()
+    {
+        if (TryPickImportPath(out string path))
+        {
+            LoadJsonFromPath(path, true);
+            return;
+        }
+
+        SetStatus("Import canceled.");
+    }
+
+    private void ExportJson()
+    {
+        PullDataFromInputs();
+        if (TryPickExportPath(Clean(outputFileName, "CustomLevel.json"), out string pickedPath))
+        {
+            ExportJsonToPath(pickedPath);
+            return;
+        }
+
+        ExportJsonToPath(GetDefaultExportPath());
+    }
+
+    private void ExportJsonToPath(string path)
+    {
+        path = NormalizeJsonPath(path);
+        try
+        {
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            File.WriteAllText(path, BuildJson());
+            SetStatus($"Exported JSON: {path}");
+        }
+        catch (Exception exception)
+        {
+            SetStatus($"Export failed: {exception.Message}");
+        }
+    }
+
+    private void PublishCommunityLevel()
+    {
+        PullDataFromInputs();
+        string json = BuildJson();
+        if (!LevelJsonUtility.TryParse(json, out _, out string error))
+        {
+            SetStatus("Cannot publish: " + error);
+            return;
+        }
+
+        if (!CommunityLevelApi.TryGetBaseUrl(communityApiBaseUrl, out _))
+        {
+            SetStatus("Set a valid Community API URL before publishing.");
+            return;
+        }
+
+        SetStatus("Opening Community composer...");
+        CommunitySceneRequest.OpenComposerForLevel(
+            communityApiBaseUrl,
+            Clean(levelId, DefaultLevelName),
+            json);
+        SceneTransitionController.LoadScene("Community");
     }
 
     private void TestPlay()
@@ -1867,7 +2519,7 @@ public sealed class LevelEditorController : MonoBehaviour
         }
 
         LevelSceneModeRequest.Set(LevelSceneMode.Normal);
-        LevelLoadRequest.Set(json, displayName, 0);
+        LevelLoadRequest.Set(json, levelId, 0);
         CardSelectionState.PrepareLevelLoad(playSceneName);
         SceneTransitionController.LoadScene(playSceneName);
     }
@@ -1991,9 +2643,10 @@ public sealed class LevelEditorController : MonoBehaviour
         LevelJsonData data = new()
         {
             schemaVersion = LevelJsonUtility.CurrentSchemaVersion,
-            id = Clean(levelId, "custom-level"),
-            displayName = Clean(displayName, "Custom Level"),
+            id = Clean(levelId, DefaultLevelName),
+            displayName = Clean(levelId, DefaultLevelName),
             startingCoins = Mathf.Max(0, startingCoins),
+            timelineDuration = TimelineDuration,
             showCardSelectionOnStart = true,
             waitForCardSelectionBeforeLoadingCards = true,
             cardRules = BuildCardRules(),
@@ -2028,9 +2681,9 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void ApplyData(LevelJsonData data)
     {
-        levelId = data.id;
-        displayName = data.displayName;
+        SetMergedLevelName(!string.IsNullOrWhiteSpace(data.displayName) ? data.displayName : data.id);
         startingCoins = data.startingCoins;
+        timelineDuration = Mathf.Max(5f, data.timelineDuration <= 0f ? 60f : data.timelineDuration);
         spawns.Clear();
         selectedSpawnIds.Clear();
         selectedSpawnId = -1;
@@ -2053,9 +2706,13 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void PullDataFromInputs()
     {
-        levelId = Clean(levelIdInput != null ? levelIdInput.text : levelId, "custom-level");
-        displayName = Clean(displayNameInput != null ? displayNameInput.text : displayName, "Custom Level");
-        outputFileName = Clean(outputFileInput != null ? outputFileInput.text : outputFileName, "CustomLevel.json");
+        string levelName = levelIdInput != null ? levelIdInput.text : levelId;
+        if (string.IsNullOrWhiteSpace(levelName) && displayNameInput != null)
+        {
+            levelName = displayNameInput.text;
+        }
+
+        SetMergedLevelName(levelName);
         if (startingCoinsInput != null && int.TryParse(startingCoinsInput.text, out int parsedCoins))
         {
             startingCoins = Mathf.Max(0, parsedCoins);
@@ -2070,7 +2727,21 @@ public sealed class LevelEditorController : MonoBehaviour
     private void NormalizeCatalogs()
     {
         enemyIds = enemyIds.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        EnsureCatalogEntry(enemyIds, "Giant");
         towerNames = towerNames.Where(value => !string.IsNullOrWhiteSpace(value)).Select(value => value.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static void EnsureCatalogEntry(List<string> catalog, string value)
+    {
+        if (catalog == null || string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        if (!catalog.Contains(value, StringComparer.OrdinalIgnoreCase))
+        {
+            catalog.Add(value);
+        }
     }
 
     private void ResetTowerRules()
@@ -2109,8 +2780,70 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private string GetOutputPath()
     {
-        string fileName = Clean(outputFileName, "CustomLevel.json");
+        string fileName = EnsureJsonExtension(Clean(outputFileName, "CustomLevel.json"));
         return Path.Combine(Application.persistentDataPath, fileName);
+    }
+
+    private string GetDefaultExportPath()
+    {
+        string directory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            directory = Application.persistentDataPath;
+        }
+
+        return Path.Combine(directory, EnsureJsonExtension(Clean(outputFileName, "CustomLevel.json")));
+    }
+
+    private static string NormalizeJsonPath(string path)
+    {
+        path = Clean(path, "CustomLevel.json");
+        if (Directory.Exists(path))
+        {
+            return Path.Combine(path, "CustomLevel.json");
+        }
+
+        return EnsureJsonExtension(path);
+    }
+
+    private static string EnsureJsonExtension(string path)
+    {
+        return string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase)
+            ? path
+            : path + ".json";
+    }
+
+    private static bool TryPickImportPath(out string path)
+    {
+#if UNITY_EDITOR
+        path = EditorUtility.OpenFilePanel("Import Level JSON", Application.persistentDataPath, "json");
+        return !string.IsNullOrWhiteSpace(path);
+#else
+        path = string.Empty;
+        return false;
+#endif
+    }
+
+    private string GetExportDirectory()
+    {
+        string defaultPath = GetDefaultExportPath();
+        string directory = Path.GetDirectoryName(defaultPath);
+        return string.IsNullOrWhiteSpace(directory) ? Application.persistentDataPath : directory;
+    }
+
+    private bool TryPickExportPath(string defaultName, out string path)
+    {
+#if UNITY_EDITOR
+        path = EditorUtility.SaveFilePanel(
+            "Export Level JSON",
+            GetExportDirectory(),
+            EnsureJsonExtension(defaultName),
+            "json");
+        return !string.IsNullOrWhiteSpace(path);
+#else
+        path = string.Empty;
+        return false;
+#endif
     }
 
     private void SetStatus(string message)
@@ -2182,10 +2915,26 @@ public sealed class LevelEditorController : MonoBehaviour
             return;
         }
 
-        text.fontSize = fallbackSize;
+        ConfigureTextToFit(text, minSize, maxSize, fallbackSize);
+    }
+
+    // Legacy UI.Text does not clip overflowing glyphs by default. Every dynamic
+    // editor card shares this configuration so it stays readable at any layout
+    // size without spilling into a neighbouring card or timeline lane.
+    private static void ConfigureTextToFit(Text text, int minSize, int maxSize, int fallbackSize)
+    {
+        if (text == null)
+        {
+            return;
+        }
+
+        text.fontSize = Mathf.Clamp(fallbackSize, minSize, maxSize);
         text.resizeTextForBestFit = true;
-        text.resizeTextMinSize = minSize;
-        text.resizeTextMaxSize = maxSize;
+        text.resizeTextMinSize = Mathf.Max(1, minSize);
+        text.resizeTextMaxSize = Mathf.Max(text.resizeTextMinSize, maxSize);
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Truncate;
+        text.supportRichText = false;
     }
 
     private void ClearGeneratedButtonsUnder(RectTransform root)

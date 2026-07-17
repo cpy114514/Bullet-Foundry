@@ -20,6 +20,10 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
     [SerializeField, Range(0.05f, 1f)]
     private float previewAlpha = 0.45f;
 
+    [Header("Tower Removal")]
+    [SerializeField, Range(0f, 1f)]
+    private float towerRemovalRefundRatio = 0.75f;
+
     private CardView selectedCard;
     private Color selectedCardNormalColor = Color.white;
     private GameObject previewObject;
@@ -29,6 +33,16 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
     private bool dragMoved;
     private bool pressedCardWasSelected;
     private Vector2 dragStartScreenPosition;
+    private bool towerRemovalMode;
+    private bool towerPointerDown;
+    private bool towerDragMoved;
+    private Vector2 towerDragStartScreenPosition;
+    private Transform draggedTower;
+    private LandPlot draggedTowerOriginalLand;
+    private Vector3 draggedTowerOriginalPosition;
+    private Vector3 draggedTowerOffset;
+
+    public bool IsTowerRemovalModeActive => towerRemovalMode;
 
     private void Awake()
     {
@@ -44,6 +58,7 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
 
     private void OnDisable()
     {
+        CancelTowerMove();
         ClearSelection();
     }
 
@@ -51,6 +66,7 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
     {
         if (CardSelectionMenu.IsOpen)
         {
+            CancelTowerMove();
             ClearSelection();
             HidePlacementPreview();
             return;
@@ -58,29 +74,40 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
 
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
+            CancelTowerMove();
             ClearSelection();
         }
 
         Mouse mouse = Mouse.current;
         if (mouse == null)
         {
+            CancelTowerMove();
             HidePlacementPreview();
             return;
         }
 
         if (mouse.rightButton.wasPressedThisFrame)
         {
+            CancelTowerMove();
             ClearSelection();
             return;
         }
 
         if (!TryGetPointerWorldPosition(mouse, out Vector2 worldPosition))
         {
+            CancelTowerMove();
             HidePlacementPreview();
             return;
         }
 
-        UpdatePlacementPreview(worldPosition);
+        if (towerRemovalMode || towerPointerDown)
+        {
+            HidePlacementPreview();
+        }
+        else
+        {
+            UpdatePlacementPreview(worldPosition);
+        }
 
         Vector2 screenPosition = mouse.position.ReadValue();
         if (mouse.leftButton.wasPressedThisFrame)
@@ -94,7 +121,34 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
 
             if (!cardPointerDown)
             {
-                TryPlaceSelectedTower(worldPosition);
+                if (towerRemovalMode)
+                {
+                    TryRemoveTower(worldPosition);
+                }
+                else if (selectedCard == null &&
+                    TryBeginTowerMove(worldPosition, screenPosition))
+                {
+                    return;
+                }
+                else
+                {
+                    TryPlaceSelectedTower(worldPosition);
+                }
+            }
+
+            return;
+        }
+
+        if (towerPointerDown)
+        {
+            if (mouse.leftButton.isPressed)
+            {
+                HandleTowerMoveDragged(screenPosition);
+            }
+
+            if (mouse.leftButton.wasReleasedThisFrame)
+            {
+                HandleTowerMoveReleased(screenPosition);
             }
 
             return;
@@ -124,6 +178,29 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
     public void HandleCardPressed(CardView card, Vector2 screenPosition)
     {
         BeginCardPress(card, screenPosition);
+    }
+
+    public void ToggleTowerRemovalMode()
+    {
+        SetTowerRemovalMode(!towerRemovalMode);
+    }
+
+    public void SetTowerRemovalMode(bool active)
+    {
+        if (active)
+        {
+            ClearSelection();
+            towerRemovalMode = true;
+            HidePlacementPreview();
+            return;
+        }
+
+        towerRemovalMode = false;
+    }
+
+    public bool TryRemoveTowerAtWorldPosition(Vector2 worldPosition)
+    {
+        return TryRemoveTower(worldPosition);
     }
 
     public void HandleCardDragged(Vector2 screenPosition)
@@ -224,12 +301,46 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
             return false;
         }
 
-        PlaceTower(land, selectedCard.TowerPrefab);
+        PlaceTower(land, selectedCard.TowerPrefab, price);
         ClearSelection();
         return true;
     }
 
-    private void PlaceTower(LandPlot land, GameObject towerPrefab)
+    private bool TryRemoveTower(Vector2 worldPosition)
+    {
+        LandPlot land = FindLandWithTowerAt(worldPosition);
+        if (land == null)
+        {
+            land = FindLandAt(worldPosition);
+        }
+
+        if (land == null)
+        {
+            return false;
+        }
+
+        Transform tower = land.CurrentTower;
+        if (tower == null)
+        {
+            return false;
+        }
+
+        int originalPrice = ResolveTowerOriginalPrice(tower.gameObject);
+        int refund = Mathf.FloorToInt(originalPrice * towerRemovalRefundRatio);
+        if (refund > 0)
+        {
+            ResolveWallet();
+            wallet?.AddCoins(refund);
+        }
+
+        tower.SetParent(null, true);
+        Destroy(tower.gameObject);
+        land.ClearTowerOccupancy();
+        towerRemovalMode = false;
+        return true;
+    }
+
+    private void PlaceTower(LandPlot land, GameObject towerPrefab, int originalPrice)
     {
         if (land == null || towerPrefab == null)
         {
@@ -245,6 +356,13 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
             towerPrefab.transform.rotation);
 
         tower.name = towerPrefab.name;
+        PlacedTowerCost towerCost = tower.GetComponent<PlacedTowerCost>();
+        if (towerCost == null)
+        {
+            towerCost = tower.AddComponent<PlacedTowerCost>();
+        }
+
+        towerCost.SetOriginalPrice(originalPrice);
         land.SetTower(tower.transform);
     }
 
@@ -256,6 +374,7 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
             return;
         }
 
+        towerRemovalMode = false;
         selectedCard = card;
         selectedCardNormalColor = card.BackgroundRenderer.color;
         card.BackgroundRenderer.color = selectedCardColor;
@@ -273,7 +392,176 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
         cardPointerDown = false;
         dragMoved = false;
         pressedCardWasSelected = false;
+        towerRemovalMode = false;
         DestroyPlacementPreview();
+    }
+
+    private int ResolveTowerOriginalPrice(GameObject tower)
+    {
+        if (tower == null)
+        {
+            return 0;
+        }
+
+        PlacedTowerCost cost = tower.GetComponent<PlacedTowerCost>();
+        if (cost != null && cost.OriginalPrice > 0)
+        {
+            return cost.OriginalPrice;
+        }
+
+        if (cardCatalog == null)
+        {
+            cardCatalog = FindFirstObjectByType<CardCatalog>();
+        }
+
+        if (cardCatalog == null)
+        {
+            return 0;
+        }
+
+        string towerName = tower.name.Replace("(Clone)", string.Empty).Trim();
+        for (int i = 0; i < cardCatalog.Cards.Count; i++)
+        {
+            CardEntry entry = cardCatalog.Cards[i];
+            if (entry == null || entry.TowerPrefab == null)
+            {
+                continue;
+            }
+
+            if (entry.TowerPrefab.name == towerName)
+            {
+                return entry.Price;
+            }
+        }
+
+        return 0;
+    }
+
+    private bool TryBeginTowerMove(Vector2 worldPosition, Vector2 screenPosition)
+    {
+        LandPlot land = FindLandWithTowerAt(worldPosition);
+        if (land == null || land.CurrentTower == null)
+        {
+            return false;
+        }
+
+        draggedTowerOriginalLand = land;
+        draggedTower = land.CurrentTower;
+        draggedTowerOriginalPosition = draggedTower.position;
+        draggedTowerOffset = draggedTower.position - new Vector3(worldPosition.x, worldPosition.y, draggedTower.position.z);
+        towerDragStartScreenPosition = screenPosition;
+        towerPointerDown = true;
+        towerDragMoved = false;
+
+        draggedTower.SetParent(null, true);
+        land.ClearTowerOccupancy();
+        HidePlacementPreview();
+        return true;
+    }
+
+    private void HandleTowerMoveDragged(Vector2 screenPosition)
+    {
+        if (!towerPointerDown || draggedTower == null)
+        {
+            CancelTowerMove();
+            return;
+        }
+
+        if (Vector2.Distance(screenPosition, towerDragStartScreenPosition) >= DragThresholdPixels)
+        {
+            towerDragMoved = true;
+        }
+
+        if (!towerDragMoved ||
+            !TryGetPointerWorldPosition(screenPosition, out Vector2 worldPosition))
+        {
+            return;
+        }
+
+        Vector3 position = new Vector3(
+            worldPosition.x + draggedTowerOffset.x,
+            worldPosition.y + draggedTowerOffset.y,
+            draggedTowerOriginalPosition.z);
+        draggedTower.position = position;
+    }
+
+    private void HandleTowerMoveReleased(Vector2 screenPosition)
+    {
+        if (!towerPointerDown)
+        {
+            return;
+        }
+
+        if (draggedTower == null)
+        {
+            ClearTowerMoveState();
+            return;
+        }
+
+        if (!towerDragMoved ||
+            !TryGetPointerWorldPosition(screenPosition, out Vector2 worldPosition))
+        {
+            ReturnDraggedTowerToOriginalLand();
+            return;
+        }
+
+        LandPlot targetLand = FindLandAt(worldPosition);
+        bool canDropOnTarget = targetLand != null &&
+            (targetLand == draggedTowerOriginalLand || !targetLand.IsOccupied);
+
+        if (!canDropOnTarget)
+        {
+            ReturnDraggedTowerToOriginalLand();
+            return;
+        }
+
+        MoveDraggedTowerToLand(targetLand);
+        ClearTowerMoveState();
+    }
+
+    private void CancelTowerMove()
+    {
+        if (!towerPointerDown)
+        {
+            return;
+        }
+
+        ReturnDraggedTowerToOriginalLand();
+    }
+
+    private void ReturnDraggedTowerToOriginalLand()
+    {
+        if (draggedTower != null && draggedTowerOriginalLand != null)
+        {
+            draggedTower.position = draggedTowerOriginalPosition;
+            draggedTowerOriginalLand.SetTower(draggedTower);
+        }
+
+        ClearTowerMoveState();
+    }
+
+    private void MoveDraggedTowerToLand(LandPlot targetLand)
+    {
+        if (draggedTower == null || targetLand == null)
+        {
+            ReturnDraggedTowerToOriginalLand();
+            return;
+        }
+
+        Vector3 position = targetLand.transform.position;
+        position.z = draggedTowerOriginalPosition.z;
+        draggedTower.position = position;
+        targetLand.SetTower(draggedTower);
+    }
+
+    private void ClearTowerMoveState()
+    {
+        towerPointerDown = false;
+        towerDragMoved = false;
+        draggedTower = null;
+        draggedTowerOriginalLand = null;
+        draggedTowerOriginalPosition = default;
+        draggedTowerOffset = default;
     }
 
     private void CreatePlacementPreview(GameObject towerPrefab)
@@ -397,6 +685,26 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
         return null;
     }
 
+    private static LandPlot FindLandWithTowerAt(Vector2 worldPosition)
+    {
+        LandPlot[] lands = FindObjectsByType<LandPlot>(FindObjectsSortMode.None);
+        for (int i = 0; i < lands.Length; i++)
+        {
+            LandPlot land = lands[i];
+            if (land == null || !land.isActiveAndEnabled || land.CurrentTower == null)
+            {
+                continue;
+            }
+
+            if (IsPointInsideTower(land.CurrentTower, worldPosition))
+            {
+                return land;
+            }
+        }
+
+        return null;
+    }
+
     private static CardView FindCardAt(Vector2 worldPosition)
     {
         Collider2D[] hits = Physics2D.OverlapPointAll(worldPosition);
@@ -436,6 +744,38 @@ public sealed class FireTowerPlacementSystem : MonoBehaviour
             worldPosition.x,
             worldPosition.y,
             renderer.bounds.center.z));
+    }
+
+    private static bool IsPointInsideTower(Transform tower, Vector2 worldPosition)
+    {
+        if (tower == null)
+        {
+            return false;
+        }
+
+        Collider2D[] colliders = tower.GetComponentsInChildren<Collider2D>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider2D towerCollider = colliders[i];
+            if (towerCollider != null &&
+                towerCollider.enabled &&
+                towerCollider.gameObject.activeInHierarchy &&
+                towerCollider.OverlapPoint(worldPosition))
+            {
+                return true;
+            }
+        }
+
+        SpriteRenderer[] renderers = tower.GetComponentsInChildren<SpriteRenderer>(true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (IsPointInsideRenderer(renderers[i], worldPosition))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void ResolveCamera()

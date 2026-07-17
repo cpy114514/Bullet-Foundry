@@ -40,8 +40,14 @@ public sealed class LevelSelectCameraScroll : MonoBehaviour
 
     private void Awake()
     {
-        targetX = Mathf.Clamp(transform.position.x, minX, maxX);
-        SnapCameraPositionToTarget();
+        // The level-select scene must never inherit the paused state from a result panel.
+        Time.timeScale = 1f;
+        ResetScrollState();
+    }
+
+    private void OnEnable()
+    {
+        ResetScrollState();
     }
 
     private void Update()
@@ -151,7 +157,8 @@ public sealed class LevelSelectCameraScroll : MonoBehaviour
         return hit != null && (
             hit.GetComponent<LevelSelectNode>() != null ||
             hit.GetComponent<LevelSelectReturnButton>() != null ||
-            hit.GetComponent<LevelSelectSettingsButton>() != null);
+            hit.GetComponent<LevelSelectSettingsButton>() != null ||
+            hit.GetComponent<CommunityLevelButton>() != null);
     }
 
     private float GetWorldUnitsPerScreenPixel()
@@ -203,5 +210,12 @@ public sealed class LevelSelectCameraScroll : MonoBehaviour
         position.x = targetX;
         transform.position = position;
         smoothVelocity = 0f;
+    }
+
+    private void ResetScrollState()
+    {
+        isDragging = false;
+        targetX = Mathf.Clamp(transform.position.x, minX, maxX);
+        SnapCameraPositionToTarget();
     }
 }

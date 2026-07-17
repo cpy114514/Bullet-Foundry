@@ -13,6 +13,12 @@ public sealed class SplitterTower : MonoBehaviour
     [SerializeField, Min(0f)]
     private float shotInterval = 0.12f;
 
+    [SerializeField, Min(0.1f)]
+    private float maxSplitsPerSecond = 5f;
+
+    [SerializeField, Min(1)]
+    private int maxStoredBullets = 8;
+
     [SerializeField, Min(0f)]
     private float launchForwardDistance = 0.35f;
 
@@ -70,6 +76,7 @@ public sealed class SplitterTower : MonoBehaviour
     {
         if (incomingBullet == null
             || !CanAcceptBullet(incomingBullet)
+            || IsStorageFull()
             || !handledBullets.Add(incomingBullet))
         {
             return;
@@ -77,6 +84,11 @@ public sealed class SplitterTower : MonoBehaviour
 
         incomingBullet.PauseForTowerQueue();
         pendingShots.Enqueue(incomingBullet);
+    }
+
+    private bool IsStorageFull()
+    {
+        return pendingShots.Count >= Mathf.Max(1, maxStoredBullets);
     }
 
     private bool CanAcceptBullet(Bullet incomingBullet)
@@ -112,7 +124,13 @@ public sealed class SplitterTower : MonoBehaviour
             }
         }
 
-        nextShotTime = Time.time + shotInterval;
+        nextShotTime = Time.time + GetEffectiveShotInterval();
+    }
+
+    private float GetEffectiveShotInterval()
+    {
+        float cappedInterval = 1f / Mathf.Max(0.1f, maxSplitsPerSecond);
+        return Mathf.Max(shotInterval, cappedInterval);
     }
 
     private void FireSplitPair(Bullet sourceBullet)

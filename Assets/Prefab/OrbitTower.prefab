@@ -107,7 +107,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::OrbitTower
   orbitRadius: 1.5
   angularSpeedDegrees: 220
-  orbitDuration: 0
+  orbitDuration: 2.5
 --- !u!114 &620000000000000005
 MonoBehaviour:
   m_ObjectHideFlags: 0

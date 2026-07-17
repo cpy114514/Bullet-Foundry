@@ -30,6 +30,10 @@ public sealed class LevelEnemySpawner : MonoBehaviour
     private float elapsedTime;
     private int nextSpawnIndex;
 
+    public bool HasSpawnQueue => spawnQueue.Count > 0;
+
+    public bool IsSpawnQueueComplete => nextSpawnIndex >= spawnQueue.Count;
+
     private void Awake()
     {
         ResolveReferences();
@@ -125,25 +129,26 @@ public sealed class LevelEnemySpawner : MonoBehaviour
             return;
         }
 
-        Vector3 position = GetLaneSpawnPosition(spawn);
-        GameObject enemy = Instantiate(
+        int footLaneIndex = GetFootLaneIndex(spawn.EnemyPrefab, spawn.LaneIndex);
+        float laneY = GetLaneY(spawn.LaneIndex);
+        float footLaneY = GetLaneY(footLaneIndex);
+        float landBottomY = EnemySpawnAlignment.GetLandBottomYForLane(
+            footLaneIndex,
+            lanes,
+            footLaneY);
+        Vector3 position = GetLaneSpawnPosition(spawn, laneY);
+        GameObject enemy = EnemySpawnAlignment.InstantiateFootAligned(
             spawn.EnemyPrefab,
             position,
             spawn.EnemyPrefab.transform.rotation,
-            enemyParent);
+            enemyParent,
+            landBottomY + spawn.Offset.y);
 
         enemy.name = spawn.EnemyPrefab.name;
     }
 
-    private Vector3 GetLaneSpawnPosition(LevelEnemySpawn spawn)
+    private Vector3 GetLaneSpawnPosition(LevelEnemySpawn spawn, float laneY)
     {
-        float laneY = 0f;
-        if (lanes.Length > 0)
-        {
-            int laneIndex = Mathf.Clamp(spawn.LaneIndex - 1, 0, lanes.Length - 1);
-            laneY = lanes[laneIndex].position.y;
-        }
-
         float spawnX = Mathf.Approximately(spawn.SpawnX, 0f)
             ? fallbackSpawnX
             : spawn.SpawnX;
@@ -151,5 +156,28 @@ public sealed class LevelEnemySpawner : MonoBehaviour
         Vector3 position = new(spawnX, laneY, spawnZ);
         position += spawn.Offset;
         return position;
+    }
+
+    private float GetLaneY(int targetLaneIndex)
+    {
+        if (lanes.Length == 0)
+        {
+            return 0f;
+        }
+
+        int laneIndex = Mathf.Clamp(targetLaneIndex - 1, 0, lanes.Length - 1);
+        return lanes[laneIndex].position.y;
+    }
+
+    private int GetFootLaneIndex(GameObject enemyPrefab, int targetLaneIndex)
+    {
+        int laneCount = Mathf.Max(1, lanes.Length);
+        int offset = 0;
+        if (enemyPrefab != null && enemyPrefab.TryGetComponent(out GoblinEnemy enemy))
+        {
+            offset = enemy.SpawnFootLaneOffset;
+        }
+
+        return Mathf.Clamp(targetLaneIndex + offset, 1, laneCount);
     }
 }

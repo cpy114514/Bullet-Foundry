@@ -34,6 +34,21 @@ public sealed class CardEntry
     public GameObject TowerPrefab => towerPrefab;
 
     public int Price => Mathf.Max(0, price);
+
+    public static CardEntry Clone(CardEntry source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        return new CardEntry
+        {
+            towerPrefab = source.towerPrefab,
+            displayName = source.displayName,
+            price = source.price
+        };
+    }
 }
 
 [DisallowMultipleComponent]
@@ -45,15 +60,47 @@ public sealed class CardCatalog : MonoBehaviour
     [SerializeField, HideInInspector, Min(0.1f)]
     private float cardSpacing = 3.6f;
 
+    [SerializeField]
+    private Transform cardSlotsRoot;
+
+    [SerializeField]
+    private bool useGlobalCardSlots;
+
     private readonly List<CardView> activeCards = new List<CardView>();
 
     public IReadOnlyList<CardEntry> Cards => cards;
 
     public IReadOnlyList<CardView> ActiveCards => activeCards;
 
+    public void ReplaceCardsFrom(CardCatalog sourceCatalog)
+    {
+        if (sourceCatalog == null || sourceCatalog == this)
+        {
+            return;
+        }
+
+        cards = sourceCatalog.Cards
+            .Where(card => card != null)
+            .Select(CardEntry.Clone)
+            .Where(card => card != null)
+            .ToList();
+    }
+
     private void Awake()
     {
+        if (ShouldStartEmptyForPendingCardSelection())
+        {
+            BuildCards(new List<CardEntry>());
+            return;
+        }
+
         BuildCards();
+    }
+
+    public void SetCardSlotsRoot(Transform root, bool useGlobalFallback = false)
+    {
+        cardSlotsRoot = root;
+        useGlobalCardSlots = useGlobalFallback;
     }
 
     public void BuildCards()
@@ -113,6 +160,17 @@ public sealed class CardCatalog : MonoBehaviour
         }
 
         BuildCards(orderedCards);
+    }
+
+    private bool ShouldStartEmptyForPendingCardSelection()
+    {
+        if (GetComponentInParent<CardSelectionMenu>(true) != null)
+        {
+            return false;
+        }
+
+        LevelDefinition levelDefinition = FindFirstObjectByType<LevelDefinition>();
+        return levelDefinition != null && levelDefinition.ShouldDelayCardRuntimeLoad();
     }
 
     private void BuildCards(IReadOnlyList<CardEntry> cardsToBuild)
@@ -257,8 +315,22 @@ public sealed class CardCatalog : MonoBehaviour
         }
     }
 
-    private static CardSlotPoint[] FindCardSlots()
+    private CardSlotPoint[] FindCardSlots()
     {
+        if (cardSlotsRoot != null)
+        {
+            return cardSlotsRoot.GetComponentsInChildren<CardSlotPoint>(true)
+                .Where(slot => slot != null && slot.gameObject.activeInHierarchy)
+                .OrderBy(slot => slot.SlotIndex)
+                .ThenBy(slot => slot.name)
+                .ToArray();
+        }
+
+        if (!useGlobalCardSlots)
+        {
+            return Array.Empty<CardSlotPoint>();
+        }
+
         return FindObjectsByType<CardSlotPoint>(FindObjectsSortMode.None)
             .OrderBy(slot => slot.SlotIndex)
             .ThenBy(slot => slot.name)

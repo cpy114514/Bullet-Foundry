@@ -18,6 +18,7 @@ public sealed class SceneTransitionController : MonoBehaviour
 
     private CanvasGroup canvasGroup;
     private Image fadeImage;
+    private GraphicRaycaster graphicRaycaster;
     private Coroutine activeRoutine;
 
     public static SceneTransitionController Instance
@@ -51,6 +52,16 @@ public sealed class SceneTransitionController : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         EnsureUi();
         SetFadeAlpha(0f);
+        SetRaycastBlocking(false);
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+        }
     }
 
     public static void LoadScene(string sceneName)
@@ -106,6 +117,7 @@ public sealed class SceneTransitionController : MonoBehaviour
         }
 
         yield return FadeRoutine(0f);
+        SetRaycastBlocking(false);
         activeRoutine = null;
     }
 
@@ -117,14 +129,21 @@ public sealed class SceneTransitionController : MonoBehaviour
         activeRoutine = null;
     }
 
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (activeRoutine == null && canvasGroup != null && canvasGroup.alpha <= 0.001f)
+        {
+            SetRaycastBlocking(false);
+        }
+    }
+
     private IEnumerator FadeRoutine(float targetAlpha)
     {
         float startAlpha = canvasGroup.alpha;
         float duration = Mathf.Max(0.01f, fadeDuration);
         float elapsed = 0f;
 
-        canvasGroup.blocksRaycasts = true;
-        fadeImage.raycastTarget = true;
+        SetRaycastBlocking(true);
 
         while (elapsed < duration)
         {
@@ -136,9 +155,7 @@ public sealed class SceneTransitionController : MonoBehaviour
         }
 
         SetFadeAlpha(targetAlpha);
-        bool shouldBlock = targetAlpha > 0.001f;
-        canvasGroup.blocksRaycasts = shouldBlock;
-        fadeImage.raycastTarget = shouldBlock;
+        SetRaycastBlocking(targetAlpha > 0.001f);
     }
 
     private void EnsureUi()
@@ -156,7 +173,15 @@ public sealed class SceneTransitionController : MonoBehaviour
             canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = short.MaxValue;
-            canvasObject.AddComponent<GraphicRaycaster>();
+            graphicRaycaster = canvasObject.AddComponent<GraphicRaycaster>();
+        }
+        else
+        {
+            graphicRaycaster = canvas.GetComponent<GraphicRaycaster>();
+            if (graphicRaycaster == null)
+            {
+                graphicRaycaster = canvas.gameObject.AddComponent<GraphicRaycaster>();
+            }
         }
 
         canvasGroup = canvas.GetComponent<CanvasGroup>();
@@ -179,6 +204,7 @@ public sealed class SceneTransitionController : MonoBehaviour
         }
 
         fadeImage.color = fadeColor;
+        SetRaycastBlocking(canvasGroup != null && canvasGroup.alpha > 0.001f);
     }
 
     private void SetFadeAlpha(float alpha)
@@ -189,5 +215,24 @@ public sealed class SceneTransitionController : MonoBehaviour
         }
 
         canvasGroup.alpha = Mathf.Clamp01(alpha);
+    }
+
+    private void SetRaycastBlocking(bool shouldBlock)
+    {
+        if (canvasGroup != null)
+        {
+            canvasGroup.blocksRaycasts = shouldBlock;
+            canvasGroup.interactable = shouldBlock;
+        }
+
+        if (fadeImage != null)
+        {
+            fadeImage.raycastTarget = shouldBlock;
+        }
+
+        if (graphicRaycaster != null)
+        {
+            graphicRaycaster.enabled = shouldBlock;
+        }
     }
 }

@@ -1,16 +1,3320 @@
 {
-  "schemaVersion": 1,
-  "id": "level-12",
-  "displayName": "Level 12",
-  "startingCoins": 130,
-  "showCardSelectionOnStart": true,
-  "waitForCardSelectionBeforeLoadingCards": true,
-  "cardRules": { "restrictAvailableCards": false, "allowedCards": [], "bannedCards": [] },
-  "enemySpawns": [
-    { "time": 1, "enemy": "SpeedGoblin", "lane": 1, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 2, "enemy": "SpeedGoblin", "lane": 5, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 4, "enemy": "Barbarian", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 6, "enemy": "Barbarian", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 10, "enemy": "Barbarian", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
-  ]
+    "schemaVersion": 1,
+    "id": "level012",
+    "displayName": "level012",
+    "startingCoins": 999,
+    "timelineDuration": 230.0,
+    "showCardSelectionOnStart": true,
+    "waitForCardSelectionBeforeLoadingCards": true,
+    "cardRules": {
+        "restrictAvailableCards": true,
+        "allowedCards": [
+            "FireTower",
+            "IceTower",
+            "SplitTower",
+            "TriwayTower",
+            "TransitTower",
+            "OrbitTower",
+            "ElectricTower",
+            "RandomBulletTower",
+            "RocketTower",
+            "ShieldTower",
+            "HomingTower"
+        ],
+        "bannedCards": [
+            "CoinTower",
+            "DoubleHeadCoinTower"
+        ]
+    },
+    "enemySpawns": [
+        {
+            "time": 18.5,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 18.5,
+            "enemy": "Chicken",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 28.5,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 43.5,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 50.5,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 64.0,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 66.5,
+            "enemy": "Chicken",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 69.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 75.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 80.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 91.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 98.5,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 116.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 130.5,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 133.5,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 140.5,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 143.5,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 156.5,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 158.5,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 159.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 164.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 170.0,
+            "enemy": "Chicken",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 174.5,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 179.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 182.5,
+            "enemy": "Chicken",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 187.5,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 195.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 196.5,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 200.5,
+            "enemy": "Chicken",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 210.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 211.5,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 217.5,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 218.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 218.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 221.5,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 222.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 222.5,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 226.0,
+            "enemy": "Chicken",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    ]
 }

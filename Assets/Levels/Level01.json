@@ -1,18 +1,185 @@
 {
-  "schemaVersion": 1,
-  "id": "level-01",
-  "displayName": "Level 1",
-  "startingCoins": 75,
-  "showCardSelectionOnStart": true,
-  "waitForCardSelectionBeforeLoadingCards": true,
-  "cardRules": {
-    "restrictAvailableCards": true,
-    "allowedCards": ["CoinTower", "SplitTower"],
-    "bannedCards": []
-  },
-  "enemySpawns": [
-    { "time": 2, "enemy": "Goblin", "lane": 3, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 7, "enemy": "Goblin", "lane": 2, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } },
-    { "time": 12, "enemy": "Goblin", "lane": 4, "spawnX": 8.5, "offset": { "x": 0, "y": 0, "z": 0 } }
-  ]
+    "schemaVersion": 1,
+    "id": "Level001",
+    "displayName": "Level001",
+    "startingCoins": 75,
+    "timelineDuration": 60.0,
+    "showCardSelectionOnStart": true,
+    "waitForCardSelectionBeforeLoadingCards": true,
+    "cardRules": {
+        "restrictAvailableCards": true,
+        "allowedCards": [
+            "CoinTower",
+            "SplitTower"
+        ],
+        "bannedCards": [
+            "FireTower",
+            "IceTower",
+            "DoubleHeadCoinTower",
+            "TriwayTower",
+            "TransitTower",
+            "OrbitTower",
+            "ElectricTower",
+            "RandomBulletTower",
+            "RocketTower",
+            "ShieldTower",
+            "HomingTower"
+        ]
+    },
+    "enemySpawns": [
+        {
+            "time": 9.0,
+            "enemy": "Goblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 20.0,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 29.0,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 29.0,
+            "enemy": "Goblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 36.0,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 37.0,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 38.0,
+            "enemy": "Goblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 42.0,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 42.0,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 50.5,
+            "enemy": "Goblin",
+            "lane": 3,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 57.5,
+            "enemy": "Goblin",
+            "lane": 2,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 57.5,
+            "enemy": "Goblin",
+            "lane": 5,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 58.0,
+            "enemy": "Goblin",
+            "lane": 4,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "time": 58.5,
+            "enemy": "Goblin",
+            "lane": 1,
+            "spawnX": 8.5,
+            "offset": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    ]
 }

@@ -394,7 +394,10 @@ public static class LevelEditorSceneBuilder
         text.color = color;
         text.raycastTarget = false;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
-        text.verticalOverflow = VerticalWrapMode.Overflow;
+        // Text in the editor must stay inside its panel. Individual cards enable
+        // best-fit sizing at runtime; this prevents a small card from drawing
+        // over its neighbours while the layout is being rebuilt.
+        text.verticalOverflow = VerticalWrapMode.Truncate;
         return text;
     }
 

@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 public sealed class CardSelectionMenu : MonoBehaviour
 {
     private const string CardsResourcePath = "Cards";
-    private const int MaxSelectedCards = 9;
+    private const int FallbackMaxSelectedCards = 8;
     private const float DefaultCardScale = 0.72f;
 
     [Header("Scene Layout")]
@@ -292,6 +292,7 @@ public sealed class CardSelectionMenu : MonoBehaviour
             return;
         }
 
+        cardCatalog.SetCardSlotsRoot(cardSlotsRoot);
         cardCatalog.BuildCards();
         ResolveRestrictedCards();
 
@@ -471,7 +472,12 @@ public sealed class CardSelectionMenu : MonoBehaviour
         CardView clickedCard = FindCardAt(worldPosition);
         if (clickedCard != null)
         {
-            ToggleCard(clickedCard);
+            // Source cards only add to the selection. Removal is performed from the selected dock.
+            if (!selectedCards.Contains(clickedCard))
+            {
+                ToggleCard(clickedCard);
+            }
+
             return;
         }
 
@@ -504,7 +510,7 @@ public sealed class CardSelectionMenu : MonoBehaviour
             return;
         }
 
-        if (selectedCards.Count >= MaxSelectedCards)
+        if (selectedCards.Count >= GetSelectionLimit())
         {
             return;
         }
@@ -545,30 +551,21 @@ public sealed class CardSelectionMenu : MonoBehaviour
     private void ConfirmSelection()
     {
         CompleteCardMotionAnimations();
-        CardSelectionState.ConfirmSelection(selectedCards);
-
-        CardCatalog dockCatalog = selectedDockCatalog;
-        selectedDockCatalog = null;
-        selectedDockObject = null;
+        CardSelectionState.ConfirmSelection(selectedCards.Take(GetSelectionLimit()));
 
         Close(true);
 
         CardRuntimeLoader loader = FindFirstObjectByType<CardRuntimeLoader>();
         if (loader != null)
         {
-            if (dockCatalog != null)
-            {
-                loader.AdoptLoadedCatalog(dockCatalog);
-            }
-            else
-            {
-                loader.LoadCards();
-            }
+            loader.LoadCards();
         }
     }
 
     private void RefreshSelectedVisuals()
     {
+        TrimSelectionToLimit();
+
         if (cardCatalog != null)
         {
             foreach (CardView card in cardCatalog.ActiveCards)
@@ -593,7 +590,7 @@ public sealed class CardSelectionMenu : MonoBehaviour
             }
         }
 
-        SetCountText($"Selected {selectedCards.Count}/{MaxSelectedCards}");
+        SetCountText($"Selected {selectedCards.Count}/{GetSelectionLimit()}");
     }
 
     private CardView FindCardAt(Vector2 worldPosition)
@@ -779,6 +776,11 @@ public sealed class CardSelectionMenu : MonoBehaviour
             selectedDockObject = Instantiate(cardsPrefab);
             selectedDockObject.name = "Selected Cards Dock";
             selectedDockCatalog = selectedDockObject.GetComponent<CardCatalog>();
+            if (selectedDockCatalog != null)
+            {
+                selectedDockCatalog.SetCardSlotsRoot(null);
+            }
+
             createdDock = true;
         }
 
@@ -815,6 +817,7 @@ public sealed class CardSelectionMenu : MonoBehaviour
             .Select(card => card.TowerPrefab.name)
             .Distinct()
             .ToList();
+        selectedDockCatalog.SetCardSlotsRoot(null);
         selectedDockCatalog.BuildCardsInOrder(selectedTowerNames);
 
         IReadOnlyList<CardView> dockCards = selectedDockCatalog.ActiveCards;
@@ -902,6 +905,23 @@ public sealed class CardSelectionMenu : MonoBehaviour
             .OrderBy(slot => slot.SlotIndex)
             .ThenBy(slot => slot.name)
             .ToArray();
+    }
+
+    private int GetSelectionLimit()
+    {
+        int slotCount = FindGameplayDockSlots().Length;
+        return slotCount > 0 ? slotCount : FallbackMaxSelectedCards;
+    }
+
+    private void TrimSelectionToLimit()
+    {
+        int limit = GetSelectionLimit();
+        if (selectedCards.Count <= limit)
+        {
+            return;
+        }
+
+        selectedCards.RemoveRange(limit, selectedCards.Count - limit);
     }
 
     private void ClearSelectedDockPreview()

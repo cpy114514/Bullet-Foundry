@@ -25,8 +25,18 @@ public sealed class SandboxEnemyEntry
 [DisallowMultipleComponent]
 public sealed class SandboxEnemyList : MonoBehaviour
 {
+    private const string EnemySlotPrefix = "Enemy Button Slot";
+    private const string LaneSlotPrefix = "Lane Button Slot";
+    private const float DefaultLaneSpacing = 1.25f;
+
     [SerializeField]
     private Transform buttonRoot;
+
+    [SerializeField]
+    private Transform enemyButtonSlotsRoot;
+
+    [SerializeField]
+    private Transform laneButtonSlotsRoot;
 
     [SerializeField]
     private Transform lanePointParent;
@@ -54,9 +64,6 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
     [SerializeField, Min(0.01f)]
     private float labelCharacterSize = 0.11f;
-
-    [SerializeField]
-    private Vector2 buttonColliderSize = new(2.25f, 0.44f);
 
     [Header("Enemy Card Layout")]
     [SerializeField, Min(1)]
@@ -89,6 +96,25 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
     [SerializeField]
     private Color selectedLaneButtonTint = new(0.42f, 0.42f, 0.42f, 1f);
+
+    [SerializeField]
+    private Color selectedEnemyTint = new(0.42f, 0.42f, 0.42f, 1f);
+
+    [SerializeField]
+    private Color dragPreviewTint = new(1f, 1f, 1f, 0.55f);
+
+    [Header("Placement Area")]
+    [SerializeField]
+    private bool restrictPlacementX = true;
+
+    [SerializeField]
+    private Vector2 placementXRange = new(-9f, 6.35f);
+
+    [SerializeField, Min(1f)]
+    private float dragStartThresholdPixels = 8f;
+
+    [SerializeField, Min(0f)]
+    private float lanePlacementPadding = 0.75f;
 
     [Header("Card Visuals")]
     [SerializeField]
@@ -124,6 +150,16 @@ public sealed class SandboxEnemyList : MonoBehaviour
     private readonly List<ButtonBinding> enemyButtons = new();
     private readonly List<ButtonBinding> laneButtons = new();
     private Transform[] lanePoints = Array.Empty<Transform>();
+    private SandboxEnemyEntry selectedEnemy;
+    private ButtonBinding selectedEnemyButton;
+    private SandboxEnemyEntry pressedEnemy;
+    private ButtonBinding pressedEnemyButton;
+    private bool pressedEnemyWasSelected;
+    private bool enemyPointerDown;
+    private bool enemyDragActive;
+    private Vector2 enemyPointerStartScreenPosition;
+    private GameObject dragPreviewObject;
+    private SpriteRenderer dragPreviewRenderer;
 
     private void Awake()
     {
@@ -143,6 +179,8 @@ public sealed class SandboxEnemyList : MonoBehaviour
         }
 
         Vector2 pointerScreenPosition;
+        bool pressed;
+        bool held;
         bool released;
 #if ENABLE_INPUT_SYSTEM
         Mouse mouse = Mouse.current;
@@ -152,42 +190,101 @@ public sealed class SandboxEnemyList : MonoBehaviour
         }
 
         pointerScreenPosition = mouse.position.ReadValue();
+        pressed = mouse.leftButton.wasPressedThisFrame;
+        held = mouse.leftButton.isPressed;
         released = mouse.leftButton.wasReleasedThisFrame;
 #else
         pointerScreenPosition = Input.mousePosition;
+        pressed = Input.GetMouseButtonDown(0);
+        held = Input.GetMouseButton(0);
         released = Input.GetMouseButtonUp(0);
 #endif
-        if (!released || !TryScreenToWorld(pointerScreenPosition, out Vector2 worldPosition))
+        if (!TryScreenToWorld(pointerScreenPosition, out Vector2 worldPosition))
         {
             return;
         }
 
-        for (int i = 0; i < laneButtons.Count; i++)
+        if (pressed)
         {
-            ButtonBinding button = laneButtons[i];
-            if (button.Collider == null || !button.Collider.OverlapPoint(worldPosition))
+            if (TryGetEnemyButton(worldPosition, out ButtonBinding enemyButton))
             {
-                continue;
+                pressedEnemyWasSelected = IsSelectedEnemyButton(enemyButton);
+                if (!pressedEnemyWasSelected)
+                {
+                    SelectEnemy(enemyButton);
+                }
+
+                pressedEnemy = enemyButton.Entry;
+                pressedEnemyButton = enemyButton;
+                enemyPointerDown = true;
+                enemyDragActive = false;
+                enemyPointerStartScreenPosition = pointerScreenPosition;
+                SetDragPreviewVisible(false);
+                return;
             }
 
-            laneIndex = Mathf.Max(1, button.LaneIndex);
-            RefreshLaneButtonVisuals();
+            if (TryGetLaneButton(worldPosition, out ButtonBinding laneButton))
+            {
+                laneIndex = Mathf.Max(1, laneButton.LaneIndex);
+                RefreshLaneButtonVisuals();
+                return;
+            }
+
+            if (selectedEnemy != null &&
+                TryGetPlacementLane(worldPosition, out int clickedLaneIndex))
+            {
+                laneIndex = clickedLaneIndex;
+                RefreshLaneButtonVisuals();
+                SpawnEnemy(selectedEnemy.EnemyPrefab, laneIndex);
+                return;
+            }
+        }
+
+        if (enemyPointerDown && held && pressedEnemy != null)
+        {
+            if (!enemyDragActive &&
+                Vector2.Distance(pointerScreenPosition, enemyPointerStartScreenPosition) >= dragStartThresholdPixels)
+            {
+                enemyDragActive = true;
+            }
+
+            UpdateDragPreview(worldPosition, enemyDragActive);
+        }
+
+        if (!released)
+        {
             return;
         }
 
-        for (int i = 0; i < enemyButtons.Count; i++)
+        if (enemyPointerDown)
         {
-            ButtonBinding button = enemyButtons[i];
-            if (button.Collider == null ||
-                button.Entry == null ||
-                button.Entry.EnemyPrefab == null ||
-                !button.Collider.OverlapPoint(worldPosition))
+            bool releasedOverControl = IsPointerOverSandboxControl(worldPosition);
+            if (enemyDragActive &&
+                pressedEnemy != null &&
+                pressedEnemy.EnemyPrefab != null &&
+                !releasedOverControl &&
+                TryGetPlacementLane(worldPosition, out int releaseLaneIndex))
             {
-                continue;
+                laneIndex = releaseLaneIndex;
+                RefreshLaneButtonVisuals();
+                SpawnEnemy(pressedEnemy.EnemyPrefab, laneIndex);
             }
 
-            SpawnEnemy(button.Entry.EnemyPrefab);
-            return;
+            bool wasEnemyDragActive = enemyDragActive;
+            enemyPointerDown = false;
+            enemyDragActive = false;
+            if (!wasEnemyDragActive &&
+                TryGetEnemyButton(worldPosition, out ButtonBinding releasedEnemyButton) &&
+                AreSameEnemyButton(pressedEnemyButton, releasedEnemyButton) &&
+                pressedEnemyWasSelected)
+            {
+                DeselectEnemy();
+            }
+
+            pressedEnemy = null;
+            pressedEnemyButton = default;
+            pressedEnemyWasSelected = false;
+            SetDragPreviewVisible(false);
         }
     }
 
@@ -207,6 +304,18 @@ public sealed class SandboxEnemyList : MonoBehaviour
         if (buttonRoot == null)
         {
             buttonRoot = transform;
+        }
+
+        if (enemyButtonSlotsRoot == null)
+        {
+            Transform found = FindChild(buttonRoot, "Enemy Button Slots");
+            enemyButtonSlotsRoot = found != null ? found : buttonRoot;
+        }
+
+        if (laneButtonSlotsRoot == null)
+        {
+            Transform found = FindChild(buttonRoot, "Lane Button Slots");
+            laneButtonSlotsRoot = found != null ? found : buttonRoot;
         }
 
         if (lanePointParent == null && !string.IsNullOrWhiteSpace(lanePointParentName))
@@ -244,6 +353,33 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
     private void BuildEnemyCards()
     {
+        Transform[] slots = GetSlots(enemyButtonSlotsRoot, EnemySlotPrefix);
+        if (slots.Length > 0)
+        {
+            int slotIndex = 0;
+            for (int i = 0; i < enemies.Count && slotIndex < slots.Length; i++)
+            {
+                SandboxEnemyEntry entry = enemies[i];
+                if (entry == null || entry.EnemyPrefab == null)
+                {
+                    continue;
+                }
+
+                ConfigureEnemySlot(slots[slotIndex], entry);
+                slotIndex++;
+            }
+
+            for (int i = slotIndex; i < slots.Length; i++)
+            {
+                if (slots[i] != null)
+                {
+                    slots[i].gameObject.SetActive(false);
+                }
+            }
+
+            return;
+        }
+
         for (int i = 0; i < enemies.Count; i++)
         {
             SandboxEnemyEntry entry = enemies[i];
@@ -252,7 +388,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
                 continue;
             }
 
-            GameObject button = new($"Enemy Button - {entry.DisplayName}");
+            GameObject button = new($"Generated Enemy Button - {entry.DisplayName}");
             button.transform.SetParent(buttonRoot, false);
             int buttonIndex = enemyButtons.Count;
             int row = buttonIndex / Mathf.Max(1, cardsPerRow);
@@ -302,8 +438,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
             BoxCollider2D collider = button.AddComponent<BoxCollider2D>();
             collider.isTrigger = true;
-            collider.size = buttonColliderSize.sqrMagnitude > 0.001f ? buttonColliderSize : cardSize;
-            collider.offset = Vector2.zero;
+            FitColliderToCard(collider, background, cardSize);
 
             enemyButtons.Add(ButtonBinding.ForEnemy(entry, collider, background));
         }
@@ -318,11 +453,30 @@ public sealed class SandboxEnemyList : MonoBehaviour
 
         int laneCount = Mathf.Max(1, lanePoints.Length > 0 ? lanePoints.Length : fallbackLaneCount);
         laneIndex = Mathf.Clamp(laneIndex, 1, laneCount);
+        Transform[] slots = GetSlots(laneButtonSlotsRoot, LaneSlotPrefix);
+        if (slots.Length > 0)
+        {
+            int count = Mathf.Min(laneCount, slots.Length);
+            for (int i = 0; i < count; i++)
+            {
+                ConfigureLaneSlot(slots[i], i + 1);
+            }
+
+            for (int i = count; i < slots.Length; i++)
+            {
+                if (slots[i] != null)
+                {
+                    slots[i].gameObject.SetActive(false);
+                }
+            }
+
+            return;
+        }
 
         for (int i = 0; i < laneCount; i++)
         {
             int selectableLaneIndex = i + 1;
-            GameObject button = new($"Lane Button - {selectableLaneIndex}");
+            GameObject button = new($"Generated Lane Button - {selectableLaneIndex}");
             button.transform.SetParent(buttonRoot, false);
             button.transform.localPosition = firstLaneButtonLocalPosition + Vector3.right * laneButtonSpacing * i;
             button.transform.localRotation = Quaternion.identity;
@@ -368,21 +522,238 @@ public sealed class SandboxEnemyList : MonoBehaviour
         for (int i = buttonRoot != null ? buttonRoot.childCount - 1 : -1; i >= 0; i--)
         {
             Transform child = buttonRoot.GetChild(i);
-            if (child != null && child.name.StartsWith("Enemy Button -", StringComparison.Ordinal))
+            if (child != null && child.name.StartsWith("Generated Enemy Button -", StringComparison.Ordinal))
             {
                 child.gameObject.SetActive(false);
                 Destroy(child.gameObject);
             }
 
-            if (child != null && child.name.StartsWith("Lane Button -", StringComparison.Ordinal))
+            if (child != null && child.name.StartsWith("Generated Lane Button -", StringComparison.Ordinal))
             {
                 child.gameObject.SetActive(false);
                 Destroy(child.gameObject);
             }
         }
 
+        DeactivateSlots(enemyButtonSlotsRoot, EnemySlotPrefix);
+        DeactivateSlots(laneButtonSlotsRoot, LaneSlotPrefix);
+
         enemyButtons.Clear();
         laneButtons.Clear();
+        selectedEnemy = null;
+        selectedEnemyButton = default;
+        pressedEnemy = null;
+        pressedEnemyButton = default;
+        pressedEnemyWasSelected = false;
+        DestroyDragPreview();
+    }
+
+    private void ConfigureEnemySlot(Transform slot, SandboxEnemyEntry entry)
+    {
+        if (slot == null || entry == null)
+        {
+            return;
+        }
+
+        slot.gameObject.SetActive(true);
+        SpriteRenderer background = EnsureSpriteRenderer(slot, out bool createdBackground);
+        if (createdBackground)
+        {
+            background.sprite = cardBackgroundSprite;
+            background.color = cardTint;
+            background.sortingOrder = backgroundSortingOrder;
+            FitSpriteRenderer(background, cardSize);
+        }
+        else if (background.sprite == null && cardBackgroundSprite != null)
+        {
+            background.sprite = cardBackgroundSprite;
+        }
+
+        Transform iconTransform = EnsureChild(slot, "Enemy Icon", out bool createdIcon);
+        if (createdIcon)
+        {
+            iconTransform.localPosition = iconLocalPosition;
+        }
+
+        SpriteRenderer icon = EnsureSpriteRenderer(iconTransform, out bool createdIconRenderer);
+        if (icon.sprite == null)
+        {
+            icon.sprite = GetEnemyPreviewSprite(entry.EnemyPrefab);
+        }
+
+        if (createdIconRenderer)
+        {
+            icon.color = Color.white;
+            icon.sortingOrder = iconSortingOrder;
+            FitSpriteRenderer(icon, enemyIconSize);
+        }
+
+        Transform labelTransform = EnsureChild(slot, "Enemy Label", out bool createdLabel);
+        if (createdLabel)
+        {
+            labelTransform.localPosition = labelLocalPosition;
+        }
+
+        TextMesh text = EnsureTextMesh(labelTransform);
+        if (string.IsNullOrWhiteSpace(text.text))
+        {
+            text.text = FormatCardLabel(entry.DisplayName);
+        }
+
+        if (createdLabel)
+        {
+            text.fontSize = 96;
+            text.characterSize = labelCharacterSize;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = labelColor;
+            SetTextSortingOrder(labelTransform, labelSortingOrder);
+        }
+
+        BoxCollider2D collider = EnsureCollider(slot);
+        FitColliderToCard(collider, background, cardSize);
+
+        enemyButtons.Add(ButtonBinding.ForEnemy(entry, collider, background));
+    }
+
+    private void ConfigureLaneSlot(Transform slot, int selectableLaneIndex)
+    {
+        if (slot == null)
+        {
+            return;
+        }
+
+        slot.gameObject.SetActive(true);
+        SpriteRenderer background = EnsureSpriteRenderer(slot);
+        background.sprite = cardBackgroundSprite;
+        background.color = selectableLaneIndex == laneIndex ? selectedLaneButtonTint : laneButtonTint;
+        background.sortingOrder = backgroundSortingOrder;
+        FitSpriteRenderer(background, laneButtonSize);
+
+        Transform labelTransform = EnsureChild(slot, "Lane Label");
+        labelTransform.localPosition = new Vector3(0f, 0f, -0.05f);
+        TextMesh text = EnsureTextMesh(labelTransform);
+        text.text = selectableLaneIndex.ToString();
+        text.fontSize = 96;
+        text.characterSize = Mathf.Max(0.045f, labelCharacterSize * 0.9f);
+        text.anchor = TextAnchor.MiddleCenter;
+        text.alignment = TextAlignment.Center;
+        text.color = labelColor;
+        SetTextSortingOrder(labelTransform, labelSortingOrder);
+
+        BoxCollider2D collider = EnsureCollider(slot);
+        collider.size = laneButtonSize;
+        collider.offset = Vector2.zero;
+        laneButtons.Add(ButtonBinding.ForLane(selectableLaneIndex, collider, background));
+    }
+
+    private bool TryGetEnemyButton(Vector2 worldPosition, out ButtonBinding binding)
+    {
+        for (int i = 0; i < enemyButtons.Count; i++)
+        {
+            ButtonBinding button = enemyButtons[i];
+            if (button.Collider == null ||
+                button.Entry == null ||
+                button.Entry.EnemyPrefab == null ||
+                !button.Collider.OverlapPoint(worldPosition))
+            {
+                continue;
+            }
+
+            binding = button;
+            return true;
+        }
+
+        binding = default;
+        return false;
+    }
+
+    private bool TryGetLaneButton(Vector2 worldPosition, out ButtonBinding binding)
+    {
+        for (int i = 0; i < laneButtons.Count; i++)
+        {
+            ButtonBinding button = laneButtons[i];
+            if (button.Collider == null || !button.Collider.OverlapPoint(worldPosition))
+            {
+                continue;
+            }
+
+            binding = button;
+            return true;
+        }
+
+        binding = default;
+        return false;
+    }
+
+    private bool IsPointerOverSandboxControl(Vector2 worldPosition)
+    {
+        return TryGetEnemyButton(worldPosition, out _) ||
+            TryGetLaneButton(worldPosition, out _);
+    }
+
+    private bool TryGetPlacementLane(Vector2 worldPosition, out int targetLaneIndex)
+    {
+        targetLaneIndex = laneIndex;
+        if (IsPointerOverSandboxControl(worldPosition))
+        {
+            return false;
+        }
+
+        if (restrictPlacementX)
+        {
+            float minX = Mathf.Min(placementXRange.x, placementXRange.y);
+            float maxX = Mathf.Max(placementXRange.x, placementXRange.y);
+            if (worldPosition.x < minX || worldPosition.x > maxX)
+            {
+                return false;
+            }
+        }
+
+        return TryGetLaneIndexFromWorldY(worldPosition.y, out targetLaneIndex);
+    }
+
+    private void SelectEnemy(ButtonBinding button)
+    {
+        selectedEnemy = button.Entry;
+        selectedEnemyButton = button;
+        RefreshEnemyButtonVisuals();
+    }
+
+    private void DeselectEnemy()
+    {
+        selectedEnemy = null;
+        selectedEnemyButton = default;
+        RefreshEnemyButtonVisuals();
+    }
+
+    private bool IsSelectedEnemyButton(ButtonBinding button)
+    {
+        return selectedEnemy != null &&
+            selectedEnemy == button.Entry &&
+            AreSameEnemyButton(selectedEnemyButton, button);
+    }
+
+    private static bool AreSameEnemyButton(ButtonBinding left, ButtonBinding right)
+    {
+        return left.Entry == right.Entry && left.Collider == right.Collider;
+    }
+
+    private void RefreshEnemyButtonVisuals()
+    {
+        for (int i = 0; i < enemyButtons.Count; i++)
+        {
+            ButtonBinding button = enemyButtons[i];
+            if (button.Background == null)
+            {
+                continue;
+            }
+
+            button.Background.color =
+                button.Entry == selectedEnemy && button.Equals(selectedEnemyButton)
+                    ? selectedEnemyTint
+                    : button.NormalColor;
+        }
     }
 
     private void RefreshLaneButtonVisuals()
@@ -399,16 +770,108 @@ public sealed class SandboxEnemyList : MonoBehaviour
         }
     }
 
-    private void SpawnEnemy(GameObject enemyPrefab)
+    private void SpawnEnemy(GameObject enemyPrefab, int targetLaneIndex)
     {
         if (enemyPrefab == null)
         {
             return;
         }
 
-        Vector3 position = new(spawnX, GetLaneY(), spawnZ);
-        GameObject enemy = Instantiate(enemyPrefab, position, enemyPrefab.transform.rotation);
+        int footLaneIndex = GetFootLaneIndex(enemyPrefab, targetLaneIndex);
+        float footLaneY = GetFootLaneY(footLaneIndex);
+        float landBottomY = GetFootLandBottomY(footLaneIndex, footLaneY);
+        float laneY = GetLaneY(targetLaneIndex);
+        Vector3 position = new(spawnX, laneY, spawnZ);
+        GameObject enemy = EnemySpawnAlignment.InstantiateFootAligned(
+            enemyPrefab,
+            position,
+            enemyPrefab.transform.rotation,
+            null,
+            landBottomY);
         enemy.name = enemyPrefab.name;
+    }
+
+    private void UpdateDragPreview(Vector2 worldPosition, bool visible)
+    {
+        if (!visible || pressedEnemy == null || pressedEnemy.EnemyPrefab == null)
+        {
+            SetDragPreviewVisible(false);
+            return;
+        }
+
+        if (!TryGetPlacementLane(worldPosition, out int previewLaneIndex))
+        {
+            SetDragPreviewVisible(false);
+            return;
+        }
+
+        EnsureDragPreview(pressedEnemy.EnemyPrefab);
+        if (dragPreviewObject == null)
+        {
+            return;
+        }
+
+        laneIndex = previewLaneIndex;
+        RefreshLaneButtonVisuals();
+        int footLaneIndex = GetFootLaneIndex(pressedEnemy.EnemyPrefab, previewLaneIndex);
+        float footLaneY = GetFootLaneY(footLaneIndex);
+        PositionDragPreview(GetFootLandBottomY(footLaneIndex, footLaneY));
+        SetDragPreviewVisible(true);
+    }
+
+    private void EnsureDragPreview(GameObject enemyPrefab)
+    {
+        Sprite sprite = GetEnemyPreviewSprite(enemyPrefab);
+        if (sprite == null)
+        {
+            return;
+        }
+
+        if (dragPreviewObject == null)
+        {
+            dragPreviewObject = new GameObject("Sandbox Enemy Placement Preview");
+            dragPreviewRenderer = dragPreviewObject.AddComponent<SpriteRenderer>();
+            dragPreviewRenderer.sortingOrder = iconSortingOrder;
+        }
+
+        dragPreviewRenderer.sprite = sprite;
+        dragPreviewRenderer.color = dragPreviewTint;
+        FitSpriteRenderer(dragPreviewRenderer, enemyIconSize);
+    }
+
+    private void PositionDragPreview(float laneY)
+    {
+        if (dragPreviewObject == null || dragPreviewRenderer == null)
+        {
+            return;
+        }
+
+        Bounds bounds = dragPreviewRenderer.bounds;
+        float footOffset = bounds.min.y - dragPreviewObject.transform.position.y;
+        dragPreviewObject.transform.position = new Vector3(
+            spawnX,
+            laneY - footOffset,
+            spawnZ);
+    }
+
+    private void SetDragPreviewVisible(bool visible)
+    {
+        if (dragPreviewObject != null)
+        {
+            dragPreviewObject.SetActive(visible);
+        }
+    }
+
+    private void DestroyDragPreview()
+    {
+        if (dragPreviewObject == null)
+        {
+            return;
+        }
+
+        Destroy(dragPreviewObject);
+        dragPreviewObject = null;
+        dragPreviewRenderer = null;
     }
 
     private static Sprite GetEnemyPreviewSprite(GameObject enemyPrefab)
@@ -469,7 +932,186 @@ public sealed class SandboxEnemyList : MonoBehaviour
             1f);
     }
 
-    private float GetLaneY()
+    private static void FitColliderToCard(
+        BoxCollider2D collider,
+        SpriteRenderer background,
+        Vector2 fallbackWorldSize)
+    {
+        if (collider == null)
+        {
+            return;
+        }
+
+        collider.isTrigger = true;
+        if (background != null && background.sprite != null)
+        {
+            Bounds spriteBounds = background.sprite.bounds;
+            collider.size = spriteBounds.size;
+            collider.offset = spriteBounds.center;
+            return;
+        }
+
+        Vector3 scale = collider.transform.lossyScale;
+        float scaleX = Mathf.Abs(scale.x) > 0.001f ? Mathf.Abs(scale.x) : 1f;
+        float scaleY = Mathf.Abs(scale.y) > 0.001f ? Mathf.Abs(scale.y) : 1f;
+        collider.size = new Vector2(
+            Mathf.Max(0.01f, fallbackWorldSize.x / scaleX),
+            Mathf.Max(0.01f, fallbackWorldSize.y / scaleY));
+        collider.offset = Vector2.zero;
+    }
+
+    private static Transform[] GetSlots(Transform root, string prefix)
+    {
+        if (root == null)
+        {
+            return Array.Empty<Transform>();
+        }
+
+        List<Transform> slots = new();
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform child = root.GetChild(i);
+            if (child != null && child.name.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                slots.Add(child);
+            }
+        }
+
+        if (slots.Count == 0 && string.Equals(prefix, EnemySlotPrefix, StringComparison.Ordinal) &&
+            root.name.IndexOf("Enemy", StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform child = root.GetChild(i);
+                if (child != null && !IsGeneratedRuntimeButton(child))
+                {
+                    slots.Add(child);
+                }
+            }
+        }
+
+        return slots.ToArray();
+    }
+
+    private static bool IsGeneratedRuntimeButton(Transform target)
+    {
+        return target != null &&
+            (target.name.StartsWith("Generated Enemy Button -", StringComparison.Ordinal) ||
+             target.name.StartsWith("Generated Lane Button -", StringComparison.Ordinal));
+    }
+
+    private static void DeactivateSlots(Transform root, string prefix)
+    {
+        Transform[] slots = GetSlots(root, prefix);
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (slots[i] != null)
+            {
+                slots[i].gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private static Transform EnsureChild(Transform parent, string childName)
+    {
+        return EnsureChild(parent, childName, out _);
+    }
+
+    private static Transform EnsureChild(Transform parent, string childName, out bool created)
+    {
+        Transform child = parent.Find(childName);
+        if (child != null)
+        {
+            created = false;
+            return child;
+        }
+
+        GameObject childObject = new(childName);
+        childObject.transform.SetParent(parent, false);
+        childObject.transform.localRotation = Quaternion.identity;
+        childObject.transform.localScale = Vector3.one;
+        created = true;
+        return childObject.transform;
+    }
+
+    private static SpriteRenderer EnsureSpriteRenderer(Transform target)
+    {
+        return EnsureSpriteRenderer(target, out _);
+    }
+
+    private static SpriteRenderer EnsureSpriteRenderer(Transform target, out bool created)
+    {
+        SpriteRenderer renderer = target.GetComponent<SpriteRenderer>();
+        if (renderer == null)
+        {
+            renderer = target.gameObject.AddComponent<SpriteRenderer>();
+            created = true;
+        }
+        else
+        {
+            created = false;
+        }
+
+        return renderer;
+    }
+
+    private static TextMesh EnsureTextMesh(Transform target)
+    {
+        TextMesh text = target.GetComponent<TextMesh>();
+        if (text == null)
+        {
+            text = target.gameObject.AddComponent<TextMesh>();
+        }
+
+        return text;
+    }
+
+    private static BoxCollider2D EnsureCollider(Transform target)
+    {
+        BoxCollider2D collider = target.GetComponent<BoxCollider2D>();
+        if (collider == null)
+        {
+            collider = target.gameObject.AddComponent<BoxCollider2D>();
+        }
+
+        collider.isTrigger = true;
+        return collider;
+    }
+
+    private static void SetTextSortingOrder(Transform target, int sortingOrder)
+    {
+        MeshRenderer renderer = target.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.sortingOrder = sortingOrder;
+        }
+    }
+
+    private static Transform FindChild(Transform root, string objectName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        if (root.name == objectName)
+        {
+            return root;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform found = FindChild(root.GetChild(i), objectName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    private float GetLaneY(int targetLaneIndex)
     {
         if (lanePoints.Length == 0)
         {
@@ -481,8 +1123,138 @@ public sealed class SandboxEnemyList : MonoBehaviour
             return 0f;
         }
 
-        int clampedLaneIndex = Mathf.Clamp(laneIndex - 1, 0, lanePoints.Length - 1);
+        int clampedLaneIndex = Mathf.Clamp(targetLaneIndex - 1, 0, lanePoints.Length - 1);
         return lanePoints[clampedLaneIndex].position.y;
+    }
+
+    private int GetFootLaneIndex(GameObject enemyPrefab, int targetLaneIndex)
+    {
+        int offset = 0;
+        if (enemyPrefab != null && enemyPrefab.TryGetComponent(out GoblinEnemy enemy))
+        {
+            offset = enemy.SpawnFootLaneOffset;
+        }
+
+        return targetLaneIndex + offset;
+    }
+
+    private float GetFootLaneY(int footLaneIndex)
+    {
+        if (lanePoints.Length == 0)
+        {
+            ResolveReferences();
+        }
+
+        if (lanePoints.Length == 0)
+        {
+            return 0f;
+        }
+
+        if (footLaneIndex >= 1 && footLaneIndex <= lanePoints.Length)
+        {
+            return lanePoints[footLaneIndex - 1].position.y;
+        }
+
+        float spacing = GetLaneSpacing();
+        if (footLaneIndex < 1)
+        {
+            return lanePoints[0].position.y - ((1 - footLaneIndex) * spacing);
+        }
+
+        return lanePoints[lanePoints.Length - 1].position.y + ((footLaneIndex - lanePoints.Length) * spacing);
+    }
+
+    private float GetLandBottomY(int targetLaneIndex, float fallbackY)
+    {
+        return EnemySpawnAlignment.GetLandBottomYForLane(
+            targetLaneIndex,
+            lanePoints,
+            fallbackY);
+    }
+
+    private float GetFootLandBottomY(int footLaneIndex, float footLaneY)
+    {
+        if (lanePoints.Length == 0)
+        {
+            ResolveReferences();
+        }
+
+        if (lanePoints.Length == 0)
+        {
+            return footLaneY;
+        }
+
+        if (footLaneIndex >= 1 && footLaneIndex <= lanePoints.Length)
+        {
+            return GetLandBottomY(footLaneIndex, footLaneY);
+        }
+
+        int nearestLaneIndex = Mathf.Clamp(footLaneIndex, 1, lanePoints.Length);
+        float nearestLaneY = GetLaneY(nearestLaneIndex);
+        float nearestLandBottomY = GetLandBottomY(nearestLaneIndex, nearestLaneY);
+        return nearestLandBottomY + (footLaneY - nearestLaneY);
+    }
+
+    private float GetLaneSpacing()
+    {
+        if (lanePoints.Length >= 2)
+        {
+            float totalSpacing = 0f;
+            int spacingCount = 0;
+            for (int i = 1; i < lanePoints.Length; i++)
+            {
+                totalSpacing += Mathf.Abs(lanePoints[i].position.y - lanePoints[i - 1].position.y);
+                spacingCount++;
+            }
+
+            if (spacingCount > 0)
+            {
+                return totalSpacing / spacingCount;
+            }
+        }
+
+        return DefaultLaneSpacing;
+    }
+
+    private bool TryGetLaneIndexFromWorldY(float worldY, out int targetLaneIndex)
+    {
+        if (lanePoints.Length == 0)
+        {
+            ResolveReferences();
+        }
+
+        if (lanePoints.Length == 0)
+        {
+            targetLaneIndex = 1;
+            return false;
+        }
+
+        int nearestIndex = 0;
+        float nearestDistance = Mathf.Abs(worldY - lanePoints[0].position.y);
+        float minY = lanePoints[0].position.y;
+        float maxY = lanePoints[0].position.y;
+        for (int i = 1; i < lanePoints.Length; i++)
+        {
+            float laneY = lanePoints[i].position.y;
+            float distance = Mathf.Abs(worldY - laneY);
+            if (distance < nearestDistance)
+            {
+                nearestIndex = i;
+                nearestDistance = distance;
+            }
+
+            minY = Mathf.Min(minY, laneY);
+            maxY = Mathf.Max(maxY, laneY);
+        }
+
+        if (worldY < minY - lanePlacementPadding || worldY > maxY + lanePlacementPadding)
+        {
+            targetLaneIndex = laneIndex;
+            return false;
+        }
+
+        targetLaneIndex = nearestIndex + 1;
+        return true;
     }
 
     private static bool TryScreenToWorld(Vector2 screenPosition, out Vector2 worldPosition)
@@ -511,6 +1283,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
             LaneIndex = laneIndex;
             Collider = collider;
             Background = background;
+            NormalColor = background != null ? background.color : Color.white;
         }
 
         public static ButtonBinding ForEnemy(SandboxEnemyEntry entry, Collider2D collider, SpriteRenderer background)
@@ -530,5 +1303,7 @@ public sealed class SandboxEnemyList : MonoBehaviour
         public Collider2D Collider { get; }
 
         public SpriteRenderer Background { get; }
+
+        public Color NormalColor { get; }
     }
 }

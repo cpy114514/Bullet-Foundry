@@ -20,7 +20,10 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
 
     [Header("Ranged Attack")]
     [SerializeField, Min(0.1f)]
-    private float attackRange = 4.5f;
+    private float attackRange = 4f;
+
+    [SerializeField, Min(0.01f)]
+    private float laneTolerance = 0.6f;
 
     [SerializeField, Min(0.05f)]
     private float attackCooldown = 1.8f;
@@ -37,15 +40,16 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
     [SerializeField, Min(0.01f)]
     private float retractDuration = 0.2f;
 
-    [SerializeField, Min(0.01f)]
-    private float laneTolerance = 0.65f;
-
     [SerializeField]
     private string attackStateName = "frogprincess_attack";
+
+    [SerializeField, Min(0.02f)]
+    private float targetHoldRefreshDuration = 0.2f;
 
     private float nextAttackTime;
     private bool isAttacking;
     private Vector3 tongueTipRestLocalPosition;
+    private TowerHealth lockedTarget;
 
     private void Awake()
     {
@@ -61,6 +65,7 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
         CacheRestPose();
         nextAttackTime = Time.time + 0.5f;
         isAttacking = false;
+        lockedTarget = null;
         RestoreTonguePose();
         SetTongueRestVisible();
     }
@@ -69,18 +74,30 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
     {
         StopAllCoroutines();
         isAttacking = false;
+        lockedTarget = null;
         RestoreTonguePose();
         SetTongueRestVisible();
     }
 
     private void Update()
     {
-        if (enemy == null || enemy.IsActionBlocked || isAttacking || Time.time < nextAttackTime)
+        if (enemy == null || enemy.IsActionBlocked || isAttacking)
         {
             return;
         }
 
-        TowerHealth target = FindRangedTarget();
+        TowerHealth target = GetAttackTarget();
+        if (target == null)
+        {
+            return;
+        }
+
+        if (Time.time < nextAttackTime)
+        {
+            enemy.HoldPosition(targetHoldRefreshDuration, attackStateName);
+            return;
+        }
+
         if (target != null)
         {
             StartCoroutine(AttackRoutine(target));
@@ -90,8 +107,10 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
     private IEnumerator AttackRoutine(TowerHealth target)
     {
         isAttacking = true;
-        nextAttackTime = Time.time + attackCooldown;
-        float totalDuration = extendDuration + holdDuration + retractDuration;
+        float tongueDuration = extendDuration + holdDuration + retractDuration;
+        float totalDuration = enemy != null
+            ? Mathf.Max(tongueDuration, enemy.GetActionAnimationDuration(attackStateName, tongueDuration))
+            : tongueDuration;
         enemy.PlayTemporaryAction(attackStateName, totalDuration);
 
         Vector3 start = GetTongueOriginPosition();
@@ -100,20 +119,53 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
 
         yield return AnimateTongue(start, end, extendDuration, true);
 
-        if (!enemy.IsActionBlocked && target != null && !target.IsDestroyed)
-        {
-            target.TakeDamage(attackDamage);
-        }
-
         if (holdDuration > 0f)
         {
             yield return new WaitForSeconds(holdDuration);
         }
 
         yield return AnimateTongue(start, end, retractDuration, false);
+        float remainingAnimationTime = Mathf.Max(0f, totalDuration - tongueDuration);
+        if (remainingAnimationTime > 0f)
+        {
+            yield return new WaitForSeconds(remainingAnimationTime);
+        }
+
+        if (!enemy.IsActionBlocked && target != null && !target.IsDestroyed)
+        {
+            target.TakeDamage(attackDamage);
+        }
+
         RestoreTonguePose();
         SetTongueRestVisible();
+        nextAttackTime = Time.time + attackCooldown;
         isAttacking = false;
+    }
+
+    private TowerHealth GetAttackTarget()
+    {
+        if (IsValidLockedTarget(lockedTarget))
+        {
+            return lockedTarget;
+        }
+
+        lockedTarget = FindRangedTarget();
+        return lockedTarget;
+    }
+
+    private bool IsValidLockedTarget(TowerHealth target)
+    {
+        if (target == null || target.IsDestroyed || !target.isActiveAndEnabled)
+        {
+            return false;
+        }
+
+        Bounds enemyBounds = enemy != null
+            ? enemy.GetWorldBounds()
+            : new Bounds(transform.position, Vector3.one);
+        Bounds towerBounds = target.GetWorldBounds();
+        return IsSameLane(enemyBounds, towerBounds) &&
+            GetBoundsDistance(enemyBounds, towerBounds) <= attackRange;
     }
 
     private IEnumerator AnimateTongue(
@@ -186,17 +238,12 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
             }
 
             Bounds towerBounds = tower.GetWorldBounds();
-            if (Mathf.Abs(towerBounds.center.y - enemyBounds.center.y) > laneTolerance ||
-                towerBounds.center.x >= enemyBounds.center.x)
+            if (!IsSameLane(enemyBounds, towerBounds))
             {
                 continue;
             }
 
-            float distance = enemyBounds.min.x - towerBounds.max.x;
-            if (distance < 0f)
-            {
-                distance = 0f;
-            }
+            float distance = GetBoundsDistance(enemyBounds, towerBounds);
 
             if (distance <= attackRange && distance < closestDistance)
             {
@@ -206,6 +253,18 @@ public sealed class FrogPrincessEnemy : MonoBehaviour
         }
 
         return closest;
+    }
+
+    private bool IsSameLane(Bounds enemyBounds, Bounds towerBounds)
+    {
+        return Mathf.Abs(towerBounds.center.y - enemyBounds.center.y) <= laneTolerance;
+    }
+
+    private static float GetBoundsDistance(Bounds from, Bounds to)
+    {
+        float dx = Mathf.Max(0f, from.min.x - to.max.x, to.min.x - from.max.x);
+        float dy = Mathf.Max(0f, from.min.y - to.max.y, to.min.y - from.max.y);
+        return Mathf.Sqrt((dx * dx) + (dy * dy));
     }
 
     private static Vector3 GetTargetPoint(TowerHealth target, Vector3 origin)

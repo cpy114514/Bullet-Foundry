@@ -95,6 +95,15 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     private void Awake()
     {
+        ResolveSceneUiReferences();
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        if (resolutionDropdown != null && resolutionDropdown.transform.parent != null)
+        {
+            resolutionDropdown.transform.parent.gameObject.SetActive(false);
+        }
+#endif
+
         if (buildDefaultUiIfMissing && settingsPanel == null)
         {
             BuildDefaultUi();
@@ -117,6 +126,65 @@ public sealed class SettingsMenuController : MonoBehaviour
         }
     }
 
+    // A settings canvas is deliberately stored in each scene so its layout can
+    // be edited in Unity.  These name-based fallbacks keep that editable UI
+    // connected even after a designer rearranges the hierarchy.
+    private void ResolveSceneUiReferences()
+    {
+        Transform panel = settingsPanel != null
+            ? settingsPanel.transform
+            : FindNamed(transform, "Settings Panel");
+        if (panel == null)
+        {
+            return;
+        }
+
+        settingsPanel = panel.gameObject;
+        closeSettingsButton ??= FindComponent<Button>(panel, "Close Settings Button");
+        resolutionDropdown ??= FindComponent<Dropdown>(panel, "RESOLUTION Dropdown");
+        fullscreenToggle ??= FindComponent<Toggle>(panel, "FULLSCREEN Toggle");
+        masterVolumeToggle ??= FindComponent<Toggle>(panel, "VOLUME Toggle");
+        masterVolumeSlider ??= FindComponent<Slider>(panel, "VOLUME Slider");
+        masterVolumeValueText ??= FindComponent<Text>(panel, "VOLUME Value");
+        musicToggle ??= FindComponent<Toggle>(panel, "MUSIC Toggle");
+        musicVolumeSlider ??= FindComponent<Slider>(panel, "MUSIC Slider");
+        musicVolumeValueText ??= FindComponent<Text>(panel, "MUSIC Value");
+        soundEffectsToggle ??= FindComponent<Toggle>(panel, "SOUND EFFECTS Toggle");
+        soundEffectsVolumeSlider ??= FindComponent<Slider>(panel, "SOUND EFFECTS Slider");
+        soundEffectsVolumeValueText ??= FindComponent<Text>(panel, "SOUND EFFECTS Value");
+        clickEffectToggle ??= FindComponent<Toggle>(panel, "CLICK EFFECT Toggle");
+    }
+
+    private static T FindComponent<T>(Transform root, string objectName) where T : Component
+    {
+        Transform found = FindNamed(root, objectName);
+        return found != null ? found.GetComponent<T>() : null;
+    }
+
+    private static Transform FindNamed(Transform root, string objectName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        if (root.name == objectName)
+        {
+            return root;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            Transform found = FindNamed(root.GetChild(i), objectName);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
     public void OpenSettings()
     {
         if (settingsPanel == null)
@@ -124,6 +192,8 @@ public sealed class SettingsMenuController : MonoBehaviour
             return;
         }
 
+        LoadSettingsIntoUi();
+        ApplySettings(false);
         StartSettingsAnimation(true);
     }
 
@@ -239,7 +309,6 @@ public sealed class SettingsMenuController : MonoBehaviour
         if (!open)
         {
             settingsPanel.SetActive(false);
-            root.SetActive(false);
         }
 
         settingsAnimationRoutine = null;
@@ -286,7 +355,6 @@ public sealed class SettingsMenuController : MonoBehaviour
             settingsCanvasGroup.interactable = false;
         }
 
-        GetSettingsRoot().SetActive(false);
     }
 
     private GameObject GetSettingsRoot()
@@ -547,27 +615,60 @@ public sealed class SettingsMenuController : MonoBehaviour
             return;
         }
 
-        int resolutionIndex = resolutionDropdown != null ? resolutionDropdown.value : 0;
-        if (resolutionOptions.Count > 0)
+        if (resolutionOptions.Count > 0 && (resolutionDropdown != null || fullscreenToggle != null))
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            bool fullscreen = fullscreenToggle != null ? fullscreenToggle.isOn : GameSettings.Fullscreen;
+            GameSettings.Fullscreen = fullscreen;
+            Screen.fullScreen = fullscreen;
+#else
+            int resolutionIndex = resolutionDropdown != null
+                ? resolutionDropdown.value
+                : FindResolutionIndex(GameSettings.ResolutionWidth, GameSettings.ResolutionHeight);
             resolutionIndex = Mathf.Clamp(resolutionIndex, 0, resolutionOptions.Count - 1);
             Vector2Int selectedResolution = resolutionOptions[resolutionIndex];
-            bool fullscreen = fullscreenToggle != null && fullscreenToggle.isOn;
+            bool fullscreen = fullscreenToggle != null ? fullscreenToggle.isOn : GameSettings.Fullscreen;
             GameSettings.ResolutionWidth = selectedResolution.x;
             GameSettings.ResolutionHeight = selectedResolution.y;
             GameSettings.Fullscreen = fullscreen;
             Screen.SetResolution(selectedResolution.x, selectedResolution.y, fullscreen);
+#endif
         }
 
-        GameSettings.MasterVolumeEnabled = masterVolumeToggle == null || masterVolumeToggle.isOn;
-        GameSettings.MasterVolume = masterVolumeSlider != null ? masterVolumeSlider.value : GameSettings.MasterVolume;
-        GameSettings.MusicEnabled = musicToggle == null || musicToggle.isOn;
-        GameSettings.MusicVolume = musicVolumeSlider != null ? musicVolumeSlider.value : GameSettings.MusicVolume;
-        GameSettings.SoundEffectsEnabled = soundEffectsToggle == null || soundEffectsToggle.isOn;
-        GameSettings.SoundEffectsVolume = soundEffectsVolumeSlider != null
-            ? soundEffectsVolumeSlider.value
-            : GameSettings.SoundEffectsVolume;
-        GameSettings.ClickEffectEnabled = clickEffectToggle == null || clickEffectToggle.isOn;
+        if (masterVolumeToggle != null)
+        {
+            GameSettings.MasterVolumeEnabled = masterVolumeToggle.isOn;
+        }
+
+        if (masterVolumeSlider != null)
+        {
+            GameSettings.MasterVolume = masterVolumeSlider.value;
+        }
+
+        if (musicToggle != null)
+        {
+            GameSettings.MusicEnabled = musicToggle.isOn;
+        }
+
+        if (musicVolumeSlider != null)
+        {
+            GameSettings.MusicVolume = musicVolumeSlider.value;
+        }
+
+        if (soundEffectsToggle != null)
+        {
+            GameSettings.SoundEffectsEnabled = soundEffectsToggle.isOn;
+        }
+
+        if (soundEffectsVolumeSlider != null)
+        {
+            GameSettings.SoundEffectsVolume = soundEffectsVolumeSlider.value;
+        }
+
+        if (clickEffectToggle != null)
+        {
+            GameSettings.ClickEffectEnabled = clickEffectToggle.isOn;
+        }
 
         GameSettings.ApplyAudio(musicSources, soundEffectSources);
         RefreshValueTexts();
@@ -623,7 +724,11 @@ public sealed class SettingsMenuController : MonoBehaviour
             GameObject canvasObject = new("Settings Canvas");
             canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObject.AddComponent<CanvasScaler>();
+            CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
             canvasObject.AddComponent<GraphicRaycaster>();
         }
 

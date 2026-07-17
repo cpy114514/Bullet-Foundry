@@ -3,7 +3,7 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public sealed class OrbitingBullet : MonoBehaviour
 {
-    private const float DefaultOrbitDuration = 5.5f;
+    private const float DefaultOrbitDuration = 2.5f;
 
     [SerializeField, Min(0.05f)]
     private float radius = 0.5f;

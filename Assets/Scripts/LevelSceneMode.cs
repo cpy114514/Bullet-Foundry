@@ -2,7 +2,8 @@ public enum LevelSceneMode
 {
     Normal,
     LevelEditor,
-    Sandbox
+    Sandbox,
+    Endless
 }
 
 public static class LevelSceneModeRequest
@@ -14,6 +15,8 @@ public static class LevelSceneModeRequest
     public static bool HasRequest { get; private set; }
 
     public static bool IsSandbox => ActiveMode == LevelSceneMode.Sandbox;
+
+    public static bool IsEndless => ActiveMode == LevelSceneMode.Endless;
 
     public static void Set(LevelSceneMode mode)
     {
