@@ -25,6 +25,8 @@ This is a place that allows people to socialize, chating with each other. You ca
 - Node.js
 - JSON
 
+## AI usage
+This project uses AI for coding.
 ---
 
 ## License
