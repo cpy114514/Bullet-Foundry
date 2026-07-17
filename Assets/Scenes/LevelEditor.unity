@@ -4466,7 +4466,7 @@ MonoBehaviour:
   saveButton: {fileID: 1923470248}
   loadButton: {fileID: 2103691453}
   exportButton: {fileID: 0}
-  communityApiBaseUrl: 
+  communityApiBaseUrl: https://2a01-4f9-3081-399c--1306.nip.io
   communityAuthor: Anonymous
   publishButton: {fileID: 0}
   testButton: {fileID: 1518547160}

@@ -24,20 +24,37 @@ The server stores its runtime data in `data/`. Back up that directory before mov
 
 ## Nest Deployment
 
-1. SSH into Nest and run `nest get_port`. Keep the allocated port number.
-2. Clone or upload this repository, then enter `Tools/community-level-server`.
-3. Confirm Node 18 or newer with `node --version`.
-4. Start a quick test with `PORT=YOUR_PORT node server.js`, then from another terminal run `curl http://hackclub.app:YOUR_PORT/health`.
-5. Copy `bullet-foundry-community.service` to `~/.config/systemd/user/`, replace the two `REPLACE_...` values, then run:
+This project is configured for a root-managed Debian Nest container. It keeps the Node API private on `127.0.0.1:8787` and Caddy exposes HTTPS on ports 80 and 443.
+
+1. Install the runtime:
 
 ```bash
-systemctl --user daemon-reload
-systemctl --user enable --now bullet-foundry-community
-systemctl --user status bullet-foundry-community
+apt-get update
+apt-get install -y nodejs caddy
 ```
 
-6. In Unity, set both `Community API Base Url` fields to `http://hackclub.app:YOUR_PORT`:
+2. Upload this directory to `/opt/community-level-server`.
+3. Choose a hostname with an AAAA record pointing to the Nest public IPv6 address. The included `Caddyfile` currently uses `2a01-4f9-3081-399c--1306.nip.io` for this server. Replace that hostname with a custom domain when one is available.
+4. Install and start the API service:
+
+```bash
+install -m 0644 bullet-foundry-community.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now bullet-foundry-community
+```
+
+5. Install the proxy and reload it:
+
+```bash
+install -m 0644 Caddyfile /etc/caddy/Caddyfile
+caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+systemctl enable --now caddy
+systemctl reload caddy
+```
+
+6. Verify `https://YOUR_HOSTNAME/health` returns `{ "ok": true }`.
+7. In Unity, set both `Community API Base Url` fields to `https://YOUR_HOSTNAME`:
    - `Level Editor Controller` for publishing.
    - `Community Button` in the `LevelSelect` scene for browsing.
 
-For an HTTPS-only WebGL build, put the API behind an HTTPS reverse proxy or custom domain; an HTTPS page cannot call this plain HTTP address because browsers block mixed content.
+The browser build requires HTTPS. Do not point it to `http://` or to the private port `8787`.

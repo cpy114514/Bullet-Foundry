@@ -5634,7 +5634,6 @@ GameObject:
   - component: {fileID: 1814523594}
   - component: {fileID: 1814523593}
   - component: {fileID: 1814523596}
-  - component: {fileID: 1814523597}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -5760,23 +5759,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!114 &1814523597
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1814523592}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c6a8f5e4937d4b0fa2c3d4e5f6071829, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FireTowerPlacementSystem
-  worldCamera: {fileID: 1814523594}
-  cardCatalog: {fileID: 0}
-  selectedCardColor: {r: 0.65, g: 0.65, b: 0.65, a: 1}
-  previewAlpha: 0.45
-  towerRemovalRefundRatio: 0.75
 --- !u!1 &1823237492
 GameObject:
   m_ObjectHideFlags: 0

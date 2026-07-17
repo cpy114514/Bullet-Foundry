@@ -2486,11 +2486,6 @@ public sealed class LevelEditorController : MonoBehaviour
 
     private void PublishCommunityLevel()
     {
-        if (isPublishingCommunityLevel)
-        {
-            return;
-        }
-
         PullDataFromInputs();
         string json = BuildJson();
         if (!LevelJsonUtility.TryParse(json, out _, out string error))
@@ -2499,47 +2494,18 @@ public sealed class LevelEditorController : MonoBehaviour
             return;
         }
 
-        CommunityPostPublishRequest request = new()
+        if (!CommunityLevelApi.TryGetBaseUrl(communityApiBaseUrl, out _))
         {
-            type = "level",
-            title = Clean(levelId, DefaultLevelName),
-            author = Clean(communityAuthor, "Anonymous"),
-            body = "A playable community level.",
-            mediaUrl = string.Empty,
-            level = json
-        };
-
-        isPublishingCommunityLevel = true;
-        if (publishButton != null)
-        {
-            publishButton.interactable = false;
+            SetStatus("Set a valid Community API URL before publishing.");
+            return;
         }
 
-        SetStatus("Publishing community post...");
-        StartCoroutine(CommunityLevelApi.PublishPost(
+        SetStatus("Opening Community composer...");
+        CommunitySceneRequest.OpenComposerForLevel(
             communityApiBaseUrl,
-            request,
-            response =>
-            {
-                isPublishingCommunityLevel = false;
-                if (publishButton != null)
-                {
-                    publishButton.interactable = true;
-                }
-
-                string publishedId = string.IsNullOrWhiteSpace(response.id) ? string.Empty : " (" + response.id + ")";
-                SetStatus("Published community level" + publishedId + ".");
-            },
-            publishError =>
-            {
-                isPublishingCommunityLevel = false;
-                if (publishButton != null)
-                {
-                    publishButton.interactable = true;
-                }
-
-                SetStatus("Publish failed: " + publishError);
-            }));
+            Clean(levelId, DefaultLevelName),
+            json);
+        SceneTransitionController.LoadScene("Community");
     }
 
     private void TestPlay()

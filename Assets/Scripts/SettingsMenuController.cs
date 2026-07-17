@@ -97,6 +97,13 @@ public sealed class SettingsMenuController : MonoBehaviour
     {
         ResolveSceneUiReferences();
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        if (resolutionDropdown != null && resolutionDropdown.transform.parent != null)
+        {
+            resolutionDropdown.transform.parent.gameObject.SetActive(false);
+        }
+#endif
+
         if (buildDefaultUiIfMissing && settingsPanel == null)
         {
             BuildDefaultUi();
@@ -610,6 +617,11 @@ public sealed class SettingsMenuController : MonoBehaviour
 
         if (resolutionOptions.Count > 0 && (resolutionDropdown != null || fullscreenToggle != null))
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            bool fullscreen = fullscreenToggle != null ? fullscreenToggle.isOn : GameSettings.Fullscreen;
+            GameSettings.Fullscreen = fullscreen;
+            Screen.fullScreen = fullscreen;
+#else
             int resolutionIndex = resolutionDropdown != null
                 ? resolutionDropdown.value
                 : FindResolutionIndex(GameSettings.ResolutionWidth, GameSettings.ResolutionHeight);
@@ -620,6 +632,7 @@ public sealed class SettingsMenuController : MonoBehaviour
             GameSettings.ResolutionHeight = selectedResolution.y;
             GameSettings.Fullscreen = fullscreen;
             Screen.SetResolution(selectedResolution.x, selectedResolution.y, fullscreen);
+#endif
         }
 
         if (masterVolumeToggle != null)
@@ -711,7 +724,11 @@ public sealed class SettingsMenuController : MonoBehaviour
             GameObject canvasObject = new("Settings Canvas");
             canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObject.AddComponent<CanvasScaler>();
+            CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
             canvasObject.AddComponent<GraphicRaycaster>();
         }
 

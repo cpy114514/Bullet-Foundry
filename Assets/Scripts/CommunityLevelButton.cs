@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -138,46 +137,4 @@ public sealed class CommunityLevelButton : MonoBehaviour
         return buttonCollider.OverlapPoint(point);
     }
 #endif
-}
-
-public static class CommunityLevelButtonRuntime
-{
-    private const string LevelSelectSceneName = "LevelSelect";
-    private const string EndlessButtonName = "Endless Button";
-    private const string CommunityButtonName = "Community Button";
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-    private static void CreateFallbackButton()
-    {
-        Scene scene = SceneManager.GetActiveScene();
-        if (scene.name != LevelSelectSceneName || GameObject.Find(CommunityButtonName) != null)
-        {
-            return;
-        }
-
-        GameObject endlessButton = GameObject.Find(EndlessButtonName);
-        if (endlessButton == null || endlessButton.transform.parent == null)
-        {
-            return;
-        }
-
-        GameObject communityButton = Object.Instantiate(endlessButton, endlessButton.transform.parent);
-        communityButton.name = CommunityButtonName;
-        communityButton.transform.localPosition = endlessButton.transform.localPosition + new Vector3(3f, 0f, 0f);
-
-        LevelSelectModeButton modeButton = communityButton.GetComponent<LevelSelectModeButton>();
-        if (modeButton != null)
-        {
-            modeButton.enabled = false;
-            Object.Destroy(modeButton);
-        }
-
-        TextMesh label = communityButton.GetComponent<TextMesh>();
-        if (label != null)
-        {
-            label.text = "COMMUNITY";
-        }
-
-        communityButton.AddComponent<CommunityLevelButton>();
-    }
 }

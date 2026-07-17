@@ -74,6 +74,7 @@ public static class FireTowerPlacementBootstrap
 
     private static bool IsMenuScene(Scene scene)
     {
-        return scene.IsValid() && (scene.name == "TitlePage" || scene.name == "LevelSelect");
+        return scene.IsValid() &&
+            (scene.name == "TitlePage" || scene.name == "LevelSelect" || scene.name == "Community");
     }
 }

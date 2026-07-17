@@ -3701,6 +3701,54 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 504621865638449339, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 504621865638449339, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 504621865638449339, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 651208063440085465, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 651208063440085465, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 798327014391114551, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 798327014391114551, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 908001183215348649, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 908001183215348649, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 908001183215348649, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1396125271413142825, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1396125271413142825, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3335168509720446272, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -3792,6 +3840,22 @@ PrefabInstance:
     - target: {fileID: 8409812146658726828, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8651824297238090126, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9044282373982548019, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9044282373982548019, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9044282373982548019, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -6309,7 +6373,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1af084bd2a54b468c9b6dd4b1f06c07, type: 3}
   m_Name: Community
   m_EditorClassIdentifier: Assembly-CSharp::CommunityLevelButton
-  apiBaseUrl: not-configured
+  apiBaseUrl: https://2a01-4f9-3081-399c--1306.nip.io
   hoverScale: 1.08
   pressedScale: 0.94
   scaleSpeed: 14

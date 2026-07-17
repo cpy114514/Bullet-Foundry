@@ -1,0 +1,4 @@
+2a01-4f9-3081-399c--1306.nip.io {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8787
+}

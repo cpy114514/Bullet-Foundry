@@ -4,8 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=REPLACE_WITH_YOUR_SERVER_DIRECTORY
-Environment=PORT=REPLACE_WITH_NEST_PORT
+WorkingDirectory=/opt/community-level-server
+Environment=PORT=8787
+Environment=HOST=127.0.0.1
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=3
