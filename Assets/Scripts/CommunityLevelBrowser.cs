@@ -158,10 +158,10 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
         Canvas canvas = GetComponent<Canvas>() ?? gameObject.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 1200;
         CanvasScaler scaler = GetComponent<CanvasScaler>() ?? gameObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize; scaler.referenceResolution = new Vector2(1920f, 1080f); scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight; scaler.matchWidthOrHeight = 0.5f;
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize; scaler.referenceResolution = new Vector2(1600f, 900f); scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight; scaler.matchWidthOrHeight = 0.5f;
         if (GetComponent<GraphicRaycaster>() == null) gameObject.AddComponent<GraphicRaycaster>();
         RectTransform root = GetComponent<RectTransform>();
-        CreateImage("Backdrop", root, new Color(0f, 0f, 0f, 0.78f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        CreateImage("Backdrop", root, Color.white, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         feedRoot = CreateRootPanel("Community Feed", root);
         detailRoot = CreateRootPanel("Post Detail", root);
         composerRoot = CreateRootPanel("Post Composer", root);
@@ -179,7 +179,7 @@ public sealed class CommunityLevelBrowser : MonoBehaviour
 
     private GameObject CreateRootPanel(string objectName, RectTransform root)
     {
-        Image panel = CreateImage(objectName, root, new Color(0.96f, 0.96f, 0.94f, 1f), new Vector2(.5f, .5f), new Vector2(.5f, .5f), new Vector2(-760f, -430f), new Vector2(760f, 430f));
+        Image panel = CreateImage(objectName, root, Color.white, new Vector2(.5f, .5f), new Vector2(.5f, .5f), new Vector2(-760f, -430f), new Vector2(760f, 430f));
         AddOutline(panel.gameObject, Color.black, new Vector2(3f, -3f)); return panel.gameObject;
     }
 

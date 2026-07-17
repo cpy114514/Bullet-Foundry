@@ -57,7 +57,6 @@ public static class LevelPauseMenuBootstrap
             serializedPauseMenu.FindProperty("panelSprite").objectReferenceValue = LoadSprite(UiPath, "UI_1");
             serializedPauseMenu.FindProperty("buttonSprite").objectReferenceValue = LoadSprite(Ui2Path, "UI2_8");
             serializedPauseMenu.ApplyModifiedPropertiesWithoutUndo();
-            pauseMenu.RebuildSceneUi();
         }
 
         SharedSettingsPanelBootstrap.InstallIntoScene(scene, sharedSettingsPrefab, 3300);

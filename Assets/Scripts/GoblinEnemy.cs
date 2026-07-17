@@ -87,6 +87,9 @@ public sealed class GoblinEnemy : MonoBehaviour
     private int coinDropCount = 1;
 
     [SerializeField, Min(1)]
+    private int coinDropMultiplier = 1;
+
+    [SerializeField, Min(1)]
     private int coinDropValue = 5;
 
     [SerializeField]
