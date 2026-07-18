@@ -46,8 +46,6 @@ Right click on the card to delete or change the number of enemy
 - Node.js
 - JSON
 
-## It's a project for #horizons
-
 ## AI usage
 
 This project uses AI for coding.
@@ -56,3 +54,11 @@ This project uses AI for coding.
 ## License
 
 MIT License
+
+# It's a project for #horizons
+
+## Screenshots
+
+![Level Editor](Assets/Screenshots/level_editor_overview.webp)
+
+![Gameplay](Assets/Screenshots/gameplay_overview.webp)
