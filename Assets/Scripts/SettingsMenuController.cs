@@ -134,6 +134,7 @@ public sealed class SettingsMenuController : MonoBehaviour
         Transform panel = settingsPanel != null
             ? settingsPanel.transform
             : FindNamed(transform, "Settings Panel");
+        panel ??= FindSceneTransform("Settings Panel");
         if (panel == null)
         {
             return;
@@ -185,10 +186,29 @@ public sealed class SettingsMenuController : MonoBehaviour
         return null;
     }
 
+    private static Transform FindSceneTransform(string objectName)
+    {
+        Transform[] transforms = FindObjectsByType<Transform>(
+            FindObjectsInactive.Include,
+            FindObjectsSortMode.None);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform candidate = transforms[i];
+            if (candidate != null && candidate.name == objectName)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
     public void OpenSettings()
     {
+        ResolveSceneUiReferences();
         if (settingsPanel == null)
         {
+            Debug.LogWarning("Settings cannot open because the scene has no Settings Panel.");
             return;
         }
 
@@ -199,6 +219,7 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     public void CloseSettings()
     {
+        ResolveSceneUiReferences();
         if (settingsPanel == null)
         {
             return;
@@ -209,8 +230,10 @@ public sealed class SettingsMenuController : MonoBehaviour
 
     public void ToggleSettings()
     {
+        ResolveSceneUiReferences();
         if (settingsPanel == null)
         {
+            Debug.LogWarning("Settings cannot toggle because the scene has no Settings Panel.");
             return;
         }
 

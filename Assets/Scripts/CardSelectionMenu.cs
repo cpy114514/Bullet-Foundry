@@ -830,7 +830,7 @@ public sealed class CardSelectionMenu : MonoBehaviour
             }
 
             SetCardVisibility(dockCard, true);
-            if (TryGetSelectionPreviewPlacement(i, dockCards.Count, out Vector3 previewPosition, out Vector3 previewScale))
+            if (TryGetSelectionPreviewPlacement(dockCard, i, out Vector3 previewPosition, out Vector3 previewScale))
             {
                 Vector3 targetScale = previewScale;
                 string towerName = dockCard.TowerPrefab != null
@@ -875,21 +875,23 @@ public sealed class CardSelectionMenu : MonoBehaviour
         }
     }
 
-    private bool TryGetSelectionPreviewPlacement(int cardIndex, int cardCount, out Vector3 position, out Vector3 scale)
+    private bool TryGetSelectionPreviewPlacement(
+        CardView card,
+        int cardIndex,
+        out Vector3 position,
+        out Vector3 scale)
     {
         position = default;
-        scale = Vector3.one * Mathf.Max(0.35f, cardScale * 0.65f);
-        if (scrollViewport == null || cardIndex < 0 || cardCount <= 0)
+        scale = Vector3.one * cardScale * uniformCardScaleMultiplier;
+        CardSlotPoint[] gameplaySlots = FindGameplayDockSlots();
+        if (card == null || cardIndex < 0 || cardIndex >= gameplaySlots.Length)
         {
             return false;
         }
 
-        Bounds panelBounds = scrollViewport.bounds;
-        float spacing = 1f;
-        position = new Vector3(
-            panelBounds.center.x + ((cardIndex - ((cardCount - 1) * 0.5f)) * spacing),
-            panelBounds.max.y + 0.32f,
-            -0.25f);
+        CardSlotPoint slot = gameplaySlots[cardIndex];
+        position = slot.transform.position;
+        scale = Vector3.one * GetScaleForSlot(card, slot);
         return true;
     }
 

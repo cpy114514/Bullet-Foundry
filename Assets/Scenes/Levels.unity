@@ -4143,7 +4143,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 788439792}
-  m_Father: {fileID: 1931526743}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
@@ -6668,7 +6668,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1931526743}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
@@ -9099,6 +9099,18 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3335168509720446272, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3335168509720446272, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3335168509720446272, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3335168509720446272, guid: 97c2f8bc460d8074180a69b5f0a0cc60, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -11131,7 +11143,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1994279981}
-  m_Text: 999999
+  m_Text: 99999
   m_OffsetZ: 0
   m_CharacterSize: 0.28
   m_LineSpacing: 0.5
@@ -14764,6 +14776,7 @@ MonoBehaviour:
   selectedCountText: {fileID: 0}
   startButtonCollider: {fileID: 3300000253}
   backButtonCollider: {fileID: 0}
+  levelSelectSceneName: LevelSelect
   selectedColor: {r: 0.55, g: 0.55, b: 0.55, a: 1}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   restrictedColor: {r: 0.35, g: 0.35, b: 0.35, a: 1}
@@ -16255,3 +16268,5 @@ SceneRoots:
   - {fileID: 1943093992}
   - {fileID: 2005876749}
   - {fileID: 1177314255}
+  - {fileID: 618308656}
+  - {fileID: 1126084575}
