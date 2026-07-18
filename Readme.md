@@ -59,6 +59,6 @@ MIT License
 
 ## Screenshots
 
-![Level Editor](Assets/Screenshots/level_editor_overview.webp)
+![Level Editor](Assets/Screenshots/level_editor_overview.png)
 
 ![Gameplay](Assets/Screenshots/gameplay_overview.webp)
