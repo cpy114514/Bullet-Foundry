@@ -1,11 +1,11 @@
 # Bullet Foundry
 
+> Build towers. Shape bullets. Fight against enemies. Create levels. Share them with the community.
+
 ## Where to play
 
 Play it free on itch.io: https://cpy111.itch.io/bullet-foundry
 (I don't mind if you wanna donat( $ ω $ ))
-
-> Build towers. Shape bullets. Fight against enemies. Create levels. Share them with the community.
 
 Bullet Foundry is black and white hand drawing(Trust my drawing skill☜(ﾟヮﾟ☜)) towerdefense game. Unlike other towerdefense, it only have one shooter that can attack. The towers will only have reaction when bullets hits them. Build defense by the different combination of the towers. ᐠ( ᐛ )ᐟ You can also create your own levels and share it in the community or try others levels(or you can just post some random things...).
 
